@@ -4,13 +4,15 @@ import { FaPlus } from "react-icons/fa";
 import { ButtonComponent } from "./ButtonComponents";
 import { RiPencilFill } from "react-icons/ri";
 
-export function ButtonCriarCategoria() {
+export function ButtonCriarCategoria(tipo: number) {
   const [openModal, setOpenModal] = useState(false);
   const handleClick = () => {
     setOpenModal(true);
   };
   return (
+    
     <>
+    
       <ButtonComponent.Root
         onClick={handleClick}
         className="bg-[#f6cf45] flex rounded-[61px] text-black w-44 h-9 text-center justify-evenly items-center">

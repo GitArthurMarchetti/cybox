@@ -1,9 +1,7 @@
-
-
 export default function Home() {
   return (
     <main className="flex flex-col">
-      <section> </section>
+      <section></section>
     </main>
   );
 }

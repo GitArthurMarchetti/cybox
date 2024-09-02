@@ -3,8 +3,9 @@ generator client {
 }
 
 datasource db {
-  provider = "mysql"
-  url      = env("DATABASE_URL")
+  provider = "postgresql"
+  url = env("POSTGRES_PRISMA_URL") // uses connection pooling
+  directUrl = env("POSTGRES_URL_NON_POOLING") // uses a direct connection
 }
 
 model User {
@@ -34,7 +35,7 @@ model Sala {
   id                 String     @id @default(uuid())
   tituloSala         String
   descricaoSala      String?
-  cor                String?
+  imagem                String?
   totalMembros       Int
   maximoDeMembros    Int
   tokkenAcesso       String     @unique
