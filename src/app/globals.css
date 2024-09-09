@@ -1,13 +1,22 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+@import url('https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap');
 
-html, body {
+html,
+body {
     height: 100%;
     margin: 0;
     padding: 0;
     box-sizing: border-box;
     background-color: #2C2C2C;
+    font-family: "Inter", sans-serif;
+}
+
+.inter {
+    font-family: "Inter", sans-serif;
+    font-optical-sizing: auto;
+    font-style: normal;
 }
 
 #__next {
@@ -15,4 +24,14 @@ html, body {
     width: 100%;
     display: flex;
     flex-direction: column;
+}
+
+.fundoHome {
+    z-index: 0;
+    background: linear-gradient(-45deg,
+            rgba(252, 183, 88, 0.47) 4%,
+            #2C2C2C 20%,
+            #2C2C2C 80%,
+            rgba(252, 183, 88, 0.47) 120%);
+
 }

@@ -35,7 +35,7 @@ model Sala {
   id                 String     @id @default(uuid())
   tituloSala         String
   descricaoSala      String?
-  imagem                String?
+  imagem             String?
   totalMembros       Int
   maximoDeMembros    Int
   tokkenAcesso       String     @unique
