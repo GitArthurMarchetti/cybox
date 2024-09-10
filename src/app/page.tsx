@@ -1,7 +1,6 @@
-<<<<<<< HEAD
 import Navbar from "@/app/components/Navigation/navbar";
 import Image from "next/image";
-import chart from "../img/chartsPng 1.png"
+import chart from "../img/chartsPng1.png"
 import { FaCalculator } from "react-icons/fa6";
 import { BsFillClockFill } from "react-icons/bs";
 import { MdOutlineAttachMoney } from "react-icons/md";
@@ -38,18 +37,4 @@ export default function Home() {
       </main>
     </>
   );
-=======
-import db from "./services/db";
-import UserTeste from "./components/teste/userTeste";
-import { getUsers } from "@/app/services/user";
-
-export const dynamic = "force-dynamic"
-
-export default async function Home() {
-  const users = await getUsers();
-  // const user = await getEmptyUser();
-
-
-  return <UserTeste users={users}/>
->>>>>>> origin/Borges
 }
