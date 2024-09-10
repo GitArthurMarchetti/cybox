@@ -6,11 +6,20 @@ type Props = {
     users: UserType[]
 }
 
-export default function UserTeste({ users}: Props) {
+export default function UserTeste({ users }: Props) {
+    console.log(users)
     return (
         <>
-            <h1>TESTE</h1>
-            <p>{}</p>
+            <div className="text-white">
+                <h1>TESTE</h1>
+                {users.map((user) => (
+                    <div key={user.id}>
+                        <p>Nome: {user.nome}</p>
+                        <p>Email: {user.email}</p>
+                    </div>
+                ))}
+            </div>
+
         </>
     )
 }

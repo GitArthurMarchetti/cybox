@@ -19,7 +19,12 @@ export default UserType
 //     return { id: null, nome: "", email: "", senha: "", resetPasswordToken: "" }
 // }
 export async function getUsers(): Promise<UserType[]> {
-    return await db.execute(sql`SELECT * FROM user`) as UserType[]
+    try {
+        return await db.execute<UserType>(sql`SELECT * FROM "user"`);
+    } catch (error) {
+        console.error('Erro ao buscar usuários do banco:', error);
+        return [];
+    }
 }
 
 // export async function saveUser(formData: FormData) {
