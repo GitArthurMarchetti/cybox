@@ -1,9 +1,8 @@
 'use client'
-import UserType, { removeUser } from "@/app/services/user"
+import UserType, { removeUser, saveUser } from "@/app/services/user"
 // import { saveUser, removeUser } from "@/app/services/user"
 import { useState } from "react"
 
-import { saveUser } from "@/app/services/user"
 
 type Props = {
     users: UserType[]

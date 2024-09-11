@@ -1,6 +1,7 @@
 
 import Navbar from "@/app/components/Navigation/navbar";
 import Image from "next/image";
+import UserTeste from "./components/teste/userTeste"
 
 //imagens
 import chart from "../img/chartsPng1.png"
@@ -118,7 +119,7 @@ export default function Home() {
         </section>
       </main >
       <footer className="w-full bg-[#2E2E2E] h-60 rounded-t-[120px]">
-        <h1 className="text-center">FOOTER MANEIRO AQ DPS </h1>
+
       </footer>
     </>
   );
