@@ -28,10 +28,10 @@ export default function Navbar({ type }: navProps) {
                                 <Image className='w-36' alt='Logo nav' src={logoNav} />
                             </div>
                             <div className='bg-[#2E2E2E] w-2/4 flex justify-evenly text-xl text-white p-6 rounded-full'>
-                                <a className=' transition- duration-300  hover:font-semibold' href="">Home</a>
-                                <a className=' transition- duration-300  hover:font-semibold' href="">Planos</a>
-                                <a className=' transition- duration-300  hover:font-semibold' href="">Sobre nós</a>
-                                <a className=' transition- duration-300  hover:font-semibold' href="">Contato</a>
+                                <a className=' transition- duration-300  hover:font-semibold' href="#">Home</a>
+                                <a className=' transition- duration-300  hover:font-semibold' href="#Planos">Planos</a>
+                                <a className=' transition- duration-300  hover:font-semibold' href="#Sobre">Sobre nós</a>
+                                <a className=' transition- duration-300  hover:font-semibold' href="#Contato">Contato</a>
                             </div>
                             <div className='w-[25%] flex justify-end gap-2 '>
 
