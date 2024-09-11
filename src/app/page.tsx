@@ -1,3 +1,4 @@
+
 import Navbar from "@/app/components/Navigation/navbar";
 import Image from "next/image";
 
@@ -16,6 +17,7 @@ import { FaArrowTrendUp } from "react-icons/fa6";
 import { IoExtensionPuzzle } from "react-icons/io5";
 
 
+
 export default function Home() {
 
   return (
@@ -24,6 +26,7 @@ export default function Home() {
 
         <section className="fundoHome">
           <Navbar type="1" />
+
           <div className="flex w-10/12 mt-20 m-auto justify-center items-start">
             <div className="w-1/2 flex  flex-col">
               <h1 className="text-5xl font-semibold text-white w-full">
@@ -32,7 +35,9 @@ export default function Home() {
               <p className="text-white font-light border-solid border-l-2 pl-4 w-4/6 my-5 text-xl border-[#F6CF45]">
                 Gestão Estratégica de Ativos: Monitorando, Avaliando e Otimizando Seu Patrimônio Empresarial
               </p>
+
               <button className="py-3 mt-5 text-xl w-2/4 bg-[#F6CF45] text-black rounded-full">
+
                 Conheça nosso serviço
               </button>
             </div>
@@ -40,6 +45,7 @@ export default function Home() {
               <Image className="h-[550px] w-[721px]" src={chart} alt="" />
             </div>
           </div>
+
         </section>
 
         <section className=" pt-32 fundoSec2 text-white">
@@ -117,3 +123,4 @@ export default function Home() {
     </>
   );
 }
+

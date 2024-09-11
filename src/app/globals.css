@@ -9,9 +9,11 @@ body {
     margin: 0;
     padding: 0;
     box-sizing: border-box;
+
     background-color: #000000;
     font-family: "Inter", sans-serif;
     color: white;
+
 }
 
 .inter {
@@ -31,6 +33,7 @@ body {
     z-index: 0;
     background: linear-gradient(-45deg,
             rgba(252, 183, 88, 0.47) 4%,
+
             #000000 20%,
             #000000 80%,
             rgba(252, 183, 88, 0.47) 120%);

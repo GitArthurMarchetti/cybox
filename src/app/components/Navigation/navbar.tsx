@@ -24,7 +24,10 @@ export default function Navbar({ type }: navProps) {
                                 <a className=' transition- duration-300  hover:font-semibold' href="">Contato</a>
                             </div>
                             <div className='w-[25%] flex justify-end gap-2 '>
+                          <button className='bg-[#F6CF45] w-40 hover:bg-[#F1fF14] transition-all duration-300 h-11 px-9  text-lg rounded-full'>Cadastrar</button>
+
                                 <button className='bg-[#F6CF45] text-black w-40 hover:bg-[#F1fF14] transition-all duration-300 h-11 px-9  text-lg rounded-full'>Cadastrar</button>
+
                                 <button className='border-[#F6CF45] border-solid text-white border w-40 transition-all  duration-300 hover:bg-[#F1aF45] h-11 px-9  text-lg rounded-full'>Entrar</button>
                             </div>
                         </nav>
