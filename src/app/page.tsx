@@ -37,8 +37,7 @@ export default function Home() {
                 Gestão Estratégica de Ativos: Monitorando, Avaliando e Otimizando Seu Patrimônio Empresarial
               </p>
 
-              <button className="py-3 mt-5 text-xl w-2/4 bg-[#F6CF45] text-black rounded-full">
-
+              <button className="py-3 mt-5 text-xl w-2/4 bg-[#F6CF45] hover:bg-[#ffdf6c] transition-all text-black rounded-full">
                 Conheça nosso serviço
               </button>
             </div>

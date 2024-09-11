@@ -1,13 +1,23 @@
+'use client'
+
 import Image from 'next/image'
 import logoNav from '../../../img/logo-completa-branca.png'
+
+//icons
 import { MdDashboard } from "react-icons/md";
 import { IoMdNotifications } from "react-icons/io";
 import { FaGear } from "react-icons/fa6";
+import { useRouter } from 'next/navigation';
+
+
 interface navProps {
     type: string
 }
 
 export default function Navbar({ type }: navProps) {
+
+    const router = useRouter()
+
     return (
         <>
             {type == "1" ? (
@@ -25,9 +35,9 @@ export default function Navbar({ type }: navProps) {
                             </div>
                             <div className='w-[25%] flex justify-end gap-2 '>
 
-                                <button className='bg-[#F6CF45] text-black w-40 hover:bg-[#F1fF14] transition-all duration-300 h-11 px-9  text-lg rounded-full'>Cadastrar</button>
+                                <button onClick={() => router.push('/cadastro')} className='bg-[#F6CF45] text-black w-40 hover:bg-[#ffde67] transition-all duration-300 h-11 px-9  text-lg rounded-full'>Cadastrar</button>
 
-                                <button className='border-[#F6CF45] border-solid text-white border w-40 transition-all  duration-300 hover:bg-[#F1aF45] h-11 px-9  text-lg rounded-full'>Entrar</button>
+                                <button onClick={() => router.push('/login')} className='border-[#F6CF45] border-solid text-white border w-40 transition-all  duration-300 hover:bg-[#ffde67] hover:text-black h-11 px-9  text-lg rounded-full'>Entrar</button>
                             </div>
                         </nav>
                     </header>
