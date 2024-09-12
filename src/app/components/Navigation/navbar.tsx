@@ -8,6 +8,7 @@ import { MdDashboard } from "react-icons/md";
 import { IoMdNotifications } from "react-icons/io";
 import { FaGear } from "react-icons/fa6";
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 
 
 interface navProps {
@@ -15,8 +16,6 @@ interface navProps {
 }
 
 export default function Navbar({ type }: navProps) {
-
-    const router = useRouter()
 
     return (
         <>
@@ -35,9 +34,11 @@ export default function Navbar({ type }: navProps) {
                             </div>
                             <div className='w-[25%] flex justify-end gap-2 '>
 
+
                                 <button onClick={() => router.push('/login')} className='bg-[#2E2E2E] text-white w-40 hover:bg-[#F6CF45] hover:text-black  transition-all duration-300 h-11 px-9  text-lg rounded-full'>Cadastrar</button>
 
                                 <button onClick={() => router.push('/cadastro')} className='border-[#2E2E2E] hover:border-[#F6CF45] border-2 border-solid text-white w-40 transition-all  duration-300 hover:bg-[#F6CF45] hover:text-black h-11 px-9  text-lg rounded-full'>Entrar</button>
+
 
                             </div>
                         </nav>

@@ -1,3 +1,4 @@
+"use server"
 
 import { sql } from "drizzle-orm";
 import db from "./db";
@@ -33,6 +34,7 @@ export async function saveUser(formData: FormData) {
     const nome = formData.get('nome') as string
     const email = formData.get('email') as string
     const senha = formData.get('senha') as string
+    const confirmarSenha = formData.get('confirmarSenha') as string
 
     if (!nome || !email || !senha) {
         throw new Error('Todos os campos (nome, email, senha) devem estar preenchidos.');
@@ -49,6 +51,10 @@ export async function saveUser(formData: FormData) {
         throw new Error('A senha deve conter mais de 5 caracteres e pelo menos 1 caractere especial.');
     }
 
+    if (senha !== confirmarSenha) {
+        throw new Error('A confirmação da senha não corresponde à senha.');
+    }
+
     const user: UserType = {
         id,
         nome,
@@ -63,7 +69,7 @@ export async function saveUser(formData: FormData) {
         await db.execute(sql`UPDATE "user" SET nome=${user.nome}, email=${user.email}, senha=${user.senha} `)
     }
 
-
+    
     redirect('/')
 }
 
