@@ -17,9 +17,6 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="pt-br">
-
-      
-
       <head>
         <link rel="shortcut icon" href='../img/logo-branca.png' type="image/x-icon" />
       </head>

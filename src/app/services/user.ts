@@ -1,3 +1,4 @@
+"use server"
 
 import { sql } from "drizzle-orm";
 import db from "./db";
@@ -68,8 +69,8 @@ export async function saveUser(formData: FormData) {
         await db.execute(sql`UPDATE "user" SET nome=${user.nome}, email=${user.email}, senha=${user.senha} `)
     }
 
-
-    redirect('/login')
+    
+    redirect('/')
 }
 
 export async function removeUser(user: UserType) {

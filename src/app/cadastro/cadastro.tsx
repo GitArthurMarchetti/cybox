@@ -82,11 +82,11 @@ export default function CadastroComponent({ user: novoUser }: Props) {
                                 {isVisible2 ? <IoMdEye size={30} onClick={() => setIsVisible2(false)} /> : <IoMdEyeOff size={30} onClick={() => setIsVisible2(true)} />}
                             </label>
                         </div>
-                    </form>
                     <p className="text-right w-4/5 m-auto text-[#B4B4B4] underline italic">Esqueceu a senha?</p>
                     <div className="w-4/5 m-auto flex mt-8">
-                        <button className="bg-[#F6CF45] text-black w-1/2 mx-auto rounded-full h-14 text-xl font-semibold" onClick={() => setUser({ ...user })}>Entrar</button>
+                        <button type="submit" className="bg-[#F6CF45] text-black w-1/2 mx-auto rounded-full h-14 text-xl font-semibold" onClick={() => setUser({ ...user })}>Entrar</button>
                     </div>
+                    </form>
                     <div className="text-center italic text-[#B4B4B4] mt-8 text-xl ">
                         <a href="/login" className="font-semibold not-italic">Ja possui uma conta? <span className="font-extralight underline">Faça login aqui.</span> </a>
                     </div>
