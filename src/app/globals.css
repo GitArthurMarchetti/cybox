@@ -5,69 +5,75 @@
 
 html,
 body {
-    height: 100%;
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-    scroll-behavior: smooth;
-    background-color: #000000;
-    font-family: "Inter", sans-serif;
-    color: white;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  scroll-behavior: smooth;
+  background-color: #000000;
+  font-family: "Inter", sans-serif;
+  color: white;
 
 }
 
 .inter {
-    font-family: "Inter", sans-serif;
-    font-optical-sizing: auto;
-    font-style: normal;
+  font-family: "Inter", sans-serif;
+  font-optical-sizing: auto;
+  font-style: normal;
 }
 
 #__next {
-    height: 100%;
-    width: 100%;
-    display: flex;
-    flex-direction: column;
+  height: 100%;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.borrar {
+  backdrop-filter: blur(8px);
 }
 
 .fundoHome {
-    z-index: 0;
-    background: linear-gradient(-45deg,
-            rgba(252, 183, 88, 0.47) 4%,
+  z-index: 10;
+  background: linear-gradient(-45deg,
+      rgba(252, 183, 88, 0.47) 4%,
 
-            #000000 20%,
-            #000000 80%,
-            rgba(252, 183, 88, 0.47) 120%);
+      #000000 20%,
+      #000000 80%,
+      rgba(252, 183, 88, 0.47) 120%);
 
 }
 
 .fundoSec2 {
-    z-index: 0;
-    background: linear-gradient(30deg,
-            rgba(252, 184, 88, 0) 0%,
-            #000000 20%,
-            #000000 80%,
-            rgba(252, 183, 88, 0.47) 96%);
+  z-index: 0;
+  background: linear-gradient(30deg,
+      rgba(252, 184, 88, 0) 0%,
+      #000000 20%,
+      #000000 80%,
+      rgba(252, 183, 88, 0.47) 96%);
 
 }
 
 /* Personalize a barra de rolagem */
 .scrollbar-thin {
-    scrollbar-width: thin; /* Para Firefox */
-  }
-  
-  .scrollbar-thumb-gray-700 {
-    scrollbar-color: #4a4a4a #e0e0e0; /* Para Firefox */
-  }
-  
-  ::-webkit-scrollbar {
-    width: 8px;
-  }
-  
-  ::-webkit-scrollbar-thumb {
-    background-color: #F6CF45;
-    border-radius: 8px;
-  }
-  
-  ::-webkit-scrollbar-track {
-    background-color: transparent;
-  }
+  scrollbar-width: thin;
+  /* Para Firefox */
+}
+
+.scrollbar-thumb-gray-700 {
+  scrollbar-color: #4a4a4a #e0e0e0;
+  /* Para Firefox */
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: #F6CF45;
+  border-radius: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background-color: transparent;
+}
