@@ -1,7 +1,6 @@
 
 import Navbar from "@/app/components/Navigation/navbar";
 import Image from "next/image";
-import UserTeste from "./components/teste/userTeste"
 
 //imagens
 import chart from "../img/chartsPng1.png"
@@ -10,7 +9,7 @@ import missao from '../img/missao.png'
 import visao from '../img/visao.png'
 
 //icons
-import { FaCalculator } from "react-icons/fa6";
+import { FaCalculator, FaChevronUp } from "react-icons/fa6";
 import { BsFillClockFill } from "react-icons/bs";
 import { MdOutlineAttachMoney } from "react-icons/md";
 import { RiBarChartFill } from "react-icons/ri";
@@ -37,8 +36,7 @@ export default function Home() {
                 Gestão Estratégica de Ativos: Monitorando, Avaliando e Otimizando Seu Patrimônio Empresarial
               </p>
 
-              <button className="py-3 mt-5 text-xl w-2/4 bg-[#F6CF45] text-black rounded-full">
-
+              <button className="py-3 mt-5 text-xl w-2/4 bg-[#F6CF45] hover:bg-[#ffdf6c] transition-all text-black rounded-full">
                 Conheça nosso serviço
               </button>
             </div>
@@ -81,7 +79,7 @@ export default function Home() {
           </div>
         </section>
 
-        <section className="flex w-5/6 mx-auto justify-around pt-32">
+        <section id="Sobre" className="flex w-5/6 mx-auto justify-around pt-32">
           <div className="flex flex-col w-1/2  justify-center gap-10">
             <h2 className="text-3xl font-semibold">Sobre nós</h2>
             <p className="text-xl">
@@ -118,9 +116,14 @@ export default function Home() {
           </div>
         </section>
       </main >
-      <footer className="w-full bg-[#2E2E2E] h-60 rounded-t-[120px]">
+      <footer id="Contato" className="w-full bg-[#2E2E2E] h-60 rounded-t-[120px]">
 
       </footer>
+      <div className="fixed bottom-5 right-5  p-2 text-[#F6CF45]">
+        <a href="#">
+          <FaChevronUp size={20} />
+        </a>
+      </div>
     </>
   );
 }
