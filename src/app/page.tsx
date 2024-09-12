@@ -1,6 +1,13 @@
 'use client'
 import Navbar from "@/app/components/Navigation/navbar";
 import Image from "next/image";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"
+
 
 //imagens
 import chart from "../img/chartsPng1.png"
@@ -15,11 +22,11 @@ import { MdOutlineAttachMoney } from "react-icons/md";
 import { RiBarChartFill } from "react-icons/ri";
 import { FaArrowTrendUp } from "react-icons/fa6";
 import { IoExtensionPuzzle } from "react-icons/io5";
+import { useRouter } from "next/navigation";
 
 
 
 export default function Home() {
-
   return (
     <>
       <main className="flex flex-col  w-full min-h-screen">
@@ -27,7 +34,7 @@ export default function Home() {
         <section className="fundoHome">
           <Navbar type="1" />
 
-          <div className="flex w-10/12 mt-40 m-auto justify-center items-start">
+          <div className="flex w-10/12 mt-52 m-auto justify-center items-start">
             <div className="w-1/2 flex  flex-col">
               <h1 className="text-5xl font-semibold text-white w-full">
                 Gerencie seu patrimônio da forma mais eficiente do mercado
@@ -41,7 +48,7 @@ export default function Home() {
               </button>
             </div>
             <div className="w-1/2 m-auto flex justify-end">
-              <Image className="h-[550px] w-[721px]" src={chart} alt="" />
+              <Image className="" src={chart} alt="" />
             </div>
           </div>
 
@@ -120,9 +127,19 @@ export default function Home() {
 
       </footer>
       <div className="fixed bottom-5 right-5  p-2 text-[#F6CF45]">
-        <a href="#">
-          <FaChevronUp size={20} />
-        </a>
+
+        <TooltipProvider delayDuration={50}>
+          <Tooltip>
+            <TooltipTrigger>
+              <a href="#" >
+                <FaChevronUp size={20} />
+              </a></TooltipTrigger>
+            <TooltipContent className="text-[#F6CF45] bg-black border-0 mr-4">
+              <p>Voltar ao inicio</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+
       </div>
     </>
   );
