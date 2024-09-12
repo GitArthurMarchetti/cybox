@@ -22,22 +22,23 @@ export default function Navbar({ type }: navProps) {
         <>
             {type == "1" ? (
                 <>
-                    <header >
-                        <nav className=' flex items-center w-full justify-between px-10 '>
+                    <header className='fixed top-0 left-0 w-full z-50'>
+                        <nav className=' flex items-center w-full gap-5 px-10 '>
                             <div className='w-[25%]'>
                                 <Image className='w-36' alt='Logo nav' src={logoNav} />
                             </div>
-                            <div className='bg-[#2E2E2E] w-2/4 flex justify-evenly text-xl text-white p-6 rounded-full'>
-                                <a className=' transition- duration-300  hover:font-semibold' href="#">Home</a>
-                                <a className=' transition- duration-300  hover:font-semibold' href="#Planos">Planos</a>
-                                <a className=' transition- duration-300  hover:font-semibold' href="#Sobre">Sobre nós</a>
-                                <a className=' transition- duration-300  hover:font-semibold' href="#Contato">Contato</a>
+                            <div className='bg-[#2E2E2E] w-2/4 flex justify-evenly text-xl text-gray-300  p-6 rounded-full sm:w-4/8 lg:w-2/8'>
+                                <a className=' transition- duration-300 hover:text-white' href="">Home</a>
+                                <a className=' transition- duration-300 hover:text-white' href="">Planos</a>
+                                <a className=' transition- duration-300 hover:text-white' href="">Sobre nós</a>
+                                <a className=' transition- duration-300 hover:text-white' href="">Contato</a>
                             </div>
                             <div className='w-[25%] flex justify-end gap-2 '>
 
-                                <button onClick={() => router.push('/cadastro')} className='bg-[#F6CF45] text-black w-40 hover:bg-[#ffde67] transition-all duration-300 h-11 px-9  text-lg rounded-full'>Cadastrar</button>
+                                <button className='bg-[#2E2E2E] text-white w-40 hover:bg-[#F6CF45] hover:text-black  transition-all duration-300 h-11 px-9  text-lg rounded-full'>Cadastrar</button>
 
-                                <button onClick={() => router.push('/login')} className='border-[#F6CF45] border-solid text-white border w-40 transition-all  duration-300 hover:bg-[#ffde67] hover:text-black h-11 px-9  text-lg rounded-full'>Entrar</button>
+                                <button className='border-[#2E2E2E] hover:border-[#F6CF45] border-2 border-solid text-white w-40 transition-all  duration-300 hover:bg-[#F6CF45] hover:text-black h-11 px-9  text-lg rounded-full'>Entrar</button>
+
                             </div>
                         </nav>
                     </header>

@@ -49,3 +49,25 @@ body {
             rgba(252, 183, 88, 0.47) 96%);
 
 }
+
+/* Personalize a barra de rolagem */
+.scrollbar-thin {
+    scrollbar-width: thin; /* Para Firefox */
+  }
+  
+  .scrollbar-thumb-gray-700 {
+    scrollbar-color: #4a4a4a #e0e0e0; /* Para Firefox */
+  }
+  
+  ::-webkit-scrollbar {
+    width: 8px;
+  }
+  
+  ::-webkit-scrollbar-thumb {
+    background-color: #F6CF45;
+    border-radius: 8px;
+  }
+  
+  ::-webkit-scrollbar-track {
+    background-color: transparent;
+  }

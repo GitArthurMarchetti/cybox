@@ -17,10 +17,14 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="pt-br">
+
+      
+
       <head>
         <link rel="shortcut icon" href='../img/logo-branca.png' type="image/x-icon" />
       </head>
-      <body className={`${inter.className} flex flex-col h-screen`}>
+      <body className={`${inter.className} flex flex-col h-screen scrollbar-thin scrollbar-thumb-yellow-700`}>
+
         <main className="flex-1">{children}</main>
       </body>
     </html>

@@ -27,7 +27,7 @@ export default function Home() {
         <section className="fundoHome">
           <Navbar type="1" />
 
-          <div className="flex w-10/12 mt-20 m-auto justify-center items-start">
+          <div className="flex w-10/12 mt-40 m-auto justify-center items-start">
             <div className="w-1/2 flex  flex-col">
               <h1 className="text-5xl font-semibold text-white w-full">
                 Gerencie seu patrimônio da forma mais eficiente do mercado
