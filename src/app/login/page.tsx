@@ -32,7 +32,7 @@ export default function Login() {
                               <h2 className="cursor-default text-3xl">Bom te ver de volta!</h2>
                               <p className="cursor-default text-[#B4B4B4]">Olá! Seu retorno é sempre bem-vindo! Pronto para mais uma sessão produtiva?</p>
                          </div>
-                         <div className="w-4/5 m-auto flex flex-col ">
+                         <form className="w-4/5 m-auto flex flex-col ">
                               <label className="bg-[#2C2C2C] text-lg flex flex-col  gap-1 p-2 px-4 my-4 rounded-lg text-[#B4B4B4]" >
                                    Email:
                                    <input className="w-11/12 px-2 bg-transparent border-0 outline-none text-white" type="email" />
@@ -44,11 +44,12 @@ export default function Login() {
                                    </div>
                                    {isVisible ? <IoMdEye size={30} onClick={() => setIsVisible(false)} /> : <IoMdEyeOff size={30} onClick={() => setIsVisible(true)} />}
                               </label>
-                         </div>
+                              <div className="w-4/5 m-auto flex mt-11">
+                                   <button className="bg-[#F6CF45] text-black w-1/2 mx-auto rounded-full h-14 text-xl font-semibold">Entrar</button>
+                              </div>
+                         </form>
                          <p className="text-right w-4/5 m-auto text-[#B4B4B4] underline italic">Esqueceu a senha?</p>
-                         <div className="w-4/5 m-auto flex mt-11">
-                              <button className="bg-[#F6CF45] text-black w-1/2 mx-auto rounded-full h-14 text-xl font-semibold">Entrar</button>
-                         </div>
+
                          <div className="text-center italic text-[#B4B4B4] mt-16 text-xl ">
                               <a href="/cadastro" className="font-semibold not-italic">Ainda não possui uma conta? <span className="font-extralight underline">Crie uma aqui.</span> </a>
                          </div>

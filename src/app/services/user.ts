@@ -76,7 +76,7 @@ export async function saveUser(formData: FormData) {
 export async function removeUser(user: UserType) {
     await db.execute(sql`DELETE FROM "user" WHERE id=${user.id}`)
 
-    redirect('/')
+    redirect('/login')
 }
 
 //LOGIN
@@ -89,7 +89,7 @@ export async function loginUser(formData: FormData) {
         throw new Error('Email e senha são obrigatórios para o login.');
     }
 
-    const [user] = await db.execute<UserType>(sql`SELECT * FROM "user" WHERE email = ${email}`);
+    const [user] = await db.execute<UserType>(sql`SELECT * FROM "user" WHERE email=${email}`);
 
     if (!user) {
         throw new Error('Usuário não encontrado.');
