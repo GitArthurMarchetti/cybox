@@ -49,7 +49,7 @@ export default function Login() {
                               </div>
                          </form>
                          <p className="text-right w-4/5 m-auto text-[#B4B4B4] underline italic">Esqueceu a senha?</p>
-
+          
                          <div className="text-center italic text-[#B4B4B4] mt-16 text-xl ">
                               <a href="/cadastro" className="font-semibold not-italic">Ainda não possui uma conta? <span className="font-extralight underline">Crie uma aqui.</span> </a>
                          </div>
