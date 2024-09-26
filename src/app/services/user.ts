@@ -1,8 +1,10 @@
+
 "use server"
 
 import { sql } from "drizzle-orm";
 import db from "./db";
 import { redirect } from 'next/navigation'
+import bcrypt from 'bcryptjs';
 
 
 type UserType = {
@@ -28,6 +30,16 @@ export async function getUsers(): Promise<UserType[]> {
     }
 }
 
+export async function getUsersByEmail(email: string): Promise<UserType | null> {
+    try {
+        const users = await db.execute<UserType>(sql`SELECT * FROM "user" WHERE email = ${email}`);
+        return users.length > 0 ? users[0] : null;
+    } catch (error) {
+        console.error('Erro ao buscar usuário por email no banco:', error);
+        return null;
+    }
+}
+
 export async function saveUser(formData: FormData) {
 
     const id = +(formData.get('id') as string) as number
@@ -40,7 +52,6 @@ export async function saveUser(formData: FormData) {
         throw new Error('Todos os campos (nome, email, senha) devem estar preenchidos.');
     }
 
-    // Verificar se o email existe (formato básico de email)
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
         throw new Error('O email fornecido não é válido.');
@@ -55,50 +66,27 @@ export async function saveUser(formData: FormData) {
         throw new Error('A confirmação da senha não corresponde à senha.');
     }
 
+    // Fazer o hash da senha
+    const hashedSenha = await bcrypt.hash(senha, 10);
+
     const user: UserType = {
         id,
         nome,
         email,
-        senha
+        senha: hashedSenha
     }
-
 
     if (!id) {
-        await db.execute(sql`INSERT INTO "user" (nome, email, senha) VALUES (${user.nome}, ${user.email}, ${user.senha} )`)
+        await db.execute(sql`INSERT INTO "user" (nome, email, senha) VALUES (${user.nome}, ${user.email}, ${user.senha})`);
     } else {
-        await db.execute(sql`UPDATE "user" SET nome=${user.nome}, email=${user.email}, senha=${user.senha} `)
+        await db.execute(sql`UPDATE "user" SET nome=${user.nome}, email=${user.email}, senha=${user.senha} WHERE id=${user.id}`);
     }
 
-    
-    redirect('/')
+    redirect('/login');
 }
 
 export async function removeUser(user: UserType) {
     await db.execute(sql`DELETE FROM "user" WHERE id=${user.id}`)
 
-    redirect('/login')
-}
-
-//LOGIN
-
-export async function loginUser(formData: FormData) {
-    const email = formData.get('email') as string;
-    const senha = formData.get('senha') as string;
-
-    if (!email || !senha) {
-        throw new Error('Email e senha são obrigatórios para o login.');
-    }
-
-    const [user] = await db.execute<UserType>(sql`SELECT * FROM "user" WHERE email=${email}`);
-
-    if (!user) {
-        throw new Error('Usuário não encontrado.');
-    }
-
-    if (user.senha !== senha) {
-        throw new Error('Senha incorreta.');
-    }
-
-    //Página depois do login
-    redirect('/');
+    redirect('/')
 }
