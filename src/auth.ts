@@ -1,74 +1,91 @@
-import NextAuth, { AuthOptions } from "next-auth";
-import GoogleProvider from "next-auth/providers/google";
-import CredentialsProvider from "next-auth/providers/credentials";
-import { signIn } from "next-auth/react";
-import bcrypt from "bcryptjs";
-import { getUsersByEmail, saveUser } from "./app/services/user"; // Importa suas funções
+import { getUsersByEmail } from "@/app/services/user";
+import { hash } from "crypto";
+import NextAuth from "next-auth/next";
+import Credentials from "next-auth/providers/credentials";
 
-export const authOptions: AuthOptions = {
+const bcrypt = require('bcrypt');
+
+
+type UserData = {
+  name: string;
+  email: string;
+  id: string;
+};
+
+export const { handlers, signIn, signOut, auth } = NextAuth({
+
   providers: [
-    // Provider do Google
-    GoogleProvider({
-      clientId: process.env.GOOGLE_CLIENT_ID!,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
-    }),
-    // Provider para login com credenciais (e-mail e senha)
-    CredentialsProvider({
-      name: "Credentials",
+
+    Credentials({
+      name: 'Credentials',
+
+
       credentials: {
-        email: { label: "Email", type: "text" },
-        password: { label: "Password", type: "password" },
+        email: { label: 'email', type: 'email' },
+        password: { label: 'password', type: 'password' },
       },
-      async authorize(credentials) {
-        if (!credentials) {
-          throw new Error("Credenciais não fornecidas.");
+
+
+
+
+      authorize: async (credentials) => {
+        const email = credentials?.email as string | undefined
+        const password = credentials?.password as string | undefined
+
+        if (!email || !password) {
+
+          throw new Error("Por favor preencha seu email e senha!");
+
         }
 
-        const { email, password } = credentials;
 
-        // Busca o usuário no banco de dados
-        const user = await getUsersByEmail(email);
+        const user = await getUsersByEmail(email)
 
         if (!user) {
-          throw new Error("Usuário não encontrado.");
+
+          throw new Error('Email ou senha inválidos');
+
         }
 
-        // Verifica a senha usando bcrypt
-        const isPasswordValid = await bcrypt.compare(password, user.senha);
+        if (!user.passwordHashed) {
 
-        if (!isPasswordValid) {
-          throw new Error("Senha incorreta.");
+          throw new Error('Email ou senha inválidos')
+
         }
 
-        return { id: user.id, email: user.email, nome: user.nome };
+
+        const senhaValida = await bcrypt.compare(password, user.passwordHashed)
+
+        if (!senhaValida) {
+
+          throw new Error('Email ou senha inválidos')
+
+        }
+
+
+        const userData: UserData = {
+          id: user.id as string,
+          name: user.name,
+          email: user.email,
+        }
+
+
+        return userData;
+
       },
-    }),
+
+
+
+
+    })
+
   ],
-  callbacks: {
-    async signIn({ user, account, profile }) {
-      if (account.provider === "google") {
-        // Verifica se o usuário já existe no banco
-        const existingUser = await getUsersByEmail(user.email!);
-        if (!existingUser) {
-          // Salva o usuário no banco de dados
-          await saveUser(
-            new FormData({
-              nome: user.name!,
-              email: user.email!,
-              senha: "", // Google não retorna senha, então poderia ser vazio
-            })
-          );
-        }
-      }
-      return true;
-    },
-    async session({ session, user }) {
-      session.user = user;
-      return session;
-    },
-  },
-  secret: process.env.NEXTAUTH_SECRET,
+
   pages: {
-    signIn: "/login", // Página de login personalizada
-  },
-};
+
+    signIn: "/login"
+
+  }
+
+
+})

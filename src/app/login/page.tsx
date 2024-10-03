@@ -1,18 +1,22 @@
-'use server'
+'use client'
 
 import Image from "next/image";
 
 //icones
 import { RiArrowLeftSLine } from "react-icons/ri";
-import CredentialsForm from "./credentialsForm";
 import GoogleSingInButton from "../components/Button/buttonSignInGoogle";
-import { getUsers } from "../services/user";
+
+import { login } from "../services/user";
+import { signIn } from "next-auth/react";
+import { useState } from "react";
 
 
-export default async function Login() {
-     const usuarios = getUsers()
-     console.log("USUARIOS: ", usuarios)
-          return (
+export default function Login() {
+     const [emailState, setEmail] = useState("")
+     const [passwordState, setPassword] = useState("")
+     console.log(emailState, passwordState)
+
+     return (
           <>
                <Image src="/loginFundo.png" alt="Imagem de fundo" layout="fill" objectFit="cover" className="w-full h-[100vh] absolute z-0" />
                <main className="flex w-[95%]  items-center m-auto z-10    min-h-screen relative ">
@@ -39,7 +43,41 @@ export default async function Login() {
                               <p className="cursor-default text-[#B4B4B4]">Olá! Seu retorno é sempre bem-vindo! Pronto para mais uma sessão produtiva?</p>
                          </div>
                          <div className="flex flex-col gap-2 text-center">
-                              <CredentialsForm />
+                              <form className="w-4/5 m-auto flex flex-col" action={() => signIn("credentials", {
+                                   emailState,
+                                   passwordState,
+                                   redirect: false,
+                                   callbackUrl: "/departamentos"
+                              })}>
+                                   <label className="bg-[#2C2C2C] text-lg flex flex-col gap-1 p-2 px-4 my-4 rounded-lg text-[#B4B4B4]">
+                                        Email:
+                                        <input className="w-11/12 px-2 bg-transparent border-0 outline-none text-white"
+                                             id="email"
+                                             type="email"
+                                             name="email"
+                                             value={emailState}
+                                             onChange={(e) => setEmail(e.target.value)} />
+                                   </label>
+                                   <label className="bg-[#2C2C2C] text-lg flex flex-row items-center p-2 px-4 my-4 rounded-lg text-[#B4B4B4]">
+                                        <div className="flex w-full flex-col gap-1">
+                                             Senha:
+                                             <input className="w-11/12 px-2 bg-transparent border-0 outline-none text-white"
+                                                  id="password"
+                                                  name="password"
+                                                  type="password" value={passwordState}
+                                                  onChange={(e) => setPassword(e.target.value)} />
+                                        </div>
+                                   </label>
+                                   <div className="w-4/5 m-auto flex mt-11">
+                                        <button className="bg-[#F6CF45] text-black w-1/2 mx-auto rounded-full h-14 text-xl font-semibold"
+                                             onClick={() => signIn("credentials", {
+                                                  emailState,
+                                                  passwordState,
+                                                  redirect: false,
+                                                  callbackUrl: "/departamentos/page"
+                                             })}>Entrar</button>
+                                   </div>
+                              </form>
                               <p>Ou</p>
                               <GoogleSingInButton />
                          </div>
