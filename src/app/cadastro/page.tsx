@@ -3,10 +3,8 @@ import CadastroComponent from "./cadastro";
 import { getEmptyUser } from "../services/user";
 
 
-export default async function Cadastro() {
+export default async function BackCadastro() {
      const user = await getEmptyUser()
 
-     // return <h1>oi</h1>
-
-     return <CadastroComponent user={user}    />
+     return <CadastroComponent user={user}/>
 }
