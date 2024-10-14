@@ -43,7 +43,7 @@ export default function Navbar({ type }: navProps) {
                                 Cadastrar
                                 </Link>
 
-                                <Link href={'/login'} 
+                                <Link href={'/loginTeste'} 
                                 className='border-[#2E2E2E]  hover:border-[#F6CF45] border-2 border-solid text-white transition-all  duration-300 hover:bg-[#F6CF45] hover:text-black h-11  px-9 flex items-center justify  text-lg rounded-full'>
                                 Entrar
                                 </Link>

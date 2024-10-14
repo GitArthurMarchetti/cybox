@@ -1,11 +1,9 @@
-
 "use server"
 
 import { sql } from "drizzle-orm";
 import db from "./db";
 import { redirect } from 'next/navigation'
-import bcrypt from 'bcryptjs';
-
+import  bcrypt  from 'bcryptjs';
 
 type UserType = {
     id: number | null
