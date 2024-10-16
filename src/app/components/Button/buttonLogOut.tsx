@@ -1,4 +1,4 @@
-import { DoLogout } from "@/app/actions";
+import { DoLogout } from "@/app/services/login";
 
 export default function Logout() {
     return(
