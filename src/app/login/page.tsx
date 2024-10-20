@@ -1,18 +1,47 @@
-'use server'
+"use client"
 
+import { signIn } from "next-auth/react";
+import { useRouter } from "next/navigation";
+import { useState } from "react"
+import { IoMdEye, IoMdEyeOff } from "react-icons/io"
 import Image from "next/image";
 
 //icones
 import { RiArrowLeftSLine } from "react-icons/ri";
-import CredentialsForm from "./credentialsForm";
 import GoogleSingInButton from "../components/Button/buttonSignInGoogle";
 import { getUsers } from "../services/user";
+import { DoCredentialsLogin } from "../services/login";
 
 
-export default async function Login() {
+export default function Login() {
      const usuarios = getUsers()
      console.log("USUARIOS: ", usuarios)
-          return (
+     const [isVisible, setIsVisible] = useState(false)
+     const router = useRouter();
+     const [error, setError] = useState<string | null>(null);
+
+     async function handleFormSubmit(event: React.FormEvent<HTMLFormElement>) {
+          event.preventDefault();
+
+          try {
+               const formData = new FormData(event.currentTarget);
+
+               const response = await DoCredentialsLogin(formData);
+
+               if (response?.error) {
+                    // Exiba o erro para o usuário
+                    console.error('Erro ao fazer login:', response.error)
+               } else {
+                    // Redireciona o usuário após o login bem-sucedido
+                    router.push('/departamentos');
+               }
+
+          } catch (e) {
+               console.error(e);
+          }
+     }
+
+     return (
           <>
                <Image src="/loginFundo.png" alt="Imagem de fundo" layout="fill" objectFit="cover" className="w-full h-[100vh] absolute z-0" />
                <main className="flex w-[95%]  items-center m-auto z-10    min-h-screen relative ">
@@ -39,7 +68,27 @@ export default async function Login() {
                               <p className="cursor-default text-[#B4B4B4]">Olá! Seu retorno é sempre bem-vindo! Pronto para mais uma sessão produtiva?</p>
                          </div>
                          <div className="flex flex-col gap-2 text-center">
-                              <CredentialsForm />
+                              <form className="w-4/5 m-auto flex flex-col" onSubmit={handleFormSubmit}>
+                                   {error && (
+                                        <span className="p-4 mb-4 text-lg font-semibold text-white bg-red-500">
+                                             {error}
+                                        </span>
+                                   )}
+                                   <label className="bg-[#2C2C2C] text-lg flex flex-col gap-1 p-2 px-4 my-4 rounded-lg text-[#B4B4B4]">
+                                        Email:
+                                        <input className="w-11/12 px-2 bg-transparent border-0 outline-none text-white" type="email" name="email" id="email" required />
+                                   </label>
+                                   <label className="bg-[#2C2C2C] text-lg flex flex-row items-center p-2 px-4 my-4 rounded-lg text-[#B4B4B4]">
+                                        <div className="flex w-full flex-col gap-1">
+                                             Senha:
+                                             <input className="w-11/12 px-2 bg-transparent border-0 outline-none text-white" type={isVisible ? "text" : "password"} name="password" id="password" />
+                                        </div>
+                                        {isVisible ? <IoMdEye size={30} /> : <IoMdEyeOff size={30} onClick={() => setIsVisible(true)} />}
+                                   </label>
+                                   <div className="w-4/5 m-auto flex mt-11">
+                                        <button className="bg-[#F6CF45] text-black w-1/2 mx-auto rounded-full h-14 text-xl font-semibold" type="submit">Entrar</button>
+                                   </div>
+                              </form>
                               <p>Ou</p>
                               <GoogleSingInButton />
                          </div>

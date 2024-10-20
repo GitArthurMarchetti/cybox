@@ -57,20 +57,20 @@ export async function saveUser(formData: FormData) {
         throw new Error('A confirmação da senha não corresponde à senha.');
     }
 
-    // const hashedSenha = await bcrypt.hash(senha, 10);
+    const hashedSenha = await bcrypt.hash(senha, 10);
 
     const user: UserType = {
         id,
         nome,
         email,
-        senha: senha
+        senha: hashedSenha
     };
 
 
     if (!id) {
         await db.execute(sql`INSERT INTO next_auth.users (nome, email, senha) VALUES (${user.nome}, ${user.email}, ${user.senha})`); // Inclua o schema "next_auth"
     } else {
-        await db.execute(sql`UPDATE next_auth.users SET nome=${user.nome}, email=${user.email}, senha=${user.senha} WHERE id=${user.id}`); // Inclua o schema "next_auth"
+        await db.execute(sql`UPDATE next_auth.users SET nome=${user.nome}, email=${user.email}, senha=${user.senha} WHERE id_users=${user.id}`); // Inclua o schema "next_auth"
     }
 
     redirect('/login');

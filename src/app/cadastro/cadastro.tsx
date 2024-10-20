@@ -7,7 +7,6 @@ import { RiArrowLeftSLine } from "react-icons/ri";
 import { IoMdEye } from "react-icons/io";
 import { IoMdEyeOff } from "react-icons/io";
 import { useState } from "react";
-import { FcGoogle } from "react-icons/fc";
 import UserType, { saveUser } from "../services/user";
 import GoogleSingInButton from "../components/Button/buttonSignInGoogle";
 
