@@ -33,7 +33,7 @@ export default function Login() {
                     console.error('Erro ao fazer login:', response.error)
                } else {
                     // Redireciona o usuário após o login bem-sucedido
-                    router.push('/departamentos');
+                    router.push('/departamentoTeste');
                }
 
           } catch (e) {

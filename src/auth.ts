@@ -46,6 +46,7 @@ export const {
                     }
 
                 } catch (error) {
+                    console.error("Erro na autenticação:", error);
                     throw new Error(error as string)
                 }
             }

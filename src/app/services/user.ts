@@ -53,7 +53,8 @@ export async function saveUser(formData: FormData) {
         throw new Error('O email fornecido não é válido.');
     }
 
-    if (senha !== confirmarSenha) {
+    const confirmedSenha = senha == confirmarSenha
+    if (!confirmarSenha) {
         throw new Error('A confirmação da senha não corresponde à senha.');
     }
 
