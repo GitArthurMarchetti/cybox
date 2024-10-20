@@ -1,5 +1,5 @@
-import  bcrypt  from 'bcryptjs';
-import  CredentialsProvider  from 'next-auth/providers/credentials';
+import bcrypt from 'bcryptjs';
+import CredentialsProvider from 'next-auth/providers/credentials';
 import GoogleProvider from 'next-auth/providers/google';
 import NextAuth from 'next-auth';
 import { getUsersByEmail } from './app/services/user';
@@ -19,8 +19,8 @@ export const {
     providers: [
 
         CredentialsProvider({
-            name: "Credentials",    
-            credentials: {}, 
+            name: "Credentials",
+            credentials: {},
             async authorize(credentials: Record<string, string> | undefined) {
 
                 if (credentials === null) return null;
@@ -29,17 +29,23 @@ export const {
 
                     const user = await getUsersByEmail(credentials?.email as string)
 
-                    if(user){
-                              return {
-                                id: user.id ? String(user.id) : "", // Converte id para string
-                                name: user.nome,
-                                email: user.email,
-                            };
-                    }else{
+                    const isMatch = await bcrypt.compare(credentials?.password as string, user?.senha as string); // Senha hasheada armazenada
+
+                    if (!isMatch) {
+                        throw new Error("Confira suas credenciais, COMPARAÇAO DEU ERRADO. ");
+                    }
+
+                    if (user) {
+                        return {
+                            id: user.id ? String(user.id) : "", // Converte id para string
+                            name: user.nome,
+                            email: user.email,
+                        };
+                    } else {
                         throw new Error("user não encontrado")
                     }
 
-                } catch(error){
+                } catch (error) {
                     throw new Error(error as string)
                 }
             }
@@ -58,12 +64,14 @@ export const {
                     access_type: "offline",
                     response_type: "code",
                 },
+
             },
 
         }),
 
     ],
 
-
+    secret: process.env.AUTH_SECRET,
+    debug: true, // Habilitar logs detalhados para o NextAuth
 
 });
