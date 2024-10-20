@@ -45,7 +45,7 @@ export async function getDepartamentosByUser(userId: number): Promise<Departamen
 }
 
 
-export async function saveDepartamento(formData: FormData, userId: number) {
+export async function saveDepartamento(formData: FormData, userId: string) {
     const id_departamentos = +(formData.get('id_departamentos') as string) as number;
     const titulo = formData.get('titulo') as string;
     const descricao = formData.get('descricao') as string || null;
@@ -90,12 +90,12 @@ export async function saveDepartamento(formData: FormData, userId: number) {
         // Inserindo o relacionamento na tabela user_departamento
         if (novoDepartamento?.id_departamentos) {
             await db.execute(
-                sql`INSERT INTO chaves_estrangeiras.user_departamento (
-                    user_id,
-                    departamento_id
+                sql`INSERT INTO chaves_estrangeiras.users_departamentos (
+                    id_users,
+                    id_departamentos
                 ) VALUES (
-                    ${userId},  -- O ID do usuário que criou o departamento (host)
-                    ${novoDepartamento.id_departamentos}  -- O ID do departamento recém-criado
+                    ${userId},  
+                    ${novoDepartamento.id_departamentos} 
                 )`
             );
         }

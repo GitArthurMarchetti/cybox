@@ -14,6 +14,7 @@ export default async function DepartamentosTeste() {
 
     if (!session?.user) redirect("/login")
 
+    const userId = session.user?.id as string;
 
     const departamentos = await getDepartamentos()
     const departamento = await getEmptyDepartamento()
@@ -21,13 +22,13 @@ export default async function DepartamentosTeste() {
 
     return (<>
         <div>
-            <h1>{session?.user?.id}</h1>
+            <h1>{userId}</h1>
             <h1>Olá: {session?.user?.name}</h1>
             <h2>cujo o email é: {session?.user?.email}</h2>
             <Logout />
         </div>
 
-        <Departamento departamentos={departamentos} departamento={departamento} userId={session?.user?.id}/>
+        <Departamento departamentos={departamentos} departamento={departamento} userId={userId}/>
 
     </>
 
