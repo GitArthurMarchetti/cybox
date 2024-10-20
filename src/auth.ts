@@ -1,91 +1,77 @@
-import { getUsersByEmail } from "@/app/services/user";
-import { hash } from "crypto";
-import NextAuth from "next-auth/next";
-import Credentials from "next-auth/providers/credentials";
-
-const bcrypt = require('bcrypt');
-
-
-type UserData = {
-  name: string;
-  email: string;
-  id: string;
-};
-
-export const { handlers, signIn, signOut, auth } = NextAuth({
-
-  providers: [
-
-    Credentials({
-      name: 'Credentials',
+import bcrypt from 'bcryptjs';
+import CredentialsProvider from 'next-auth/providers/credentials';
+import GoogleProvider from 'next-auth/providers/google';
+import NextAuth from 'next-auth';
+import { getUsersByEmail } from './app/services/user';
 
 
-      credentials: {
-        email: { label: 'email', type: 'email' },
-        password: { label: 'password', type: 'password' },
-      },
+export const {
+    handlers,
+    auth,
+    signIn,
+    signOut
+} = NextAuth({
+    session: {
+        strategy: 'jwt'
+    },
 
 
+    providers: [
+
+        CredentialsProvider({
+            name: "Credentials",
+            credentials: {},
+            async authorize(credentials: Record<string, string> | undefined) {
+
+                if (credentials === null) return null;
+
+                try {
+
+                    const user = await getUsersByEmail(credentials?.email as string)
+
+                    const isMatch = await bcrypt.compare(credentials?.password as string, user?.senha as string); // Senha hasheada armazenada
+
+                    if (!isMatch) {
+                        throw new Error("Confira suas credenciais, COMPARAÇAO DEU ERRADO. ");
+                    }
+
+                    if (user) {
+                        return {
+                            id: user.id ? String(user.id) : "", // Converte id para string
+                            name: user.nome,
+                            email: user.email,
+                        };
+                    } else {
+                        throw new Error("user não encontrado")
+                    }
+
+                } catch (error) {
+                    throw new Error(error as string)
+                }
+            }
+
+        }),
 
 
-      authorize: async (credentials) => {
-        const email = credentials?.email as string | undefined
-        const password = credentials?.password as string | undefined
+        GoogleProvider({
 
-        if (!email || !password) {
+            clientId: process.env.GOOGLE_CLIENT_ID as string,
+            clientSecret: process.env.GOOGLE_CLIENT_SECRET as string,
 
-          throw new Error("Por favor preencha seu email e senha!");
+            authorization: {
+                params: {
+                    prompt: "consent",
+                    access_type: "offline",
+                    response_type: "code",
+                },
 
-        }
+            },
 
+        }),
 
-        const user = await getUsersByEmail(email)
+    ],
 
-        if (!user) {
+    secret: process.env.AUTH_SECRET,
+    debug: true, // Habilitar logs detalhados para o NextAuth
 
-          throw new Error('Email ou senha inválidos');
-
-        }
-
-        if (!user.passwordHashed) {
-
-          throw new Error('Email ou senha inválidos')
-
-        }
-
-
-        const senhaValida = await bcrypt.compare(password, user.passwordHashed)
-
-        if (!senhaValida) {
-
-          throw new Error('Email ou senha inválidos')
-
-        }
-
-
-        const userData: UserData = {
-          id: user.id as string,
-          name: user.name,
-          email: user.email,
-        }
-
-
-        return userData;
-
-      },
-
-
-
-
-    })
-
-  ],
-
-  pages: {
-
-    signIn: "/login"
-
-  }
-
-
-})
+});
