@@ -9,13 +9,14 @@ type UserType = {
     id: number | null | string,
     nome: string,
     email: string,
-    senha: string
+    senha: string,
+    google_id?: string | null // Adicionado o campo google_id
 };
 
 export default UserType;
 
 export async function getEmptyUser(): Promise<UserType> {
-    return { id: null, nome: "", email: "", senha: "" };
+    return { id: null, nome: "", email: "", senha: "", google_id: null }; // Incluído google_id como null no usuário vazio
 }
 
 export async function getUsers(): Promise<UserType[]> {
@@ -37,7 +38,7 @@ export async function getUsersByEmail(email: string): Promise<UserType | null> {
     }
 }
 
-export async function saveUser(formData: FormData) {
+export async function saveUser(formData: FormData, googleId?: string) {
     const id = +(formData.get('id') as string) as number;
     const nome = formData.get('nome') as string;
     const email = formData.get('email') as string;
@@ -53,7 +54,7 @@ export async function saveUser(formData: FormData) {
         throw new Error('O email fornecido não é válido.');
     }
 
-    const confirmedSenha = senha == confirmarSenha
+    const confirmedSenha = senha == confirmarSenha;
     if (!confirmarSenha) {
         throw new Error('A confirmação da senha não corresponde à senha.');
     }
@@ -64,14 +65,14 @@ export async function saveUser(formData: FormData) {
         id,
         nome,
         email,
-        senha: hashedSenha
+        senha: hashedSenha,
+        google_id: googleId || null // Incluído o google_id na criação do usuário
     };
 
-
     if (!id) {
-        await db.execute(sql`INSERT INTO next_auth.users (nome, email, senha) VALUES (${user.nome}, ${user.email}, ${user.senha})`); // Inclua o schema "next_auth"
+        await db.execute(sql`INSERT INTO next_auth.users (nome, email, senha, google_id) VALUES (${user.nome}, ${user.email}, ${user.senha}, ${user.google_id})`); // Incluído o campo google_id
     } else {
-        await db.execute(sql`UPDATE next_auth.users SET nome=${user.nome}, email=${user.email}, senha=${user.senha} WHERE id_users=${user.id}`); // Inclua o schema "next_auth"
+        await db.execute(sql`UPDATE next_auth.users SET nome=${user.nome}, email=${user.email}, senha=${user.senha}, google_id=${user.google_id} WHERE id_users=${user.id}`); // Incluído o campo google_id
     }
 
     redirect('/login');

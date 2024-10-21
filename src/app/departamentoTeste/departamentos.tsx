@@ -6,9 +6,10 @@ type Props = {
     departamentos: DepartamentoType[];
     departamento: DepartamentoType;
     userId: string | undefined;  // userId será tratado como string
+    userEmail: string | null | undefined
 };
 
-export default function Departamento({ departamentos, departamento: novoDepartamento, userId }: Props) {
+export default function Departamento({ departamentos, departamento: novoDepartamento, userId, userEmail }: Props) {
     const [departamento, setDepartamento] = useState<DepartamentoType>(novoDepartamento);
 
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -42,6 +43,7 @@ export default function Departamento({ departamentos, departamento: novoDepartam
                     <h2>{t.titulo}</h2>
                     <h2>{t.maximoMembros}</h2>
                     <h2>{t.totalMembros}</h2>
+                    <h1>{userEmail}</h1>
                     <h3 className="text-pink-700">{userId}</h3>
                     <div onClick={() => removeDepartamento(t)} className="hover:text-red-600 transition-all">Apagar</div>
                 </div>

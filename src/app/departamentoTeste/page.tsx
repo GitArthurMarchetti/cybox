@@ -3,7 +3,7 @@
 import { auth } from "@/auth";
 import { redirect } from "next/navigation";
 import Logout from "../components/Button/buttonLogOut";
-import { getDepartamentos, getEmptyDepartamento } from "../services/departamento";
+import { getDepartamentos, getDepartamentosByUser, getEmptyDepartamento } from "../services/departamento";
 import Departamento from "./departamentos";
 
 export default async function DepartamentosTeste() {
@@ -16,9 +16,9 @@ export default async function DepartamentosTeste() {
 
     const userId = session.user?.id as string;
 
-    const departamentos = await getDepartamentos()
+    const departamentos = await getDepartamentos() // NECESSARIO FILTRAR 
     const departamento = await getEmptyDepartamento()
-
+    const departamentosUserData = await getDepartamentosByUser(userId)
 
     return (<>
         <div>
@@ -28,7 +28,7 @@ export default async function DepartamentosTeste() {
             <Logout />
         </div>
 
-        <Departamento departamentos={departamentos} departamento={departamento} userId={userId}/>
+        <Departamento departamentos={departamentosUserData} departamento={departamento} userId={userId} userEmail={session?.user?.email}/>
 
     </>
 

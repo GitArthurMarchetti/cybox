@@ -29,13 +29,14 @@ export async function getDepartamentos(): Promise<DepartamentoType[]> {
     }
 }
 
-export async function getDepartamentosByUser(userId: number): Promise<DepartamentoType[]> {
+export async function getDepartamentosByUser(userId: string): Promise<DepartamentoType[]> {
     try {
         const departamentos = await db.execute<DepartamentoType>(
             sql`SELECT d.*
-                FROM departamentos.departamentos AS d
-                JOIN chaves_estrangeiras.users_departamentos AS ud ON d.id_departamentos = ud.id_departamentos
-                WHERE ud.id_users=${userId}`
+                 FROM departamentos.departamentos AS d
+                 JOIN chaves_estrangeiras.users_departamentos AS ud
+                 ON d.id_departamentos = ud.id_departamentos
+                 WHERE ud.id_users = ${userId}`
         );
         return departamentos;
     } catch (error) {
