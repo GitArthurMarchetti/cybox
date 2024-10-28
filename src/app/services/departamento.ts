@@ -3,18 +3,8 @@
 import { sql } from "drizzle-orm";
 import db from "./db";
 import { redirect } from 'next/navigation';
+import { DepartamentoType } from "@/lib/types/types";
 
-type DepartamentoType = {
-    id_departamentos: number | null | string,
-    titulo: string,
-    descricao: string | null,
-    totalMembros: number,
-    maximoMembros: number,
-    convite: string | null,
-    localizacao: string | null,
-};
-
-export default DepartamentoType;
 
 export async function getEmptyDepartamento(): Promise<DepartamentoType> {
     return { id_departamentos: null, titulo: "", descricao: "", totalMembros: 1, maximoMembros: 10, convite: "", localizacao: "" };

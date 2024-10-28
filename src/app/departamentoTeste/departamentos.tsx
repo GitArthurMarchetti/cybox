@@ -1,12 +1,14 @@
 "use client"
 import { useState } from "react";
-import DepartamentoType, { removeDepartamento, saveDepartamento } from "../services/departamento";
+import { removeDepartamento, saveDepartamento } from "../services/departamento";
+import Convite from "../components/Button/Convite/convite";
+import { DepartamentoType } from "@/lib/types/types";
 
 type Props = {
     departamentos: DepartamentoType[];
     departamento: DepartamentoType;
-    userId: string | undefined;  // userId será tratado como string
-    userEmail: string | null | undefined
+    userId: string | undefined;
+    userEmail: string | null | undefined;
 };
 
 export default function Departamento({ departamentos, departamento: novoDepartamento, userId, userEmail }: Props) {
@@ -14,22 +16,21 @@ export default function Departamento({ departamentos, departamento: novoDepartam
 
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
-
         const formData = new FormData(e.currentTarget);
 
-        // Certifique-se de que o userId está presente
         if (!userId) {
             console.error('O ID do usuário não está disponível.');
             return;
         }
 
         try {
-            // Passe o userId como string (sem conversão para número)
-            await saveDepartamento(formData, userId);  
+            await saveDepartamento(formData, userId);
         } catch (error) {
             console.error('Erro ao salvar o departamento:', error);
         }
     };
+
+   
 
     return (
         <>
@@ -46,6 +47,11 @@ export default function Departamento({ departamentos, departamento: novoDepartam
                     <h1>{userEmail}</h1>
                     <h3 className="text-pink-700">{userId}</h3>
                     <div onClick={() => removeDepartamento(t)} className="hover:text-red-600 transition-all">Apagar</div>
+
+                    {/* Apenas exibe o Convite se os requisitos estiverem prontos */}
+                   
+                        {/* <Convite departamentoId={departamento.id_departamentos as number} email={userEmail as string} /> */}
+                  
                 </div>
             ))}
 
@@ -60,7 +66,7 @@ export default function Departamento({ departamentos, departamento: novoDepartam
                     type="text"
                     name="titulo"
                     className="w-11/12 p-2 text-black rounded-md"
-                    placeholder="Nova Departamento..."
+                    placeholder="Novo Departamento..."
                     value={departamento.titulo}
                     onChange={(e) => setDepartamento({ ...departamento, titulo: e.target.value })}
                 />
@@ -68,6 +74,7 @@ export default function Departamento({ departamentos, departamento: novoDepartam
                 <button className={`w-1/12 bg-blue-500 rounded-md`}>
                     {departamento.id_departamentos ? 'Salvar' : 'Adicionar'}
                 </button>
+
                 {departamento.id_departamentos && (
                     <button
                         onClick={() => setDepartamento({ ...novoDepartamento })}

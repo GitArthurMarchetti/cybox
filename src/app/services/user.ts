@@ -4,16 +4,10 @@ import { sql } from "drizzle-orm";
 import db from "./db";
 import { redirect } from 'next/navigation';
 import bcrypt from 'bcryptjs';
+import { UserType } from "@/lib/types/types";
 
-type UserType = {
-    id: number | null | string,
-    nome: string,
-    email: string,
-    senha: string,
-    google_id?: string | null // Adicionado o campo google_id
-};
 
-export default UserType;
+
 
 export async function getEmptyUser(): Promise<UserType> {
     return { id: null, nome: "", email: "", senha: "", google_id: null }; // Incluído google_id como null no usuário vazio
