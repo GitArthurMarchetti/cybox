@@ -22,9 +22,9 @@ export default function Home() {
     <>
       <main className="flex flex-col  w-full min-h-screen">
 
-      <div className="feixeLuz"></div>
-          <Navbar type="1" />
-        <section className="fundoHome 2xl:mb-40">
+        <div className="feixeLuz"></div>
+        <Navbar type="1" />
+        <section className="fundoHome ">
 
           <div className="flex w-10/12 mt-52 m-auto justify-center items-start">
             <div className="w-1/2 flex  flex-col">

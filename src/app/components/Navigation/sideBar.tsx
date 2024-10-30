@@ -9,7 +9,7 @@ export function SideBar() {
           <>
                <aside className="w-[20%] min-w-[250px] bg-[#0F0F0F] text-white p-6 flex flex-col justify-between border-r border-[#2C2C2C]">
                     <Image src="/logo-completa-branca.png" alt="Logo" width={80} height={80} className="mb-8 2xl:w-36 2xl:relative absolute top-1" />
-                    <Image src="/logo-completa-branca.png" alt="Logo" width={80} height={80} className="mb-8 2xl:w-36 2xl:opacity-100 opacity-0" />
+                    {/* <Image src="/logo-completa-branca.png" alt="Logo" width={80} height={80} className="mb-8 2xl:w-36 2xl:opacity-100 opacity-0" /> */}
 
                     <nav className="flex-grow">
                          <ul>
