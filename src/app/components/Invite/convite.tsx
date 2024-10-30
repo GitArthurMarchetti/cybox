@@ -22,12 +22,9 @@ type ConviteProps = {
 };
 
 export default function Convite({ users, departamentoNome }: ConviteProps) {
-    const [selectedUsers, setSelectedUsers] = useState<UserType[]>([]);
+    const [selectedUsers, setSelectedUsers] = useState<UserType[]>();
 
-    
-    const removeUser = (id: number) => {
-        setSelectedUsers((prevSelected) => prevSelected.filter((user) => user.id !== id));
-    };
+
 
     return (
         <>
@@ -45,32 +42,18 @@ export default function Convite({ users, departamentoNome }: ConviteProps) {
                                 <input type="text" list="users" className="border p-2 rounded" placeholder="Search users..." />
                                 <datalist id="users">
                                     {users.map((user) => (
-                                        <option key={user.id} value={user.nome}>
+                                        <option key={user.id} value={user.nome} >
                                             {user.email}
                                         </option>
                                     ))}
                                 </datalist>
 
+                                    <div>
+
+                                    </div>
 
                                 <div className="mt-4">
-                                    {selectedUsers.map((user) => (
-                                        <div key={user.id} className="flex items-center mb-2">
-                                            <span className="mr-2">{user.nome}</span>
-                                            <button
-                                                type="button"
-                                                className="text-red-500"
-                                                onClick={() => {
-                                                    if (typeof user.id === "number") {
-                                                        removeUser(user.id);
-                                                    } else {
-                                                        console.error("User ID is not a valid number.");
-                                                    }
-                                                }}
-                                            >
-                                                Remove
-                                            </button>
-                                        </div>
-                                    ))}
+                                    
                                 </div>
                             </AlertDialogDescription>
 
