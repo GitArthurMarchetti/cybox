@@ -37,7 +37,6 @@ export default function Convite({ users, departamentoNome }: ConviteProps) {
                         <IoArrowRedoSharp />
                     </AlertDialogTrigger>
                     <AlertDialogContent className="text-black">
-
                         <AlertDialogHeader>
                             <AlertDialogTitle>Invite Users</AlertDialogTitle>
                             <AlertDialogDescription>

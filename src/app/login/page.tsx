@@ -14,8 +14,6 @@ import { DoCredentialsLogin } from "../services/login";
 
 
 export default function Login() {
-     const usuarios = getUsers()
-     console.log("USUARIOS: ", usuarios)
      const [isVisible, setIsVisible] = useState(false)
      const router = useRouter();
      const [error, setError] = useState<string | null>(null);
@@ -29,10 +27,8 @@ export default function Login() {
                const response = await DoCredentialsLogin(formData);
 
                if (response?.error) {
-                    // Exiba o erro para o usuário
                     console.error('Erro ao fazer login:', response.error)
                } else {
-                    // Redireciona o usuário após o login bem-sucedido
                     router.push('/departamentoTeste');
                }
 
