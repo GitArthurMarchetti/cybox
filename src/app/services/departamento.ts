@@ -7,7 +7,16 @@ import { DepartamentoType } from "@/lib/types/types";
 
 
 export async function getEmptyDepartamento(): Promise<DepartamentoType> {
-    return { id_departamentos: null, titulo: "", descricao: "", totalMembros: 1, maximoMembros: 10, convite: "", localizacao: "" };
+    return {
+        id_departamentos: null,
+        titulo: "",
+        descricao: "",
+        totalMembros: 1,
+        maximoMembros: 10,
+        convite: "",
+        localizacao: "",
+        fotoDepartamento: "placeholderImage.jpg" // Inicialmente vazio
+    };
 }
 
 export async function getDepartamentos(): Promise<DepartamentoType[]> {
@@ -44,6 +53,7 @@ export async function saveDepartamento(formData: FormData, userId: string) {
     const maximoMembros = Number(formData.get('maximoMembros')) || 10;
     const convite = formData.get('convite') as string || null;
     const localizacao = formData.get('localizacao') as string || null;
+    const fotoDepartamento = formData.get('fotoDepartamento') as string || null; // Carrega a foto
 
     if (!titulo) {
         throw new Error('É necessário adicionar um título ao seu departamento.');
@@ -57,6 +67,7 @@ export async function saveDepartamento(formData: FormData, userId: string) {
         maximoMembros,
         convite,
         localizacao,
+        fotoDepartamento
     };
 
     if (!id_departamentos) {
@@ -67,18 +78,19 @@ export async function saveDepartamento(formData: FormData, userId: string) {
                 "totalMembros",
                 "maximoMembros",
                 "convite",
-                "localizacao"
+                "localizacao",
+                "fotoDepartamento"
             ) VALUES (
                 ${departamento.titulo},
                 ${departamento.descricao},
                 ${departamento.totalMembros},
                 ${departamento.maximoMembros},
                 ${departamento.convite},
-                ${departamento.localizacao}
+                ${departamento.localizacao},
+                ${departamento.fotoDepartamento}
             ) RETURNING "id_departamentos"`
         );
 
-        // Inserindo o relacionamento na tabela user_departamento
         if (novoDepartamento?.id_departamentos) {
             await db.execute(
                 sql`INSERT INTO chaves_estrangeiras.users_departamentos (
@@ -92,18 +104,18 @@ export async function saveDepartamento(formData: FormData, userId: string) {
         }
 
     } else {
-        // Atualizando o departamento existente
         await db.execute(sql`UPDATE departamentos.departamentos SET
             "titulo" = ${departamento.titulo},
             "descricao" = ${departamento.descricao},
             "totalMembros" = ${departamento.totalMembros},
             "maximoMembros" = ${departamento.maximoMembros},
             "convite" = ${departamento.convite},
-            "localizacao" = ${departamento.localizacao}
+            "localizacao" = ${departamento.localizacao},
+            "fotoDepartamento" = ${departamento.fotoDepartamento}
             WHERE "id_departamentos" = ${departamento.id_departamentos}`);
     }
 
-    redirect("/departamentoTeste");
+    redirect("/departamentos");
 }
 
 
@@ -114,5 +126,5 @@ export async function removeDepartamento(departamento: DepartamentoType) {
 
     await db.execute(sql`DELETE FROM departamentos.departamentos WHERE "id_departamentos" = ${departamento.id_departamentos}`);
 
-    redirect('/departamentoTeste');
+    redirect('/departamentos');
 }

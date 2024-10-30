@@ -31,7 +31,7 @@ export default function Navbar({ type }: navProps) {
                                     height={100}
                                 />
                             </div>
-                            <div className='bg-[#2E2E2E] w-2/4 flex justify-evenly text-xl text-gray-300  p-6 rounded-full sm:w-4/8 lg:w-2/8'>
+                            <div className='w-2/4 flex justify-evenly text-xl text-gray-300  p-6 rounded-full sm:w-4/8 lg:w-2/8'>
                                 <a className=' transition- duration-300 hover:text-white' href="">Home</a>
                                 <a className=' transition- duration-300 hover:text-white' href="">Planos</a>
                                 <a className=' transition- duration-300 hover:text-white' href="">Sobre nós</a>

@@ -101,7 +101,9 @@ export default function Cadastro({ user: novoUser }: Props) {
                     </form>
                     <div className="flex flex-col items-center justify-center gap-2 mt-4">
                         <p className="2xl:text-lg">ou</p>
-                        <GoogleSingInButton />
+                        <div className="w-full">
+                            <GoogleSingInButton />
+                        </div>
                     </div>
 
                     <div className="text-center italic text-[#B4B4B4] mt-4 2xl:text-2xl text-md md:text-sm">

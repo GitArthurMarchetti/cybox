@@ -9,13 +9,14 @@ export type UserType = {
 
 
 export type DepartamentoType = {
-    id_departamentos: number | null | string,
-    titulo: string,
-    descricao: string | null,
-    totalMembros: number,
-    maximoMembros: number,
-    convite: string | null,
-    localizacao: string | null,
+    id_departamentos: number | null | string;
+    titulo: string;
+    descricao: string | null;
+    totalMembros: number;
+    maximoMembros: number;
+    convite: string | null;
+    localizacao: string | null;
+    fotoDepartamento?: string | null; // Adicione o campo de imagem como opcional
 };
 
 

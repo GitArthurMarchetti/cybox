@@ -17,6 +17,7 @@ import { SideBar } from "../components/Navigation/sideBar";
 import { DepartamentoType, UserType } from "@/lib/types/types";
 import { useState } from "react";
 import { saveDepartamento } from "../services/departamento";
+import ButtonCriarSala from "../components/Button/buttonCriarSala";
 
 
 type Props = {
@@ -58,9 +59,7 @@ export default function DepartamentosFront({ departamentos, departamento: novoDe
                         <button className="bg-none text-[#F6CF45] flex items-center gap-2 border border-[#F6CF45] 2xl:px-6 2xl:py-2 px-4 py-1 2xl:text-base text-sm  rounded-full">
                             <TbLogin2 className="2xl:text-2xl" /> Entrar em sala
                         </button>
-                        <button className="bg-[#F6CF45] flex items-center gap-2  text-black 2xl:px-6 2xl:py-2 px-4 py-1 2xl:text-base text-sm rounded-full">
-                            <BsPlus className="2xl:text-3xl" /> Criar sala
-                        </button>
+                             <ButtonCriarSala />
                     </div>
                 </div>
 
