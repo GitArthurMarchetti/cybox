@@ -26,11 +26,9 @@ export default function Login() {
                const response = await DoCredentialsLogin(formData);
 
                if (response?.error) {
-                    console.error('Erro ao fazer login:', response.error);
-                    console.error('Erro ao fazer login:', response.error)
+             console.error('Erro ao fazer login:', response.error)
                } else {
                     router.push('/departamentos');
-                    router.push('/departamentoTeste');
                }
           } catch (e) {
                console.error(e);

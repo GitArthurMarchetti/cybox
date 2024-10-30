@@ -4,7 +4,7 @@ interface CardDepartamentoProps {
      nome: string;
      avatar?: string;
      cargo: string;
-     desc?: string;
+     desc?: string | null;
      NParticipantes: number;
 }
 

@@ -3,8 +3,14 @@ import { FaGear } from "react-icons/fa6";
 import { IoMdNotifications } from "react-icons/io";
 import { MdDashboard } from "react-icons/md";
 import { TbLogout2 } from "react-icons/tb";
+import Logout from "../Button/buttonLogOut";
 
-export function SideBar() {
+type Props = {
+     userName: string | null | undefined;
+     userEmail: string | null | undefined;
+ };
+
+export function SideBar({userName, userEmail}: Props) {
      return (
           <>
                <aside className="w-[20%] min-w-[250px] bg-[#0F0F0F] text-white p-6 flex flex-col justify-between border-r border-[#2C2C2C]">
@@ -37,11 +43,11 @@ export function SideBar() {
                     <div className="flex items-center gap-4 bg-[#2C2C2C] 2xl:p-6 px-1.5 py-4 rounded-lg relative">
                          <Image src="/avatar.png" alt="Avatar" width={48} height={48} className="rounded-full bg-slate-100" />
                          <div className="flex flex-col gap-1">
-                              <p className="2xl:text-base text-sm">Arthur D{"'"}eça</p>
-                              <p className="text-xs text-[#B4B4B4]">arthurdeca@cybox.com</p>
-                              <TbLogout2 className="absolute top-3 right-3 2xl:text-xl" />
+                              <p className="2xl:text-base text-sm">{userName}</p>
+                              <p className="text-xs text-[#B4B4B4]">{userEmail}</p>
+                              <Logout />
                          </div>
-                         {/* <Logout /> */}
+
                     </div>
                </aside>
           </>
