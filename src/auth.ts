@@ -51,6 +51,7 @@ export const {
                 } catch (error) {
                     console.error("Erro na autenticação:", error);
                     throw new Error(error as string);
+
                 }
             }
         }),
@@ -65,10 +66,12 @@ export const {
                     response_type: "code",
                     code_challenge_method: "S256",
                 },
+
             },
             checks: ["pkce"],
         }),
     ],
+
 
     callbacks: {
         async jwt({ token, user, account, profile }) {
@@ -127,6 +130,7 @@ export const {
             return session;
         },
     },
+
 
     secret: process.env.AUTH_SECRET,
     debug: true,
