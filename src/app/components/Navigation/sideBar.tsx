@@ -41,7 +41,7 @@ export function SideBar({userName, userEmail}: Props) {
                     </nav>
 
                     <div className="flex items-center gap-4 bg-[#2C2C2C] 2xl:p-6 px-1.5 py-4 rounded-lg relative">
-                         <Image src="/avatar.png" alt="Avatar" width={48} height={48} className="rounded-full bg-slate-100" />
+                         <Image src="/avatar.jpg" alt="Avatar" width={48} height={48} className="rounded-full bg-slate-100" />
                          <div className="flex flex-col gap-1">
                               <p className="2xl:text-base text-sm">{userName}</p>
                               <p className="text-xs text-[#B4B4B4]">{userEmail}</p>

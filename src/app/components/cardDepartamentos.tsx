@@ -1,26 +1,49 @@
+'use client'
+
 import Image from "next/image";
+import DropDownDepartamento from "./dropdowns/dropdownDep";
+import { DepartamentoType } from "@/lib/types/types";
+
+
+
+
 
 interface CardDepartamentoProps {
-     nome: string;
-     avatar?: string;
+     departamento: DepartamentoType;
+     id_departamento: string | number | null;
+     titulo: string;
+     fotoDepartamento?: string;
      cargo: string;
      desc?: string | null;
      NParticipantes: number;
 }
 
-export function CardDepartamento({ nome, avatar, cargo, desc, NParticipantes }: CardDepartamentoProps) {
+
+
+
+export function CardDepartamento({ departamento, id_departamento, titulo, fotoDepartamento, cargo, desc, NParticipantes }: CardDepartamentoProps) {
      return (
           <>
                <div className="bg-[#2C2C2C] 2xl:p-6 px-4 p-2  rounded-lg relative">
                     <div className="flex justify-between items-center ">
                          <div className="flex items-center 2xl:gap-7 gap-3 mb-8">
-                              <Image src={avatar ? avatar : '/avatar'} alt="Avatar" width={48} height={48} className="rounded-full bg-slate-100 2xl:scale-125 text-black" />
+                              <Image src={fotoDepartamento ? fotoDepartamento : '/placeholderImage.jpg'} alt="Foto Departamento" width={48} height={48} className="rounded-full bg-slate-100 2xl:scale-125 text-black" />
                               <div>
-                                   <h2 className="text-base font-bold text-white 2xl:text-2xl">{nome}</h2>
+                                   <h2 className="text-base font-bold text-white 2xl:text-2xl">{titulo}</h2>
                                    <p className="text-xs 2xl:text-base 2xl:w-5/6 text-gray-400">{desc ? desc : ""}</p>
                               </div>
                          </div>
-                         <span className="text-gray-500 absolute top-3 right-3 text-xs 2xl:text-base">{cargo}</span>
+                         <div className="flex flex-row absolute top-3 right-3 text-gray-500 ">
+                              <span className="mr-2 text-xs 2xl:text-base">{cargo}</span>
+                              <DropDownDepartamento 
+                              departamento={departamento}
+                              id_departamento={id_departamento}
+                              titulo={titulo}
+                              desc={desc}
+                              cargo={"Host: Y"}
+                              NParticipantes={NParticipantes}
+                              fotoDepartamento="" />
+                         </div>
                     </div>
                     <div className="flex justify-end relative items-center text-right w-full pb-2">
                          <span className="w-6 h-6 bg-green-500 rounded-full border border-[#ffffff90] absolute left-0"></span>

@@ -4,6 +4,7 @@ import { sql } from "drizzle-orm";
 import db from "./db";
 import { redirect } from 'next/navigation';
 import { DepartamentoType } from "@/lib/types/types";
+import { format } from "date-fns";
 
 
 export async function getEmptyDepartamento(): Promise<DepartamentoType> {
@@ -21,7 +22,9 @@ export async function getEmptyDepartamento(): Promise<DepartamentoType> {
 
 export async function getDepartamentos(): Promise<DepartamentoType[]> {
     try {
-        return await db.execute<DepartamentoType>(sql`SELECT * FROM departamentos.departamentos ORDER BY titulo ASC`);
+        return await db.execute<DepartamentoType>(
+            sql`SELECT *, TO_CHAR(created_at, 'YYYY-MM-DD') as created_at FROM departamentos.departamentos ORDER BY titulo ASC`
+        );
     } catch (error) {
         console.error('Erro ao buscar departamento do banco:', error);
         return [];
@@ -31,7 +34,7 @@ export async function getDepartamentos(): Promise<DepartamentoType[]> {
 export async function getDepartamentosByUser(userId: string): Promise<DepartamentoType[]> {
     try {
         const departamentos = await db.execute<DepartamentoType>(
-            sql`SELECT d.*
+            sql`SELECT d.*, TO_CHAR(d.created_at, 'YYYY-MM-DD') as created_at
                  FROM departamentos.departamentos AS d
                  JOIN chaves_estrangeiras.users_departamentos AS ud
                  ON d.id_departamentos = ud.id_departamentos

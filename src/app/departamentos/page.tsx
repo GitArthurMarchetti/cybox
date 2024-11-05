@@ -15,11 +15,12 @@ export default async function Departamento() {
     console.log("Sessão recuperada:", session)
 
     if (!session?.user) return (<>
-     <h1>Ops... Algo não está certo, confira se já fez o seu login.</h1>
+     <h1>Ops... Algo não está certo, confira se já fez o seu login.</h1> 
+     {/* Preciso que monte a página de erro do usuário, caso ele não tenha feito login ou algo do tipo, sugiro fazer um componente, porque usará várias vezes */}
     </>)
 
     const userId = session.user.id as string;
-    const users = await getUsers()
+ 
 
     const departamento = await getEmptyDepartamento();
     const departamentosUserData = await getDepartamentosByUser(userId);
@@ -31,7 +32,6 @@ export default async function Departamento() {
     userId={userId} 
     userName={session.user.name}
     userEmail={session.user.email} 
-    users={users}
 
     />
 }
