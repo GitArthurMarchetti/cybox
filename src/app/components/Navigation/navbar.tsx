@@ -9,13 +9,15 @@ import { FaGear } from "react-icons/fa6";
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import router from 'next/router';
+import { DetailedHTMLProps, HTMLAttributes } from 'react';
 
 
 interface navProps {
     type: string
+    class?: string | undefined
 }
 
-export default function Navbar({ type }: navProps) {
+export default function Navbar({ type, class: className }: navProps) {
 
     return (
         <>
@@ -38,14 +40,14 @@ export default function Navbar({ type }: navProps) {
                                 <a className=' transition- duration-300 hover:text-white' href="">Contato</a>
                             </div>
                             <div className='w-[25%] flex justify-end gap-2 '>
-                                <Link  href={'/cadastro'} 
-                                className='bg-[#2E2E2E] text-white  hover:bg-[#F6CF45] hover:text-black  transition-all duration-300 h-11 px-9  text-lg rounded-full flex items-center'>
-                                Cadastrar
+                                <Link href={'/cadastro'}
+                                    className='bg-[#2E2E2E] text-white  hover:bg-[#F6CF45] hover:text-black  transition-all duration-300 h-11 px-9  text-lg rounded-full flex items-center'>
+                                    Cadastrar
                                 </Link>
 
-                                <Link href={'/login'} 
-                                className='border-[#2E2E2E]  hover:border-[#F6CF45] border-2 border-solid text-white transition-all  duration-300 hover:bg-[#F6CF45] hover:text-black h-11  px-9 flex items-center justify  text-lg rounded-full'>
-                                Entrar
+                                <Link href={'/login'}
+                                    className='border-[#2E2E2E]  hover:border-[#F6CF45] border-2 border-solid text-white transition-all  duration-300 hover:bg-[#F6CF45] hover:text-black h-11  px-9 flex items-center justify  text-lg rounded-full'>
+                                    Entrar
                                 </Link>
 
 
@@ -55,15 +57,14 @@ export default function Navbar({ type }: navProps) {
                 </>
             ) : type == '2' ? (
                 <>
-                    <header>
-                        <nav className=' flex items-center w-full justify-between px-10 '>
+                    <header className={className}>
+                        <nav className='flex items-center w-full justify-between px-10 '>
                             <div className='w-[25%] flex items-center'>
                                 <Image
-                                    src="/logo-branca.png"
+                                    src="/logo-completa-branca.png"
                                     alt="Logo"
-                                    width={200}
+                                    width={150}
                                     height={50}
-                                    layout="responsive"
                                 />
                             </div>
                             <div className='bg-[#2E2E2E] w-2/4 flex justify-evenly text-xl text-white p-6 rounded-full'>
