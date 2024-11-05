@@ -61,8 +61,8 @@ export default function Cadastro({ user: novoUser }: Props) {
                             <input className="w-full bg-transparent border-0 outline-none text-white"
                                 type="text"
                                 name="nome"
-                                value={user.nome}
-                                onChange={(e) => setUser({ ...user, nome: e.target.value })}
+                                value={user.name}
+                                onChange={(e) => setUser({ ...user, name: e.target.value })}
                             />
                         </label>
                         <label className="bg-[#2C2C2C] text-md 2xl:text-2xl md:text-sm flex flex-col gap-1 py-2 2xl:px-4 px-4 my-1.5 2xl:my-4 rounded-lg text-[#B4B4B4]">
@@ -81,8 +81,8 @@ export default function Cadastro({ user: novoUser }: Props) {
                                     <input className="w-full bg-transparent border-0 outline-none text-white"
                                         type={isVisible ? "text" : "password"}
                                         name="senha"
-                                        value={user.senha}
-                                        onChange={(e) => setUser({ ...user, senha: e.target.value })}
+                                        value={user.passwordHashed}
+                                        onChange={(e) => setUser({ ...user, passwordHashed: e.target.value })}
                                     />
                                 </div>
                                 {isVisible ? <IoMdEye className="text-2xl 2xl:text-4xl" onClick={() => setIsVisible(false)} /> : <IoMdEyeOff className="text-2xl 2xl:text-4xl" onClick={() => setIsVisible(true)} />}

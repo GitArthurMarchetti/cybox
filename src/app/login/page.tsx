@@ -1,4 +1,6 @@
+
 "use client"
+
 
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
@@ -9,6 +11,7 @@ import Image from "next/image";
 //icones
 import { RiArrowLeftSLine } from "react-icons/ri";
 import GoogleSingInButton from "../components/Button/buttonSignInGoogle";
+
 import { getUsers } from "../services/user";
 import { DoCredentialsLogin } from "../services/login";
 
@@ -34,6 +37,7 @@ export default function Login() {
                console.error(e);
           }
      }
+
 
      return (
           <>
@@ -64,6 +68,7 @@ export default function Login() {
                                    Olá! Seu retorno é sempre bem-vindo! Pronto para mais uma sessão produtiva?
                               </p>
                          </div>
+
                          <div className="flex flex-col gap-2 w-4/5 md:w-full m-auto">
                               <form className="w-full flex flex-col gap-2" onSubmit={handleFormSubmit}>
                                    {error && (
@@ -90,6 +95,7 @@ export default function Login() {
                                    <p className="2xl:text-2xl pr-1.5">ou</p>
                                    <GoogleSingInButton />
                               </div>
+
                          </div>
                          <p className="text-right w-4/5 md:w-full m-auto text-[#B4B4B4] underline italic text-sm 2xl:text-base md:text-xs mt-2">Esqueceu a senha?</p>
 

@@ -59,14 +59,18 @@ export async function saveUser(formData: FormData, googleId?: string) {
         id,
         nome,
         email,
+
         senha: hashedSenha,
         google_id: googleId || null // Incluído o google_id na criação do usuário
+
     };
 
     if (!id) {
         await db.execute(sql`INSERT INTO next_auth.users (nome, email, senha, google_id) VALUES (${user.nome}, ${user.email}, ${user.senha}, ${user.google_id})`); // Incluído o campo google_id
     } else {
+
         await db.execute(sql`UPDATE next_auth.users SET nome=${user.nome}, email=${user.email}, senha=${user.senha}, google_id=${user.google_id} WHERE id_users=${user.id}`); // Incluído o campo google_id
+
     }
 
     redirect('/login');
