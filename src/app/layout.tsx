@@ -18,7 +18,11 @@ export default function RootLayout({
   return (
     <html lang="pt-br">
       <head>
-        <link rel="shortcut icon" href='../img/logo-branca.png' type="image/x-icon" />
+        <link rel="icon" type="image/png" href="/cyboxFavicon/favicon-96x96.png" sizes="96x96" />
+        <link rel="icon" type="image/svg+xml" href="/cyboxFavicon/favicon.svg" />
+        <link rel="shortcut icon" href="/cyboxFavicon/favicon.ico" />
+        <link rel="apple-touch-icon" sizes="180x180" href="/cyboxFavicon/apple-touch-icon.png" />
+        <link rel="manifest" href="/cyboxFavicon/site.webmanifest" />
       </head>
       <body className={`${inter.className} flex flex-col h-screen scrollbar-thin scrollbar-thumb-yellow-700`}>
 
