@@ -75,9 +75,9 @@ export const {
 
     callbacks: {
         async jwt({ token, user, account, profile }) {
-            console.log("Account data:", account);
-            console.log("User data:", user);
-            console.log("Token before:", token);
+            // console.log("Account data:", account);
+            // console.log("User data:", user);
+            // console.log("Token before:", token);
 
             if (account) {
                 if (account.provider === 'google') {

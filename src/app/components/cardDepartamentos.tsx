@@ -1,7 +1,6 @@
 'use client'
 
 import Image from "next/image";
-import DropDownDepartamento from "./dropdowns/dropdownDep";
 import { DepartamentoType } from "@/lib/types/types";
 
 
@@ -15,13 +14,15 @@ interface CardDepartamentoProps {
      fotoDepartamento?: string;
      cargo: string;
      desc?: string | null;
+     maximoParticipante: number;
      NParticipantes: number;
+     userId: string
 }
 
 
 
 
-export function CardDepartamento({ departamento, id_departamento, titulo, fotoDepartamento, cargo, desc, NParticipantes }: CardDepartamentoProps) {
+export function CardDepartamento({ departamento, id_departamento, titulo, fotoDepartamento, cargo, desc, NParticipantes, maximoParticipante, userId }: CardDepartamentoProps) {
      return (
           <>
                <div className="bg-[#2C2C2C] 2xl:p-6 px-4 p-2  rounded-lg relative">
@@ -35,14 +36,6 @@ export function CardDepartamento({ departamento, id_departamento, titulo, fotoDe
                          </div>
                          <div className="flex flex-row absolute top-3 right-3 text-gray-500 ">
                               <span className="mr-2 text-xs 2xl:text-base">{cargo}</span>
-                              <DropDownDepartamento 
-                              departamento={departamento}
-                              id_departamento={id_departamento}
-                              titulo={titulo}
-                              desc={desc}
-                              cargo={"Host: Y"}
-                              NParticipantes={NParticipantes}
-                              fotoDepartamento="" />
                          </div>
                     </div>
                     <div className="flex justify-end relative items-center text-right w-full pb-2">

@@ -80,7 +80,9 @@ export default function DepartamentosFront({ departamentos, departamento, userId
                                 desc={d.descricao}
                                 cargo={"Host: Y"}
                                 NParticipantes={d.totalMembros}
-                                fotoDepartamento="" />
+                                maximoParticipante={d.maximoMembros}
+                                fotoDepartamento=""
+                                userId={userId} />
                         ))}
                     </div>
                 </div>

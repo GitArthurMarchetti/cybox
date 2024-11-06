@@ -55,13 +55,11 @@ export default function ButtonCriarSala({ userId, departamento: novoDepartamento
                                 name="titulo"
                                 className="w-11/12 p-2 text-black rounded-md"
                                 placeholder="Novo Departamento..."
-                                value={departamento.titulo}
                                 onChange={(e) => setDepartamento({ ...departamento, titulo: e.target.value })}
                                 required />
 
                             <input
                                 name="descricao"
-                                value={departamento.descricao ?? ""}
                                 onChange={(e) => setDepartamento({ ...departamento, descricao: e.target.value })}
                                 type="text"
                                 className="border p-2 rounded"
