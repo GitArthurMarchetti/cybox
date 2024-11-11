@@ -3,7 +3,7 @@
 import Image from "next/image";
 import { DepartamentoType } from "@/lib/types/types";
 
-
+import { FaGear } from "react-icons/fa6";
 
 
 
@@ -25,7 +25,7 @@ interface CardDepartamentoProps {
 export function CardDepartamento({ departamento, id_departamento, titulo, fotoDepartamento, cargo, desc, NParticipantes, maximoParticipante, userId }: CardDepartamentoProps) {
      return (
           <>
-               <div className="bg-[#2C2C2C] 2xl:p-6 px-4 p-2  rounded-lg relative">
+               <div className="bg-[#2C2C2C] 2xl:p-6 px-4 p-2  rounded-lg relative cursor-pointer hover:shadow-md hover:shadow-black">
                     <div className="flex justify-between items-center ">
                          <div className="flex items-center 2xl:gap-7 gap-3 mb-8">
                               <Image src={fotoDepartamento ? fotoDepartamento : '/placeholderImage.jpg'} alt="Foto Departamento" width={48} height={48} className="rounded-full bg-slate-100 2xl:scale-125 text-black" />
@@ -36,6 +36,7 @@ export function CardDepartamento({ departamento, id_departamento, titulo, fotoDe
                          </div>
                          <div className="flex flex-row absolute top-3 right-3 text-gray-500 ">
                               <span className="mr-2 text-xs 2xl:text-base">{cargo}</span>
+                              <span className="cursor-pointer hover:text-gray-100 transition-all"><FaGear /> </span>
                          </div>
                     </div>
                     <div className="flex justify-end relative items-center text-right w-full pb-2">

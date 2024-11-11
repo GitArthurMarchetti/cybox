@@ -2,7 +2,7 @@
 'use server'
 
 import { auth } from "@/auth";
-import DepartamentosFront from "./departamentoFront"
+import DepartamentosFront from "./departamentosFront"
 import { redirect } from "next/navigation";
 import { getUsers } from "../services/user";
 import { getDepartamentosByUser, getEmptyDepartamento } from "../services/departamento";
