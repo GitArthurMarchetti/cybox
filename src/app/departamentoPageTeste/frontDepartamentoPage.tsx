@@ -11,7 +11,7 @@ type Props = {
 export default function FrontDepartamentoTeste({ departamentos, departamento, userId, userName, userEmail }: Props) {
     return(
         <>
-        a
+        
         </>
     )
 }
