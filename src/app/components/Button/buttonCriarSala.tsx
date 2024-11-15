@@ -15,6 +15,7 @@ import {
 import { DepartamentoType } from "@/lib/types/types";
 import { useState } from "react";
 import { BsPlus } from "react-icons/bs";
+import CreateDepartmentModal from "../modals/criarSala";
 
 type Props = {
     userId: string;
@@ -23,6 +24,7 @@ type Props = {
 
 export default function ButtonCriarSala({ userId, departamento: novoDepartamento }: Props) {
     const [departamento, setDepartamento] = useState<DepartamentoType>(novoDepartamento);
+    const [isModalOpen, setIsModalOpen] = useState(false);
 
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
@@ -37,46 +39,17 @@ export default function ButtonCriarSala({ userId, departamento: novoDepartamento
 
     return (
         <>
-            <AlertDialog>
-                <AlertDialogTrigger className="bg-[#F6CF45] flex items-center gap-2  text-black 2xl:px-6 2xl:py-2 px-4 py-1 2xl:text-base text-sm rounded-full">
-                    <BsPlus className="2xl:text-3xl" /> Criar Departamento
-                </AlertDialogTrigger>
-                <AlertDialogContent className="text-black">
-                    <form onSubmit={handleSubmit}>
-                        <AlertDialogHeader>
-                            <AlertDialogTitle>Criar o seu departamento.</AlertDialogTitle>
-                            <AlertDialogDescription>
-                                Crie um departamento para cuidar de seus bens.
-                            </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <section>
-                            <input
-                                type="text"
-                                name="titulo"
-                                className="w-11/12 p-2 text-black rounded-md"
-                                placeholder="Novo Departamento..."
-                                onChange={(e) => setDepartamento({ ...departamento, titulo: e.target.value })}
-                                required />
-
-                            <input
-                                name="descricao"
-                                onChange={(e) => setDepartamento({ ...departamento, descricao: e.target.value })}
-                                type="text"
-                                className="border p-2 rounded"
-                                placeholder="Descrição..."
-                            />
-                        </section>
-                        <AlertDialogFooter>
-                            <AlertDialogCancel>Cancel</AlertDialogCancel>
-                            <AlertDialogAction asChild>
-                                <button type="submit">
-                                    Criar
-                                </button>
-                            </AlertDialogAction>
-                        </AlertDialogFooter>
-                    </form>
-                </AlertDialogContent>
-            </AlertDialog>
+            <button
+                onClick={() => setIsModalOpen(true)}
+                className="bg-[#F6CF45] text-black flex items-center gap-2 2xl:px-6 2xl:py-2 px-4 py-1 2xl:text-base text-sm rounded-full"
+            >
+                <BsPlus className="2xl:text-2xl" /> Criar sala
+            </button>
+            <CreateDepartmentModal
+                isOpen={isModalOpen}
+                onClose={() => setIsModalOpen(false)}
+                userId={userId}
+            />
         </>
     );
 }

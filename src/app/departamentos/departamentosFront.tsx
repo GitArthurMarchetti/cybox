@@ -18,6 +18,7 @@ import { DepartamentoType, UserType } from "@/lib/types/types";
 import { useState } from "react";
 import { saveDepartamento } from "../services/departamento";
 import ButtonCriarSala from "../components/Button/buttonCriarSala";
+import EnterDepartmentModal from "../components/modals/entrarSala";
 
 
 type Props = {
@@ -30,7 +31,7 @@ type Props = {
 
 
 export default function DepartamentosFront({ departamentos, departamento, userId, userName, userEmail }: Props) {
-
+    const [isEnterModalOpen, setIsEnterModalOpen] = useState(false);
     const [buscaDepartamento, setbuscaDepartamento] = useState("");
 
     const filteredDepartamentos = departamentos.filter((d) =>
@@ -40,13 +41,20 @@ export default function DepartamentosFront({ departamentos, departamento, userId
 
     return (
         <div className="bg-[#0F0F0F] h-screen flex">
+            <EnterDepartmentModal
+                isOpen={isEnterModalOpen}
+                onClose={() => setIsEnterModalOpen(false)}
+            />
             <SideBar userEmail={userEmail} userName={userName} />
 
             <main className="flex-grow bg-[#0F0F0F] p-6">
                 <div className="flex justify-between items-center mb-6">
                     <h1 className="2xl:text-3xl text-xl font-bold text-white">Seus Departamentos</h1>
                     <div className="flex gap-4 absolute right-7">
-                        <button className="bg-none text-[#F6CF45] flex items-center gap-2 border border-[#F6CF45] 2xl:px-6 2xl:py-2 px-4 py-1 2xl:text-base text-sm  rounded-full">
+                        <button
+                            onClick={() => setIsEnterModalOpen(true)}
+                            className="bg-none text-[#F6CF45] flex items-center gap-2 border border-[#F6CF45] 2xl:px-6 2xl:py-2 px-4 py-1 2xl:text-base text-sm rounded-full"
+                        >
                             <TbLogin2 className="2xl:text-2xl" /> Entrar em sala
                         </button>
                         <ButtonCriarSala userId={userId} departamento={departamento} />

@@ -4,11 +4,12 @@ import Image from 'next/image'
 
 //icons
 import { MdDashboard } from "react-icons/md";
-import { IoMdNotifications } from "react-icons/io";
-import { FaGear } from "react-icons/fa6";
+import { IoMdNotifications, IoMdSearch } from "react-icons/io";
+import { FaFilter, FaGear } from "react-icons/fa6";
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import router from 'next/router';
+import { IoNotificationsSharp } from 'react-icons/io5';
 
 
 interface navProps {
@@ -38,14 +39,14 @@ export default function Navbar({ type }: navProps) {
                                 <a className=' transition- duration-300 hover:text-white' href="">Contato</a>
                             </div>
                             <div className='w-[25%] flex justify-end gap-2 '>
-                                <Link  href={'/cadastro'} 
-                                className='bg-[#2E2E2E] text-white  hover:bg-[#F6CF45] hover:text-black  transition-all duration-300 h-11 px-9  text-lg rounded-full flex items-center'>
-                                Cadastrar
+                                <Link href={'/cadastro'}
+                                    className='bg-[#2E2E2E] text-white  hover:bg-[#F6CF45] hover:text-black  transition-all duration-300 h-11 px-9  text-lg rounded-full flex items-center'>
+                                    Cadastrar
                                 </Link>
 
-                                <Link href={'/login'} 
-                                className='border-[#2E2E2E]  hover:border-[#F6CF45] border-2 border-solid text-white transition-all  duration-300 hover:bg-[#F6CF45] hover:text-black h-11  px-9 flex items-center justify  text-lg rounded-full'>
-                                Entrar
+                                <Link href={'/login'}
+                                    className='border-[#2E2E2E]  hover:border-[#F6CF45] border-2 border-solid text-white transition-all  duration-300 hover:bg-[#F6CF45] hover:text-black h-11  px-9 flex items-center justify  text-lg rounded-full'>
+                                    Entrar
                                 </Link>
 
 
@@ -56,23 +57,45 @@ export default function Navbar({ type }: navProps) {
             ) : type == '2' ? (
                 <>
                     <header>
-                        <nav className=' flex items-center w-full justify-between px-10 '>
-                            <div className='w-[25%] flex items-center'>
+                        <nav className=' flex items-center w-full justify-between px-10 relative '>
+                            <div className='w-[25%] flex items-center opacity-0 '>
                                 <Image
-                                    src="/logo-branca.png"
+                                    src="/logo-completa-branca.png"
                                     alt="Logo"
-                                    width={200}
-                                    height={50}
-                                    layout="responsive"
+                                    width={90}
+                                    height={20}
+                                />
+                            </div><div className='w-[25%] flex items-center -top-5 absolute '>
+                                <Image
+                                    src="/logo-completa-branca.png"
+                                    alt="Logo"
+                                    width={120}
+                                    height={20}
                                 />
                             </div>
-                            <div className='bg-[#2E2E2E] w-2/4 flex justify-evenly text-xl text-white p-6 rounded-full'>
-                                <a className=' flex items-center gap-2 transition-all duration-300   hover:font-bold' href=""><MdDashboard size={27} /> Departamentos</a>
-                                <a className=' flex items-center gap-2 transition-all duration-300   hover:font-bold' href=""><IoMdNotifications size={30} /> Notificações</a>
-                                <a className=' flex items-center gap-2 transition-all duration-300   hover:font-bold' href=""><FaGear size={25} /> Configurações</a>
+                            <div className="flex items-center w-2/5 gap-5">
+                                <label className="flex items-center bg-[#2C2C2C] w-full px-4 rounded-full">
+                                    <input
+                                        type="text"
+                                        placeholder="Pesquise por sua categoria"
+                                        className="flex-grow p-3 bg-[#2C2C2C] text-white rounded-lg outline-none placeholder:text-sm"
+                                    />
+                                    <IoMdSearch className="text-[#8C8888] text-xl" />
+                                </label>
+                                <button className="flex items-center text-white mr-4 gap-1">
+                                    <FaFilter className="text-xl text-[#8C8888]" />
+                                    <span className='underline underline-offset-2 italic text-[#8C8888]'>Filtar</span>
+                                </button>
                             </div>
-                            <div className='w-[25%] flex justify-end gap-2 '>
-                                <div className=' w-14 h-14 rounded-full bg-white flex items-center justify-center text-xl'>A</div>
+                            <div className='w-[25%] flex justify-end  items-center text-right gap-3 '>
+                                <div>
+                                    <IoNotificationsSharp className='text-2xl text-[#8C8888]' />
+                                </div>
+                                <div>
+                                    <p className='text-[#fff]'>Colocar nome do logado</p>
+                                    <p className='text-[#B4B4B4] text-sm'>email@gmail.com</p>
+                                </div>
+                                <div className=' w-14 h-14 rounded-full text-black bg-white flex items-center justify-center text-xl'>A</div>
                             </div>
 
                         </nav>
