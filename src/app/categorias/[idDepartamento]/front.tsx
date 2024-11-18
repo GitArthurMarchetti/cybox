@@ -1,11 +1,12 @@
 'use client'
 
 import { useState } from 'react';
-import Navbar from '../components/Navigation/navbar';
+import Navbar from '../../components/Navigation/navbar';
 import { FaFilter, FaGear, FaPlus, FaShare } from 'react-icons/fa6';
 import { MdFilterList, MdKeyboardArrowLeft, MdKeyboardArrowRight, MdModeEdit, MdSearch } from 'react-icons/md';
 import { IoMdSearch } from 'react-icons/io';
 import React from 'react';
+import { DepartamentoType, UserType } from '@/lib/types/types';
 
 // Definindo a interface para o tipo da categoria
 interface Category {
@@ -18,8 +19,14 @@ interface Category {
      }[];
 }
 
+interface CategoriasProps {
+     departamento: DepartamentoType; // Define que a página recebe um DepartamentoType-
+     user: UserType;
+   }
 
-export default function Categorias() {
+
+
+export default function CategoriaFront({ departamento, user}: CategoriasProps ) {
      const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
 
      const categories: Category[] = [
@@ -49,7 +56,7 @@ export default function Categorias() {
                                         <div className="bg-pink-500 w-16 h-16 rounded-full mb-2"></div>
                                         <div className="text-left ml-2">
                                              <h2 className="text-lg">Eletrônicos</h2>
-                                             <p className="text-base text-[#8c8888]">Administrador</p>
+                                             <p className="text-base text-[#8c8888]">Administrador: {user.email}</p>
                                         </div>
                                    </div>
                                    <p className="text-xs mt-1 w-full text-[#8c8888]">Departamento de gerenciamento de eletrônicos do Senai Floripa</p>

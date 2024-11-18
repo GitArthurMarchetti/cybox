@@ -48,6 +48,27 @@ export async function getDepartamentosByUser(userId: string): Promise<Departamen
 }
 
 
+export async function getDepartamentosById(idDepartamento: string | number): Promise<DepartamentoType | null> {
+    try {
+        if (!idDepartamento) {
+            throw new Error("ID do departamento inválido ou ausente.");
+        }
+
+        const [departamento] = await db.execute<DepartamentoType>(
+            sql`SELECT d.*, TO_CHAR(d.created_at, 'YYYY-MM-DD') as created_at
+                 FROM departamentos.departamentos AS d
+                 WHERE d.id_departamentos = ${idDepartamento}`
+        );
+
+        return departamento || null; // Retorna o departamento ou null se não encontrado
+    } catch (error) {
+        console.error("Erro ao buscar departamento por ID:", error);
+        return null;
+    }
+}
+
+
+
 export async function saveDepartamento(formData: FormData, userId: string) {
     const id_departamentos = +(formData.get('id_departamentos') as string) as number;
     const titulo = formData.get('titulo') as string;
@@ -130,4 +151,14 @@ export async function removeDepartamento(departamento: DepartamentoType) {
     await db.execute(sql`DELETE FROM departamentos.departamentos WHERE "id_departamentos" = ${departamento.id_departamentos}`);
 
     redirect('/departamentos');
+}
+
+
+export async function irParaEndereco(idDepartamento: number | null | string) {
+    if (!idDepartamento) {
+        throw new Error("O ID do departamento é necessário para redirecionar.");
+    }
+
+    // Converte o ID para string, se necessário, e redireciona
+    redirect(`/categorias/${idDepartamento}`);
 }

@@ -81,3 +81,29 @@ export async function removeUser(user: UserType) {
 
     redirect('/');
 }
+
+
+export async function getUsersByDepartamento(departamentoId: number): Promise<UserType[]> {
+    try {
+        // Valida o ID do departamento
+        if (!departamentoId || departamentoId <= 0) {
+            throw new Error("ID do departamento inválido.");
+        }
+
+        // Consulta os usuários associados ao departamento
+        const users = await db.execute<UserType>(
+            sql`
+                SELECT u.*
+                FROM next_auth.users AS u
+                JOIN chaves_estrangeiras.users_departamentos AS ud
+                ON u.id = ud.id_users
+                WHERE ud.id_departamentos = ${departamentoId}
+            `
+        );
+
+        return users;
+    } catch (error) {
+        console.error("Erro ao buscar usuários do departamento:", error);
+        return [];
+    }
+}
