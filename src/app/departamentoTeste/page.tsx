@@ -11,7 +11,7 @@ import { getUsers } from "../services/user";
 export default async function DepartamentosTeste() {
     const session = await auth();
 
-    console.log("Sessão recuperada:", session)
+
 
     if (!session?.user) redirect("/login")
 

@@ -94,7 +94,6 @@ export const {
                     const placeholderPassword = await bcrypt.hash('GoogleOAuthPassword', 10);
 
                     if (!existingUser) {
-                        console.log("Creating new Google user in the database...");
                         const result = await db.execute(sql`
                             INSERT INTO next_auth.users (nome, email, senha, google_id)
                             VALUES (${profile.name}, ${profile.email}, ${placeholderPassword}, ${googleId})
@@ -116,17 +115,14 @@ export const {
                 }
             }
 
-            console.log("Token after:", token);
             return token;
         },
 
         async session({ session, token }) {
-            console.log("Token in session:", token);
-
+           
             session.user.id = token.id as string;
             session.provider = token.provider as string;  // Armazena o provedor na sessão
 
-            console.log("Session data:", session);
             return session;
         },
     },

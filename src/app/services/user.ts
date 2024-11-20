@@ -24,13 +24,17 @@ export async function getUsers(): Promise<UserType[]> {
 
 export async function getUsersByEmail(email: string): Promise<UserType | null> {
     try {
-        const users = await db.execute<UserType>(sql`SELECT * FROM next_auth.users WHERE email = ${email}`); // Inclua o schema "next_auth"
-        return users.length > 0 ? users[0] : null;
+        const [user] = await db.execute<UserType>(
+            sql`SELECT * FROM next_auth.users WHERE email = ${email} LIMIT 1`
+        ); // Incluído LIMIT 1
+        return user || null; // Retorna o usuário ou null se não encontrado
     } catch (error) {
         console.error('Erro ao buscar usuário por email no banco:', error);
         return null;
     }
 }
+
+
 
 export async function saveUser(formData: FormData, googleId?: string) {
     const id = +(formData.get('id') as string) as number;
@@ -105,5 +109,33 @@ export async function getUsersByDepartamento(departamentoId: number): Promise<Us
     } catch (error) {
         console.error("Erro ao buscar usuários do departamento:", error);
         return [];
+    }
+}
+
+
+export async function getHostByDepartamento(departamentoId: number): Promise<UserType | null> {
+    try {
+        console.log("ID recebido na função getHostByDepartamento:", departamentoId);
+        if (!departamentoId || departamentoId <= 0) {
+            throw new Error("ID do departamento inválido.");
+        }
+
+        const [host] = await db.execute<UserType>(
+            sql`
+                SELECT u.*
+                FROM next_auth.users AS u
+                JOIN chaves_estrangeiras.users_departamentos AS ud
+                ON u.id = ud.id_users
+                WHERE ud.id_departamentos = ${departamentoId}
+                AND ud.is_host = TRUE
+            `
+        );
+
+        console.log("Host retornado:", host);
+
+        return host || null;
+    } catch (error) {
+        console.error("Erro ao buscar host do departamento:", error);
+        return null;
     }
 }

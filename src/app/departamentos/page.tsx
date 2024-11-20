@@ -13,7 +13,7 @@ export default async function Departamento() {
     
     const session = await auth();
 
-    console.log("Sessão recuperada:", session)
+   
 
     if (!session?.user) return (<>
      <h1>Ops... Algo não está certo, confira se já fez o seu login.</h1> 

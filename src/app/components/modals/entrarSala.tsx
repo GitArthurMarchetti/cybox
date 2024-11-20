@@ -12,7 +12,7 @@ const EnterDepartmentModal = ({ isOpen, onClose }: {
      const handleSubmit = async (e: React.FormEvent) => {
           e.preventDefault();
           // Add your logic here to handle the department code submission
-          console.log('Submitted code:', code);
+
           onClose();
      };
 

@@ -10,13 +10,15 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import router from 'next/router';
 import { IoNotificationsSharp } from 'react-icons/io5';
+import { UserType } from '@/lib/types/types';
 
 
 interface navProps {
     type: string
+    user: UserType
 }
 
-export default function Navbar({ type }: navProps) {
+export default function Navbar({ type, user }: navProps) {
 
     return (
         <>
@@ -92,8 +94,8 @@ export default function Navbar({ type }: navProps) {
                                     <IoNotificationsSharp className='text-2xl text-[#8C8888]' />
                                 </div>
                                 <div>
-                                    <p className='text-[#fff]'>Colocar nome do logado</p>
-                                    <p className='text-[#B4B4B4] text-sm'>email@gmail.com</p>
+                                    <p className='text-[#fff]'>{user.nome}</p>
+                                    <p className='text-[#B4B4B4] text-sm'>{user.email}</p>
                                 </div>
                                 <div className=' w-14 h-14 rounded-full text-black bg-white flex items-center justify-center text-xl'>A</div>
                             </div>

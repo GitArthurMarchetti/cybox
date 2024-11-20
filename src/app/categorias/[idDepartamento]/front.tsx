@@ -20,13 +20,14 @@ interface Category {
 }
 
 interface CategoriasProps {
-     departamento: DepartamentoType; // Define que a página recebe um DepartamentoType-
+     departamento: DepartamentoType;
      user: UserType;
-   }
+     host: UserType | null
+}
 
 
 
-export default function CategoriaFront({ departamento, user}: CategoriasProps ) {
+export default function CategoriaFront({ departamento, user, host }: CategoriasProps) {
      const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
 
      const categories: Category[] = [
@@ -47,7 +48,7 @@ export default function CategoriaFront({ departamento, user}: CategoriasProps ) 
 
      return (
           <>
-               <Navbar type='2' />
+               <Navbar type='2' user={user} />
                <div className="bg-[#0f0f0f] text-white  flex border-t-2 border-[#2c2c2c] h-[89vh]">
                     <aside className="w-1/6 bg-[#0f0f0f] p-4 flex flex-col px-5 border-r-2 border-[#2c2c2c] h-full">
                          <div className="w-11/12 mx-auto">
@@ -55,11 +56,13 @@ export default function CategoriaFront({ departamento, user}: CategoriasProps ) 
                                    <div className="flex flex-row items-center gap-2">
                                         <div className="bg-pink-500 w-16 h-16 rounded-full mb-2"></div>
                                         <div className="text-left ml-2">
-                                             <h2 className="text-lg">Eletrônicos</h2>
-                                             <p className="text-base text-[#8c8888]">Administrador: {user.email}</p>
+                                             <h2 className="text-lg">{departamento.titulo}</h2>
+                                             <p className="text-base text-[#8c8888]">
+                                                  Administrador: {host?.email === user.email ? "Você" : host?.email}
+                                             </p>
                                         </div>
                                    </div>
-                                   <p className="text-xs mt-1 w-full text-[#8c8888]">Departamento de gerenciamento de eletrônicos do Senai Floripa</p>
+                                   <p className="text-xs mt-1 w-full text-[#8c8888]">{departamento.descricao}</p>
                               </div>
                               <div className="flex flex-col gap-2 mt-8">
                                    <button className="font-bold flex items-center gap-2 justify-center bg-[#f6cf45] hover:bg-transparent hover:text-[#f6cf45] transition-all duration-300 hover:border-[#f6cf45] hover:border  text-black py-2 relative px-4 mb-2 rounded-full w-11/12 mx-auto"><FaPlus className="absolute left-6 text-2xl" /> Criar categoria</button>

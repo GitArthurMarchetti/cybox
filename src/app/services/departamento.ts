@@ -70,6 +70,7 @@ export async function getDepartamentosById(idDepartamento: string | number): Pro
 
 
 export async function saveDepartamento(formData: FormData, userId: string) {
+    // Coleta e valida os dados do formulário
     const id_departamentos = +(formData.get('id_departamentos') as string) as number;
     const titulo = formData.get('titulo') as string;
     const descricao = formData.get('descricao') as string || null;
@@ -77,12 +78,13 @@ export async function saveDepartamento(formData: FormData, userId: string) {
     const maximoMembros = Number(formData.get('maximoMembros')) || 10;
     const convite = formData.get('convite') as string || null;
     const localizacao = formData.get('localizacao') as string || null;
-    const fotoDepartamento = formData.get('fotoDepartamento') as string || null; // Carrega a foto
+    const fotoDepartamento = formData.get('fotoDepartamento') as string || null;
 
     if (!titulo) {
         throw new Error('É necessário adicionar um título ao seu departamento.');
     }
 
+    // Cria o objeto do departamento
     const departamento: DepartamentoType = {
         id_departamentos,
         titulo,
@@ -91,10 +93,11 @@ export async function saveDepartamento(formData: FormData, userId: string) {
         maximoMembros,
         convite,
         localizacao,
-        fotoDepartamento
+        fotoDepartamento,
     };
 
     if (!id_departamentos) {
+        // Criação de um novo departamento
         const [novoDepartamento] = await db.execute<DepartamentoType>(
             sql`INSERT INTO departamentos.departamentos (
                 "titulo",
@@ -116,18 +119,21 @@ export async function saveDepartamento(formData: FormData, userId: string) {
         );
 
         if (novoDepartamento?.id_departamentos) {
+            // Insere o criador do departamento na tabela de relacionamento como host
             await db.execute(
                 sql`INSERT INTO chaves_estrangeiras.users_departamentos (
                     id_users,
-                    id_departamentos
+                    id_departamentos,
+                    is_host
                 ) VALUES (
                     ${userId},  
-                    ${novoDepartamento.id_departamentos} 
+                    ${novoDepartamento.id_departamentos},
+                    TRUE -- Define como host
                 )`
             );
         }
-
     } else {
+        // Atualização de um departamento existente
         await db.execute(sql`UPDATE departamentos.departamentos SET
             "titulo" = ${departamento.titulo},
             "descricao" = ${departamento.descricao},
@@ -137,10 +143,19 @@ export async function saveDepartamento(formData: FormData, userId: string) {
             "localizacao" = ${departamento.localizacao},
             "fotoDepartamento" = ${departamento.fotoDepartamento}
             WHERE "id_departamentos" = ${departamento.id_departamentos}`);
+
+        // Atualização do criador como host (garantia de consistência)
+        await db.execute(
+            sql`UPDATE chaves_estrangeiras.users_departamentos
+                SET is_host = TRUE
+                WHERE id_departamentos = ${id_departamentos}
+                AND id_users = ${userId}`
+        );
     }
 
     redirect("/departamentos");
 }
+
 
 
 export async function removeDepartamento(departamento: DepartamentoType) {
