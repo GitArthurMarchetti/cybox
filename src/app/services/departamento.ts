@@ -177,3 +177,22 @@ export async function irParaEndereco(idDepartamento: number | null | string) {
     // Converte o ID para string, se necessário, e redireciona
     redirect(`/categorias/${idDepartamento}`);
 }
+
+
+export async function verificarAcessoDepartamento(userId: string | number | null, departamentoId: number): Promise<boolean> {
+    try {
+        const [acesso] = await db.execute(
+            sql`
+                SELECT 1
+                FROM chaves_estrangeiras.users_departamentos
+                WHERE id_users = ${userId}
+                AND id_departamentos = ${departamentoId}
+            `
+        );
+
+        return !!acesso; // Retorna true se o registro existir, false caso contrário
+    } catch (error) {
+        console.error("Erro ao verificar acesso ao departamento:", error);
+        return false;
+    }
+}

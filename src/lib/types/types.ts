@@ -21,6 +21,13 @@ export type UserType = {
     };
 
 
+
+
 export type ConviteType = {
-    id_convite: number | null | string,
-}
+    id: number; 
+    id_departamentos: number;
+    id_remetente: string; 
+    id_destinatario: string; 
+    status: "pendente" | "aceito" | "recusado"; 
+    criado_em: string;
+};
