@@ -80,7 +80,7 @@ export default function FrontHome() {
 
         <section id="Sobre" className="flex w-5/6 mx-auto justify-around pt-32">
           <div className="flex flex-col w-1/2  justify-center gap-10">
-            <h2 className="text-3xl font-semibold">Sobre nós</h2>
+            <h2 className="text-3xl font-semibold scroll-mt-40" id="about">Sobre nós</h2>
             <p className="text-md 2xl:text-xl">
               Somos a Cybox, uma iniciativa inovadora criada por estudantes do curso técnico de Desenvolvimento de Sistemas do SENAI de Florianópolis. Somos uma equipe de programadores e designers que se uniu para desenvolver um sistema integrado de gerenciamento de patrimônios. Nossa proposta é facilitar o controle, rastreamento e gestão de ativos, oferecendo uma plataforma que melhora a eficiência e precisão no acompanhamento da vida útil dos bens, cálculos de depreciação e análise de custos associados. Combinamos criatividade e dedicação para transformar a gestão de ativos empresariais e ajudar nossos clientes a otimizar suas operações.
             </p>

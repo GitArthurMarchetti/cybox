@@ -16,6 +16,7 @@ body {
 
 }
 
+
 .inter {
   font-family: "Inter", sans-serif;
   font-optical-sizing: auto;
@@ -76,4 +77,85 @@ body {
 
 ::-webkit-scrollbar-track {
   background-color: transparent;
+}
+
+/* Adicione estes estilos ao seu arquivo globals.css */
+
+/* Scrollbar personalizada */
+.hide-scrollbar::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.hide-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.hide-scrollbar::-webkit-scrollbar-thumb {
+  background: #3D3D3D;
+  border-radius: 6px;
+}
+
+.hide-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #F6CF45;
+}
+
+/* Efeitos de transição comuns */
+.transition-all {
+  transition-property: all;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 300ms;
+}
+
+/* Animações de entrada de página */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+/* Classe para elementos de foco */
+.focus-ring:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(246, 207, 69, 0.5);
+}
+
+/* Efeito de gradiente sutil para backgrounds */
+.gradient-bg {
+  background: linear-gradient(135deg, #121212 0%, #1F1F1F 100%);
+}
+
+/* Efeito de brilho para cards em hover */
+.hover-glow:hover {
+  box-shadow: 0 0 15px 1px rgba(246, 207, 69, 0.3);
+}
+
+/* Correção para melhorar a renderização de fontes */
+* {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Melhorias para elementos focáveis */
+button, a, input, select, textarea {
+  transition: all 0.2s ease;
+}
+
+button:focus, a:focus, input:focus, select:focus, textarea:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(246, 207, 69, 0.5);
 }

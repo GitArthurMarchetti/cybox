@@ -3,38 +3,32 @@
 import { signIn, signOut } from "@/auth"
 
 export async function doSocialLogin(formData: FormData) {
-
-    const action = formData.get('action') as string;
-    await signIn(action, { redirectTo: "/departamentos" })
-
+  const action = formData.get('action') as string;
+  await signIn(action, { redirectTo: "/departamentos" })
 }
 
-
 export async function DoLogout() {
-
-    await signOut({redirectTo: "/"})
-
-
+  await signOut({ redirectTo: "/" })
 }
 
 export async function DoCredentialsLogin(formData: FormData) {
-    try {
-      const email = formData.get('email') as string;
-      const password = formData.get('password') as string;
-  
-      if (!email || !password) {
-        throw new Error('Por favor, preencha todos os campos');
-      }
-  
-     
-      const response = await signIn("credentials", {
-        email,
-        password,
-        redirect: false, 
-      });
-  
-      return response; 
-    } catch (err) {
-      console.log(err)
+  try {
+    const email = formData.get('email') as string;
+    const password = formData.get('password') as string;
+
+    if (!email || !password) {
+      throw new Error('Por favor, preencha todos os campos');
     }
+
+    const response = await signIn("credentials", {
+      email,
+      password,
+      redirect: false,
+    });
+
+    return response;
+  } catch (err) {
+    console.error('Erro ao fazer login:', err);
+    return { error: 'Erro ao fazer login' };
   }
+}
