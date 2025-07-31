@@ -7,7 +7,12 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "seed": "node src/script/seed.js"
+    "seed": "node src/script/seed.js",
+    "seed:improved": "node src/script/seed-improved.js",
+    "db:show-tables": "node scripts/show-tables.js",
+    "db:table": "node scripts/table.js",
+    "db:migrate": "node scripts/migrate-database.js",
+    "db:reset": "node scripts/reset-database.js"
   },
   "dependencies": {
     "@auth/core": "^0.37.0",

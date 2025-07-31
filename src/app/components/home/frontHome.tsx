@@ -7,6 +7,8 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip"
+import ajuda from "../../../../public/ajuda.png"
+
 
 //icons
 import { FaCalculator, FaChevronUp } from "react-icons/fa6";
@@ -15,7 +17,11 @@ import { MdOutlineAttachMoney } from "react-icons/md";
 import { RiBarChartFill } from "react-icons/ri";
 import { FaArrowTrendUp } from "react-icons/fa6";
 import { IoExtensionPuzzle } from "react-icons/io5";
+import { FaLinkedin, FaInstagram, FaFacebook, FaTwitter } from "react-icons/fa";
+import { MdEmail, MdPhone, MdLocationOn } from "react-icons/md";
 import { useRouter } from "next/navigation";
+import { PlansCard } from "./PlansCard";
+import { HomeFooter } from "./HomeFooter";
 
 export default function FrontHome() {
   return (
@@ -78,46 +84,60 @@ export default function FrontHome() {
           </div>
         </section>
 
-        <section id="Sobre" className="flex w-5/6 mx-auto justify-around pt-32">
-          <div className="flex flex-col w-1/2  justify-center gap-10">
-            <h2 className="text-3xl font-semibold scroll-mt-40" id="about">Sobre nós</h2>
-            <p className="text-md 2xl:text-xl">
-              Somos a Cybox, uma iniciativa inovadora criada por estudantes do curso técnico de Desenvolvimento de Sistemas do SENAI de Florianópolis. Somos uma equipe de programadores e designers que se uniu para desenvolver um sistema integrado de gerenciamento de patrimônios. Nossa proposta é facilitar o controle, rastreamento e gestão de ativos, oferecendo uma plataforma que melhora a eficiência e precisão no acompanhamento da vida útil dos bens, cálculos de depreciação e análise de custos associados. Combinamos criatividade e dedicação para transformar a gestão de ativos empresariais e ajudar nossos clientes a otimizar suas operações.
-            </p>
-          </div>
-          <div>
-            <Image className="w-[300px]" src={"/sobrenos.png"} alt="Sobre nós" width={300} height={300} />
+        <section className="pt-32  text-white">
+          <h2 className="text-3xl font-semibold w-9/12 m-auto text-center">Como podemos te ajudar?</h2>
+          <div className="flex w-4/5 mx-auto justify-center items-center">
+            <div className="w-1/2"><Image src={ajuda} alt="" width={800} /></div>
+            <div className="flex flex-col ju w-1/2 gap-6">
+              <div className="flex flex-col gap-2">
+                <h3 className="text-2xl font-semibold">Análise detalhada</h3>
+                <p className="text-sm w-4/5">Avaliamos todos os custos associados ao ciclo de vida dos seus ativos, desde a aquisição até a manutenção e descarte.</p>
+              </div>
+              <div className="flex flex-col gap-2">
+                <h3 className="text-2xl font-semibold">Identificação de Oportunidades</h3>
+                <p className="text-sm w-4/5">Através do LCC (Life Cycle Cost), identificamos áreas onde é possível reduzir custos e aumentar a eficiência operacional.</p>
+              </div>
+              <div className="flex flex-col gap-2">
+                <h3 className="text-2xl font-semibold">Tomada de Decisão Informada</h3>
+                <p className="text-sm w-4/5">Fornecemos dados claros para que você possa tomar decisões embasadas e estratégicas, otimizando seu retorno sobre investimento.</p>
+              </div>
+              <div className="flex flex-col gap-2">
+                <h3 className="text-2xl font-semibold">Sustentabilidade e Conformidade</h3>
+                <p className="text-sm w-4/5">Ajudamos a garantir que suas decisões estejam alinhadas com padrões de sustentabilidade e regulamentações.</p>
+              </div>
+            </div>
           </div>
         </section>
 
-        {/* Row Reverse  */}
-        <section className="flex w-5/6 mx-auto flex-row-reverse justify-around pt-10">
-          <div className="flex flex-col w-1/2  justify-center gap-10">
-            <h2 className="text-3xl font-semibold text-right">Missão</h2>
-            <p className=" text-right text-md 2xl:text-xl">
-              Em um cenário empresarial cada vez mais dinâmico e competitivo, entendemos a importância de uma gestão de patrimônios eficaz. Por isso, nossa missão é desenvolver um sistema integrado de gerenciamento de patrimônios que não apenas controle e rastreie ativos, mas que também ofereça uma visão abrangente sobre depreciação e custos. Queremos garantir que nosso  cliente possam gerenciar seus bens com precisão, otimizar a alocação de recursos e tomar decisões estratégicas bem-informadas.
-            </p>
-          </div>
-          <div>
-            <Image className="w-[300px]" src={"/missao.png"} alt="Missão" width={300} height={300} />
+        <section className="pt-24 text-white mb-10">
+          <h2 className="text-3xl font-semibold w-9/12 m-auto text-center mb-12">Nossos planos</h2>
+          <div className="flex w-4/5 mx-auto justify-center items-center gap-16">
+            <PlansCard
+              name={"Básico"}
+              description={"Perfeito para pequenas empresas, que querem inovar com a Cybox"}
+              price={350}
+              colorButton={"#B4B4B4"}
+              advantages={["Limites de 2 departamentos", "Quatro colaboradores por departamento"]} />
+            <PlansCard
+              name={"Empresarial"}
+              description={"Perfeito para grandes empresas, com um estoque grande"}
+              price={5000} colorButton={"#F6CF45"}
+              advantages={["Departamentos ilimitados", "Quinze colaboradores por departamento"]} />
+            <PlansCard
+              name={"Intermediário"}
+              description={"Perfeito para médias empresas, com um estoque intermediário"}
+              price={850}
+              colorButton={"#B4B4B4"}
+              advantages={["Limite de 8 departamentos", "Oito colaboradores por departamento"]} />
           </div>
         </section>
 
-        <section className="flex w-5/6 mx-auto justify-around pt-10 pb-40">
-          <div className="flex flex-col w-1/2  justify-center gap-10">
-            <h2 className="text-3xl font-semibold">Visão</h2>
-            <p className="text-md 2xl:text-xl">
-              Almejamos ser líderes em gerenciamento de patrimônios, ajudando nossos clientes a otimizar operações, reduzir custos e tomar decisões mais estratégicas. Nossa meta é capacitar empresas de todos os tamanhos com ferramentas que promovam eficiência e controle estratégico dos recursos, contribuindo para seu crescimento e sucesso sustentável.
-            </p>
-          </div>
-          <div>
-            <Image className="w-[300px]" src={"/visao.png"} alt="Visão" width={300} height={300} />
-          </div>
-        </section>
+
+
       </main >
-      <footer id="Contato" className="w-full bg-[#2E2E2E] h-60 rounded-t-[120px]">
 
-      </footer>
+      <HomeFooter />
+
       <div className="fixed bottom-5 right-5  p-2 text-[#F6CF45]">
 
         <TooltipProvider delayDuration={50}>

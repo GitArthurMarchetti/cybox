@@ -29,7 +29,7 @@ export function ButtonEditarSala() {
       onClick={() => alert("editado")}
       className="border-[#f6cf45]  border-solid border-2 flex rounded-[61px] text-[#f6cf45] w-44 h-9 text-center justify-evenly items-center">
       <ButtonComponent.Icon icon={RiPencilFill} />
-      <ButtonComponent.Content text="Editar sala" className="text-xs" />
+      <ButtonComponent.Content text="Editar departamento" className="text-xs" />
     </ButtonComponent.Root>
   );
 }

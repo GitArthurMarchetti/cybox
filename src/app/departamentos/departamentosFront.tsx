@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { MdDashboard } from "react-icons/md";
 import { IoMdNotifications, IoMdSearch } from "react-icons/io";
@@ -13,9 +14,12 @@ import { CardDepartamento } from "../components/cardDepartamentos";
 import { ListDepartamentos } from "../components/listDepartamentos";
 import { SideBar } from "../components/Navigation/sideBar";
 import { DepartamentoType, UserType } from "@/lib/types/types";
-import { saveDepartamento } from "../services/departamento";
+import { removeDepartamento } from "../services/departamento";
 import ButtonCriarSala from "../components/Button/buttonCriarSala";
 import EnterDepartmentModal from "../components/modals/entrarSala";
+import { CompartilharModal, MembrosModal, ConfiguracoesDepartamentoModal } from "../components/modals";
+import { getMembrosPerDepartamento } from "../services/membros";
+import { toast } from "sonner";
 
 type Props = {
     departamentos: DepartamentoType[];
@@ -26,13 +30,20 @@ type Props = {
 };
 
 export default function DepartamentosFront({ departamentos, departamento, userId, userName, userEmail }: Props) {
+    const router = useRouter();
     const [isEnterModalOpen, setIsEnterModalOpen] = useState(false);
+    const [isShareModalOpen, setIsShareModalOpen] = useState(false);
+    const [isMembersModalOpen, setIsMembersModalOpen] = useState(false);
+    const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
+    const [selectedDepartamento, setSelectedDepartamento] = useState<DepartamentoType | null>(null);
+    const [departamentoMembros, setDepartamentoMembros] = useState<any[]>([]);
     const [buscaDepartamento, setBuscaDepartamento] = useState("");
     const [isSearchFocused, setIsSearchFocused] = useState(false);
     const [isLoaded, setIsLoaded] = useState(false);
+    const [departamentosLocal, setDepartamentosLocal] = useState<DepartamentoType[]>(departamentos);
 
     // Lista filtrada de departamentos
-    const filteredDepartamentos = departamentos.filter((d) =>
+    const filteredDepartamentos = departamentosLocal.filter((d) =>
         d.titulo.toLowerCase().includes(buscaDepartamento.toLowerCase())
     );
 
@@ -40,6 +51,11 @@ export default function DepartamentosFront({ departamentos, departamento, userId
     useEffect(() => {
         setIsLoaded(true);
     }, []);
+
+    // Sincronizar departamentos locais com a prop
+    useEffect(() => {
+        setDepartamentosLocal(departamentos);
+    }, [departamentos]);
 
     // Variantes de animação para os elementos
     const containerVariants = {
@@ -63,11 +79,115 @@ export default function DepartamentosFront({ departamentos, departamento, userId
         }
     };
 
+    const handleShareDepartamento = (dept: DepartamentoType) => {
+        setSelectedDepartamento(dept);
+        setIsShareModalOpen(true);
+    };
+
+    const handleViewMembers = (dept: DepartamentoType) => {
+        setSelectedDepartamento(dept);
+        setIsMembersModalOpen(true);
+    };
+
+    const handleSettings = async (dept: DepartamentoType) => {
+        // Verificar se o usuário tem permissão (owner ou admin)
+        const userRole = dept.role || 'member';
+        if (userRole === 'member') {
+            // Membros só podem visualizar
+            return;
+        }
+
+        setSelectedDepartamento(dept);
+        setIsSettingsModalOpen(true);
+
+        // Carregar membros do departamento
+        if (dept.id_departamentos) {
+            try {
+                const membros = await getMembrosPerDepartamento(dept.id_departamentos);
+                setDepartamentoMembros(membros);
+            } catch (error) {
+                console.error('Erro ao carregar membros:', error);
+                setDepartamentoMembros([]);
+            }
+        }
+    };
+
+    const handleDeleteDepartamento = async () => {
+        if (selectedDepartamento) {
+            try {
+                await removeDepartamento(selectedDepartamento);
+                toast.success('Departamento excluído com sucesso!');
+                
+                // Remover o departamento do array local
+                setDepartamentosLocal(prev => 
+                    prev.filter(d => d.id_departamentos !== selectedDepartamento.id_departamentos)
+                );
+                
+                // Fechar modais e limpar seleção
+                setIsSettingsModalOpen(false);
+                setSelectedDepartamento(null);
+                setDepartamentoMembros([]);
+            } catch (error) {
+                toast.error('Erro ao excluir departamento');
+                console.error('Erro ao excluir departamento:', error);
+                setIsSettingsModalOpen(false);
+                setSelectedDepartamento(null);
+            }
+        }
+    };
+
     return (
         <div className="bg-[#0F0F0F] h-screen flex overflow-hidden">
             <EnterDepartmentModal
                 isOpen={isEnterModalOpen}
                 onClose={() => setIsEnterModalOpen(false)}
+            />
+
+            <CompartilharModal
+                isOpen={isShareModalOpen}
+                onClose={() => {
+                    setIsShareModalOpen(false);
+                    setSelectedDepartamento(null);
+                }}
+                departamento={selectedDepartamento}
+            />
+
+            <MembrosModal
+                isOpen={isMembersModalOpen}
+                onClose={() => {
+                    setIsMembersModalOpen(false);
+                    setSelectedDepartamento(null);
+                }}
+                departamento={selectedDepartamento}
+            />
+
+            <ConfiguracoesDepartamentoModal
+                isOpen={isSettingsModalOpen}
+                onClose={() => {
+                    setIsSettingsModalOpen(false);
+                    setSelectedDepartamento(null);
+                    setDepartamentoMembros([]);
+                }}
+                departamento={selectedDepartamento}
+                membros={departamentoMembros}
+                isAdmin={selectedDepartamento?.role === 'owner' || selectedDepartamento?.role === 'admin'}
+                isOwner={selectedDepartamento?.role === 'owner'}
+                onDelete={handleDeleteDepartamento}
+                onSuccess={(departamentoAtualizado: DepartamentoType) => {
+                    // Atualizar o departamento no array local
+                    setDepartamentosLocal(prev => 
+                        prev.map(d => 
+                            d.id_departamentos === departamentoAtualizado.id_departamentos 
+                                ? { ...d, ...departamentoAtualizado }
+                                : d
+                        )
+                    );
+                    
+                    // Fechar modal e limpar seleção
+                    setIsSettingsModalOpen(false);
+                    setSelectedDepartamento(null);
+                    setDepartamentoMembros([]);
+                }}
             />
 
             {/* Sidebar */}
@@ -96,7 +216,7 @@ export default function DepartamentosFront({ departamentos, departamento, userId
                             whileHover={{ scale: 1.03 }}
                             whileTap={{ scale: 0.97 }}
                         >
-                            <TbLogin2 className="text-xl" /> Entrar em sala
+                            <TbLogin2 className="text-xl" /> Entrar no departamento
                         </motion.button>
                         <ButtonCriarSala userId={userId} departamento={departamento} />
                     </div>
@@ -112,7 +232,7 @@ export default function DepartamentosFront({ departamentos, departamento, userId
                     >
                         <input
                             type="text"
-                            placeholder="Pesquise por sua sala"
+                            placeholder="Pesquise por seu departamento"
                             className="flex-grow p-3 bg-[#2C2C2C] text-white rounded-lg outline-none placeholder:text-[#8C8888]"
                             value={buscaDepartamento}
                             onChange={(e) => setBuscaDepartamento(e.target.value)}
@@ -132,6 +252,7 @@ export default function DepartamentosFront({ departamentos, departamento, userId
 
                 {/* Lista de departamentos */}
                 <div className="overflow-y-auto h-[73vh] pr-4 hide-scrollbar">
+
                     {filteredDepartamentos.length > 0 ? (
                         <motion.div
                             className="grid grid-cols-1 md:grid-cols-2 gap-6"
@@ -150,11 +271,14 @@ export default function DepartamentosFront({ departamentos, departamento, userId
                                         id_departamento={d.id_departamentos}
                                         titulo={d.titulo}
                                         desc={d.descricao}
-                                        cargo={''}
-                                        NParticipantes={d.totalMembros}
-                                        maximoParticipante={d.maximoMembros}
-                                        fotoDepartamento=""
+                                        cargo={d.role || 'member'}
+                                        NParticipantes={d.num_participantes || 0}
+                                        maximoParticipante={50}
+                                        fotoDepartamento={d.fotoDepartamento || ""}
                                         userId={userId}
+                                        onShare={handleShareDepartamento}
+                                        onViewMembers={handleViewMembers}
+                                        onSettings={handleSettings}
                                     />
                                 </motion.div>
                             ))}
@@ -165,7 +289,7 @@ export default function DepartamentosFront({ departamentos, departamento, userId
                             variants={itemVariants}
                         >
                             <div className="bg-[#2C2C2C] p-8 rounded-xl mb-4 w-16 h-16 flex items-center justify-center">
-                                <MdDashboard className="text-[#F6CF45] text-3xl" />
+                                <MdDashboard color="#F6CF45" />
                             </div>
                             <h3 className="text-xl text-white font-semibold mb-2">Nenhum departamento encontrado</h3>
                             <p className="text-[#8C8888] max-w-md">
@@ -191,8 +315,9 @@ export default function DepartamentosFront({ departamentos, departamento, userId
                 animate={{ x: 0, opacity: 1 }}
                 transition={{ duration: 0.5, delay: 0.3 }}
             >
+
                 <div className="flex items-center justify-between mb-6">
-                    <h2 className="text-lg font-bold">Lista de salas</h2>
+                    <h2 className="text-lg font-bold">Lista de departamento</h2>
                     <motion.div
                         whileHover={{ rotate: 90 }}
                         transition={{ duration: 0.2 }}
@@ -203,8 +328,8 @@ export default function DepartamentosFront({ departamentos, departamento, userId
                 </div>
 
                 <div className="space-y-4">
-                    {departamentos.length > 0 ? (
-                        departamentos.map((d, index) => (
+                    {departamentosLocal.length > 0 ? (
+                        departamentosLocal.map((d, index) => (
                             <motion.div
                                 key={d.id_departamentos}
                                 initial={{ x: 20, opacity: 0 }}
@@ -214,12 +339,13 @@ export default function DepartamentosFront({ departamentos, departamento, userId
                                 <ListDepartamentos
                                     titulo={d.titulo}
                                     data={d.created_at ?? ""}
+                                    onClick={() => router.push(`/departamentos/${d.id_departamentos}`)}
                                 />
                             </motion.div>
                         ))
                     ) : (
                         <div className="text-center py-6 text-[#8C8888]">
-                            Nenhuma sala disponível
+                            Nenhum departamento disponível
                         </div>
                     )}
                 </div>

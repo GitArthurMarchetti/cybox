@@ -2,10 +2,12 @@
 
 import Image from "next/image";
 import { DepartamentoType } from "@/lib/types/types";
-import { FaGear, FaEye, FaUsers, FaBuilding } from "react-icons/fa6";
+import { FaGear, FaUsers, FaBuilding, FaShare } from "react-icons/fa6";
+import { BsThreeDotsVertical } from "react-icons/bs";
 import { irParaEndereco } from "../services/departamento";
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
+import { traduzirRole } from "@/lib/utils/roleUtils";
 
 interface CardDepartamentoProps {
      departamento: DepartamentoType;
@@ -16,7 +18,10 @@ interface CardDepartamentoProps {
      desc?: string | null;
      maximoParticipante: number;
      NParticipantes: number;
-     userId: string
+     userId: string;
+     onShare?: (departamento: DepartamentoType) => void;
+     onViewMembers?: (departamento: DepartamentoType) => void;
+     onSettings?: (departamento: DepartamentoType) => void;
 }
 
 export function CardDepartamento({
@@ -28,9 +33,31 @@ export function CardDepartamento({
      desc,
      NParticipantes,
      maximoParticipante,
-     userId
+     userId,
+     onShare,
+     onViewMembers,
+     onSettings
 }: CardDepartamentoProps) {
      const [isHovered, setIsHovered] = useState(false);
+     const [isMenuOpen, setIsMenuOpen] = useState(false);
+     const menuRef = useRef<HTMLDivElement>(null);
+
+     // Fechar menu quando clicar fora
+     useEffect(() => {
+          const handleClickOutside = (event: MouseEvent) => {
+               if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+                    setIsMenuOpen(false);
+               }
+          };
+
+          if (isMenuOpen) {
+               document.addEventListener('mousedown', handleClickOutside);
+          }
+
+          return () => {
+               document.removeEventListener('mousedown', handleClickOutside);
+          };
+     }, [isMenuOpen]);
 
      // Calcular percentual de ocupação
      const ocupacaoPercentual = Math.round((NParticipantes / maximoParticipante) * 100);
@@ -45,11 +72,11 @@ export function CardDepartamento({
      // Simular participantes para demonstração
      // Em produção, isso viria do backend
      const participantes = [
-          { id: 1, nome: "Ana Silva", cargo: "Admin" },
-          { id: 2, nome: "Bruno Costa", cargo: "Editor" },
+          { id: 1, nome: "Ana Silva", cargo: "Proprietário" },
+          { id: 2, nome: "Bruno Costa", cargo: "Administrador" },
           { id: 3, nome: "Carla Mendes", cargo: "Membro" },
           { id: 4, nome: "Daniel Oliveira", cargo: "Membro" },
-          { id: 5, nome: "Elisa Santos", cargo: "Visitante" }
+          { id: 5, nome: "Elisa Santos", cargo: "Membro" }
      ].slice(0, NParticipantes);
 
      // Gerar cores aleatórias para os avatares (apenas para demonstração)
@@ -108,15 +135,72 @@ export function CardDepartamento({
 
                     <div className="flex items-center space-x-1">
                          <span className="text-xs text-[#B4B4B4] bg-[#3D3D3D] px-2 py-1 rounded-full">
-                              {cargo}
+                              {traduzirRole(cargo)}
                          </span>
-                         <motion.button
-                              className="p-2 text-[#B4B4B4] hover:text-[#F6CF45] transition-colors duration-300 rounded-full hover:bg-[#3D3D3D]"
-                              whileHover={{ rotate: 45 }}
-                              transition={{ duration: 0.2 }}
-                         >
-                              <FaGear size={16} />
-                         </motion.button>
+                         <div className="relative" ref={menuRef}>
+                              <motion.button
+                                   className="p-2 text-[#B4B4B4] hover:text-[#F6CF45] transition-colors duration-300 rounded-full hover:bg-[#3D3D3D]"
+                                   whileHover={{ scale: 1.1 }}
+                                   transition={{ duration: 0.2 }}
+                                   onClick={(e) => {
+                                        e.stopPropagation();
+                                        setIsMenuOpen(!isMenuOpen);
+                                   }}
+                                   title="Opções"
+                              >
+                                   <BsThreeDotsVertical size={16} />
+                              </motion.button>
+
+                              {/* Dropdown Menu */}
+                              {isMenuOpen && (
+                                   <motion.div
+                                        initial={{ opacity: 0, scale: 0.95, y: -10 }}
+                                        animate={{ opacity: 1, scale: 1, y: 0 }}
+                                        exit={{ opacity: 0, scale: 0.95, y: -10 }}
+                                        transition={{ duration: 0.15 }}
+                                        className="absolute right-0 top-full mt-2 w-48 bg-[#2C2C2C] border border-[#3D3D3D] rounded-lg shadow-xl z-50"
+                                        onClick={(e) => e.stopPropagation()}
+                                   >
+                                        <div className="py-1">
+                                             {onShare && (cargo === 'owner' || cargo === 'admin') && (
+                                                  <motion.button
+                                                       className="w-full px-4 py-2 text-left text-sm text-[#B4B4B4] hover:text-white hover:bg-[#3D3D3D] transition-colors duration-200 flex items-center gap-3"
+                                                       onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            onShare(departamento);
+                                                            setIsMenuOpen(false);
+                                                       }}
+                                                       whileHover={{ x: 2 }}
+                                                  >
+                                                       <FaShare size={14} />
+                                                       Compartilhar
+                                                  </motion.button>
+                                             )}
+                                             {(cargo === 'owner' || cargo === 'admin') && (
+                                                  <motion.button
+                                                       className="w-full px-4 py-2 text-left text-sm text-[#B4B4B4] hover:text-white hover:bg-[#3D3D3D] transition-colors duration-200 flex items-center gap-3"
+                                                       onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            setIsMenuOpen(false);
+                                                            if (onSettings) {
+                                                                 onSettings(departamento);
+                                                            }
+                                                       }}
+                                                       whileHover={{ x: 2 }}
+                                                  >
+                                                       <FaGear size={14} />
+                                                       Configurações
+                                                  </motion.button>
+                                             )}
+                                             {cargo === 'member' && (
+                                                  <div className="px-4 py-2 text-center text-sm text-[#8c8888]">
+                                                       Apenas visualização
+                                                  </div>
+                                             )}
+                                        </div>
+                                   </motion.div>
+                              )}
+                         </div>
                     </div>
                </div>
 
@@ -160,9 +244,16 @@ export function CardDepartamento({
                               className="flex items-center gap-2 text-[#F6CF45] text-sm px-3 py-1.5 rounded-full hover:bg-[#F6CF45]/10 transition-colors duration-300"
                               whileHover={{ scale: 1.05 }}
                               whileTap={{ scale: 0.95 }}
+                              title="Ver membros do departamento"
+                              onClick={(e) => {
+                                   e.stopPropagation();
+                                   if (onViewMembers) {
+                                        onViewMembers(departamento);
+                                   }
+                              }}
                          >
-                              <FaEye size={14} />
-                              <span>Visualizar</span>
+                              <FaUsers size={14} />
+                              <span>Membros</span>
                          </motion.button>
                     </div>
                </div>

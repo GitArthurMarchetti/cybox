@@ -16,7 +16,7 @@ export async function getPatrimoniosByCategoria(categoriaId: number): Promise<Pa
                 DATE_FORMAT(p.data_aquisicao, '%Y-%m-%d') as data_aquisicao,
                 DATE_FORMAT(p.created_at, '%Y-%m-%d') as created_at
             FROM patrimonios AS p
-            WHERE p.id_categoria = ?
+            WHERE p.id_categoria = ? AND p.status != 'deletado'
             ORDER BY p.nome ASC
         `, [categoriaId]);
 
@@ -39,7 +39,7 @@ export async function getPatrimonioById(patrimonioId: number): Promise<Patrimoni
                 DATE_FORMAT(p.data_aquisicao, '%Y-%m-%d') as data_aquisicao,
                 DATE_FORMAT(p.created_at, '%Y-%m-%d') as created_at
             FROM patrimonios AS p
-            WHERE p.id = ?
+            WHERE p.id = ? AND p.status != 'deletado'
         `, [patrimonioId]);
 
           const patrimonioArray = patrimonios as PatrimonioType[];
@@ -53,9 +53,18 @@ export async function getPatrimonioById(patrimonioId: number): Promise<Patrimoni
 export async function savePatrimonio(formData: FormData) {
      try {
           const id = +(formData.get('id') as string) || null;
-          const id_categoria = +(formData.get('id_categoria') as string);
+          const id_categoria_str = formData.get('id_categoria') as string;
+          const id_categoria = id_categoria_str ? +id_categoria_str : null;
+          
+          console.log('DEBUG savePatrimonio:', {
+               id_categoria_str,
+               id_categoria,
+               formDataKeys: Array.from(formData.keys())
+          });
           const nome = formData.get('nome') as string;
           const descricao = formData.get('descricao') as string || null;
+          const codigo_patrimonio = formData.get('codigo') as string || null;
+          const localizacao = formData.get('localizacao') as string || null;
           const valor_inicial = +(formData.get('valor_inicial') as string);
           const valor_atual = +(formData.get('valor_atual') as string);
           const data_aquisicao = formData.get('data_aquisicao') as string;
@@ -87,40 +96,40 @@ export async function savePatrimonio(formData: FormData) {
                 INSERT INTO patrimonios (
                     id_categoria, 
                     nome, 
-                    descricao, 
+                    descricao,
+                    codigo_patrimonio,
+                    localizacao,
                     valor_inicial, 
                     valor_atual, 
                     data_aquisicao, 
-                    tempo_depreciacao
+                    tempo_depreciacao,
+                    status
                 )
-                VALUES (?, ?, ?, ?, ?, ?, ?)
-            `, [id_categoria, nome, descricao, valor_inicial, valor_atual, data_aquisicao, tempo_depreciacao]);
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'ativo')
+            `, [id_categoria, nome, descricao, codigo_patrimonio, localizacao, valor_inicial, valor_atual, data_aquisicao, tempo_depreciacao]);
           } else {
                // Atualização de um patrimônio existente
                await query(`
                 UPDATE patrimonios SET
                     nome = ?,
                     descricao = ?,
+                    codigo_patrimonio = ?,
+                    localizacao = ?,
                     valor_inicial = ?,
                     valor_atual = ?,
                     data_aquisicao = ?,
-                    tempo_depreciacao = ?
-                WHERE id = ?
-            `, [nome, descricao, valor_inicial, valor_atual, data_aquisicao, tempo_depreciacao, id]);
+                    tempo_depreciacao = ?,
+                    updated_at = CURRENT_TIMESTAMP
+                WHERE id = ? AND status != 'deletado'
+            `, [nome, descricao, codigo_patrimonio, localizacao, valor_inicial, valor_atual, data_aquisicao, tempo_depreciacao, id]);
           }
 
           // Recuperando o departamentoId da categoria para redirecionamento
           const categorias = await query(`
-            SELECT id_departamento FROM categorias WHERE id = ?
+            SELECT id_departamento FROM categorias WHERE id = ? AND status != 'deletado'
         `, [id_categoria]);
 
           const categoriaArray = categorias as any[];
-          if (categoriaArray.length > 0) {
-               const departamentoId = categoriaArray[0].id_departamento;
-               redirect(`/categorias/${departamentoId}?categoria=${id_categoria}`);
-          } else {
-               throw new Error("Categoria não encontrada.");
-          }
      } catch (error) {
           console.error("Erro ao salvar patrimônio:", error);
           throw error;
@@ -135,18 +144,17 @@ export async function removePatrimonio(patrimonioId: number, categoriaId: number
 
           // Recuperando o departamentoId da categoria para redirecionamento
           const categorias = await query(`
-            SELECT id_departamento FROM categorias WHERE id = ?
+            SELECT id_departamento FROM categorias WHERE id = ? AND status != 'deletado'
         `, [categoriaId]);
 
-          await query('DELETE FROM patrimonios WHERE id = ?', [patrimonioId]);
+          // Soft delete - marcar como deletado ao invés de remover
+          await query(`
+            UPDATE patrimonios 
+            SET status = 'deletado', updated_at = CURRENT_TIMESTAMP 
+            WHERE id = ?
+          `, [patrimonioId]);
 
           const categoriaArray = categorias as any[];
-          if (categoriaArray.length > 0) {
-               const departamentoId = categoriaArray[0].id_departamento;
-               redirect(`/categorias/${departamentoId}?categoria=${categoriaId}`);
-          } else {
-               throw new Error("Categoria não encontrada.");
-          }
      } catch (error) {
           console.error("Erro ao remover patrimônio:", error);
           throw error;
@@ -198,8 +206,8 @@ export async function calcularDepreciacao(patrimonioId: number) {
           // Atualizar o valor atual no banco de dados
           await query(`
             UPDATE patrimonios
-            SET valor_atual = ?
-            WHERE id = ?
+            SET valor_atual = ?, updated_at = CURRENT_TIMESTAMP
+            WHERE id = ? AND status != 'deletado'
         `, [valorAtual, patrimonioId]);
 
           return valorAtual;
@@ -211,7 +219,7 @@ export async function calcularDepreciacao(patrimonioId: number) {
 
 export async function calcularDepreciacaoTodos() {
      try {
-          // Obter todos os patrimônios
+          // Obter todos os patrimônios ativos
           const patrimonios = await query(`
             SELECT 
                 id,
@@ -219,6 +227,7 @@ export async function calcularDepreciacaoTodos() {
                 data_aquisicao,
                 tempo_depreciacao
             FROM patrimonios
+            WHERE status != 'deletado'
         `);
 
           const patrimonioArray = patrimonios as any[];
@@ -246,8 +255,8 @@ export async function calcularDepreciacaoTodos() {
 
                atualizacoes.push(query(`
                 UPDATE patrimonios
-                SET valor_atual = ?
-                WHERE id = ?
+                SET valor_atual = ?, updated_at = CURRENT_TIMESTAMP
+                WHERE id = ? AND status != 'deletado'
             `, [valorAtual, patrimonio.id]));
           }
 
@@ -272,7 +281,7 @@ export async function getResumoPatrimonios(departamentoId: number) {
                 SUM(p.valor_atual) as valor_total_atual
             FROM patrimonios AS p
             JOIN categorias AS c ON p.id_categoria = c.id
-            WHERE c.id_departamento = ?
+            WHERE c.id_departamento = ? AND p.status != 'deletado' AND c.status != 'deletado'
         `, [departamentoId]);
 
           return (resumo as any[])[0];

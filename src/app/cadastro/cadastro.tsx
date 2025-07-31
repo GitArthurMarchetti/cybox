@@ -1,14 +1,18 @@
 "use client"
 
-import Image from "next/image";
-import { RiArrowLeftSLine } from "react-icons/ri";
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { signIn } from "next-auth/react";
 import { IoMdEye, IoMdEyeOff } from "react-icons/io";
 import { FcGoogle } from "react-icons/fc";
-import { useState } from "react";
+import { MdEmail, MdLock, MdPerson, MdArrowBack, MdCheck } from "react-icons/md";
+import { AiOutlineLoading3Quarters } from "react-icons/ai";
 import { saveUser } from "../services/user";
 import { UserType } from "@/lib/types/types";
-import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { motion } from "framer-motion";
+import Image from "next/image";
+import logo from "../../../public/logo-completa-branca.png"
 
 type Props = {
     user: UserType;
@@ -17,243 +21,369 @@ type Props = {
 export default function Cadastro({ user: novoUser }: Props) {
     const [isVisible, setIsVisible] = useState(false);
     const [isVisible2, setIsVisible2] = useState(false);
-    const [user, setUser] = useState<UserType>(novoUser);
     const [isLoading, setIsLoading] = useState(false);
-    const [error, setError] = useState<string | null>(null);
+    const [formData, setFormData] = useState({
+        nome: novoUser.nome || '',
+        email: novoUser.email || '',
+        senha: '',
+        confirmarSenha: ''
+    });
     const router = useRouter();
 
+    const handleInputChange = (field: string, value: string) => {
+        setFormData(prev => ({
+            ...prev,
+            [field]: value
+        }));
+    };
+
+    const validateForm = () => {
+        if (!formData.nome.trim()) {
+            toast.error("Nome é obrigatório");
+            return false;
+        }
+
+        if (!formData.email.trim()) {
+            toast.error("Email é obrigatório");
+            return false;
+        }
+
+        if (formData.senha.length < 6) {
+            toast.error("A senha deve ter pelo menos 6 caracteres");
+            return false;
+        }
+
+        if (formData.senha !== formData.confirmarSenha) {
+            toast.error("As senhas não coincidem");
+            return false;
+        }
+
+        return true;
+    };
 
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
+
+        if (!validateForm()) return;
+
         setIsLoading(true);
 
         try {
-            const formData = new FormData(e.currentTarget);
-            const result = await saveUser(formData);
+            const formDataToSend = new FormData();
+            formDataToSend.append('nome', formData.nome);
+            formDataToSend.append('email', formData.email);
+            formDataToSend.append('senha', formData.senha);
+            formDataToSend.append('confirmarSenha', formData.confirmarSenha);
+
+            const result = await saveUser(formDataToSend);
 
             if (result?.success) {
                 toast.success("Cadastro realizado com sucesso!", {
-                    description: "Você será redirecionado para a página de login.",
+                    description: "Redirecionando para departamentos...",
                     duration: 3000,
                 });
 
-                // Pequeno atraso para mostrar o toast antes de redirecionar
-                setTimeout(() => {
-                    router.push('/login');
-                }, 1000);
+                // Login automático
+                const loginResult = await signIn('credentials', {
+                    email: formData.email,
+                    password: formData.senha,
+                    redirect: false,
+                });
+
+                if (loginResult?.error) {
+                    toast.error("Erro no login automático", {
+                        description: "Cadastro realizado! Redirecionando para o login...",
+                        duration: 3000,
+                    });
+                    setTimeout(() => {
+                        router.push('/login');
+                    }, 1000);
+                } else {
+                    setTimeout(() => {
+                        router.push('/departamentos');
+                    }, 1000);
+                }
             }
         } catch (err: any) {
             toast.error("Erro no cadastro", {
-                description: err.message || "Ocorreu um erro ao processar o cadastro.",
+                description: err.message || "Verifique os dados e tente novamente.",
                 duration: 5000,
             });
-            console.error("Erro no cadastro:", err);
         } finally {
             setIsLoading(false);
         }
     };
 
+    const getPasswordStrength = () => {
+        const password = formData.senha;
+        if (password.length === 0) return { strength: 0, text: "", color: "" };
+        if (password.length < 6) return { strength: 25, text: "Muito fraca", color: "bg-red-500" };
+        if (password.length < 8) return { strength: 50, text: "Fraca", color: "bg-yellow-500" };
+        if (password.length < 12) return { strength: 75, text: "Boa", color: "bg-blue-500" };
+        return { strength: 100, text: "Forte", color: "bg-green-500" };
+    };
+
+    const passwordStrength = getPasswordStrength();
+
     return (
-        <div className="relative min-h-screen w-full overflow-hidden bg-[#121212]">
-            {/* Imagem de fundo */}
-            <div className="absolute inset-0 z-0">
-                <Image
-                    src="/cadastroFundo.png"
-                    alt="Imagem de fundo"
-                    layout="fill"
-                    objectFit="cover"
-                    priority
-                />
-                <div className="absolute inset-0 bg-black/40"></div>
+        <div className="min-h-screen bg-gradient-to-br from-[#0F0F0F] via-[#1a1a1a] to-[#0F0F0F] flex items-center justify-center p-4">
+            {/* Decoração de fundo */}
+            <div className="absolute inset-0 overflow-hidden">
+                <div className="absolute top-1/4 right-1/4 w-96 h-96 bg-[#F6CF45]/10 rounded-full blur-3xl"></div>
+                <div className="absolute bottom-1/4 left-1/4 w-64 h-64 bg-[#F6CF45]/5 rounded-full blur-2xl"></div>
             </div>
-            <main className="relative z-10 flex min-h-screen items-center justify-between px-6 md:px-8 lg:px-16 xl:px-24">
 
-                <div className="hidden w-1/2 md:flex flex-col justify-between h-screen py-8">
-                    <Image
-                        src="/logo-completa-branca.png"
-                        alt="Logo"
-                        width={180}
-                        height={60}
-                        className="mb-20"
-                    />
-                    <h1 className="mt-24 text-4xl font-bold leading-tight text-white md:text-5xl lg:text-6xl xl:text-7xl">
-                        Pensando dentro <br />e fora da caixa.
-                    </h1>
-                </div>
+            <motion.div
+                className="relative w-full max-w-6xl mx-auto grid lg:grid-cols-2 gap-8 items-center"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6 }}
+            >
+                {/* Seção direita - Branding */}
+                <motion.div
+                    className="hidden lg:flex flex-col justify-center space-y-8 px-8 order-2"
+                    initial={{ opacity: 0, x: 50 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ duration: 0.8, delay: 0.2 }}
+                >
+                    <div className="">
+                        <div className="flex items-center ">
+                            <Image className="w-40 -ml-3 -mb-4" src={logo} alt="logo cybox" />
 
-                {/* Container principal */}
-                {/* Card de cadastro */}
-                <div className="w-5/12 rounded-xl  bg-[#111] p-8">
-                    {/* Botão de voltar */}
-                    <a href="/" className="mb-8 inline-flex items-center text-[#F6CF45]">
-                        <RiArrowLeftSLine className="mr-1 text-xl" />
-                        <span className="italic">voltar</span>
-                    </a>
-
-                    {/* Cabeçalho do formulário */}
-                    <h2 className="mb-2 text-3xl font-bold text-white">Seja bem-vindo!</h2>
-                    <p className="mb-8 text-sm text-[#B4B4B4]">
-                        Pronto para controlar seu patrimônio? Realize seu cadastro aqui embaixo!
-                    </p>
-
-                    {/* Formulário */}
-                    <form onSubmit={handleSubmit}>
-                        {/* Nome completo */}
-                        <div className="mb-4">
-                            <div className="relative">
-                                <input
-                                    className="w-full rounded-md bg-[#222] p-4 pb-3 pt-6 text-white outline-none focus:ring-1 focus:ring-[#F6CF45]"
-                                    type="text"
-                                    name="nome"
-                                    id="nome"
-                                    placeholder=" "
-                                    value={user.nome}
-                                    onChange={(e) => setUser({ ...user, nome: e.target.value })}
-                                    required
-                                    autoComplete="off"
-                                />
-                                <label
-                                    htmlFor="nome"
-                                    className="absolute left-4 top-2 text-xs text-[#B4B4B4]"
-                                >
-                                    Nome completo:
-                                </label>
-                            </div>
                         </div>
+                        <div className="flex flex-col gap-2">
 
-                        {/* Email */}
-                        <div className="mb-4">
-                            <div className="relative">
-                                <input
-                                    className="w-full rounded-md bg-[#222] p-4 pb-3 pt-6 text-white outline-none focus:ring-1 focus:ring-[#F6CF45]"
-                                    type="email"
-                                    name="email"
-                                    id="email"
-                                    placeholder=" "
-                                    value={user.email}
-                                    onChange={(e) => setUser({ ...user, email: e.target.value })}
-                                    required
-                                    autoComplete="off"
-                                />
-                                <label
-                                    htmlFor="email"
-                                    className="absolute left-4 top-2 text-xs text-[#B4B4B4]"
-                                >
-                                    Email:
-                                </label>
-                            </div>
-                        </div>
+                            <h1 className="text-5xl font-bold leading-tight text-white">
+                                Junte-se a nós!
+                            </h1>
 
-                        {/* Senhas em grid */}
-                        <div className="mb-4 grid grid-cols-2 gap-4">
-                            {/* Senha */}
-                            <div className="relative">
-                                <div className="flex h-full items-center">
-                                    <div className="relative flex-grow">
-                                        <input
-                                            className="w-full rounded-md bg-[#222] p-4 pb-3 pr-10 pt-6 text-white outline-none focus:ring-1 focus:ring-[#F6CF45]"
-                                            type={isVisible ? "text" : "password"}
-                                            name="senha"
-                                            id="senha"
-                                            placeholder=" "
-                                            value={user.senha}
-                                            onChange={(e) => setUser({ ...user, senha: e.target.value })}
-                                            required
-                                            autoComplete="new-password"
-                                        />
-                                        <label
-                                            htmlFor="senha"
-                                            className="absolute left-4 top-2 text-xs text-[#B4B4B4]"
-                                        >
-                                            Senha:
-                                        </label>
-                                        <button
-                                            type="button"
-                                            onClick={() => setIsVisible(!isVisible)}
-                                            className="absolute right-3 top-1/2 -translate-y-1/2 text-[#B4B4B4]"
-                                        >
-                                            {isVisible ? <IoMdEye size={20} /> : <IoMdEyeOff size={20} />}
-                                        </button>
-                                    </div>
+                            <p className="text-xl text-[#b4b4b4] leading-relaxed">
+                                Crie sua conta e comece a gerenciar seus patrimônios de forma profissional e eficiente.
+                            </p>
+
+                            <div className="space-y-4 pt-4">
+                                <div className="flex items-center space-x-3 text-[#F6CF45]">
+                                    <MdCheck size={20} />
+                                    <span>Gestão completa de patrimônios</span>
                                 </div>
-                            </div>
-
-                            {/* Confirmar senha */}
-                            <div className="relative">
-                                <div className="flex h-full items-center">
-                                    <div className="relative flex-grow">
-                                        <input
-                                            className="w-full rounded-md bg-[#222] p-4 pb-3 pr-10 pt-6 text-white outline-none focus:ring-1 focus:ring-[#F6CF45]"
-                                            type={isVisible2 ? "text" : "password"}
-                                            name="confirmarSenha"
-                                            id="confirmarSenha"
-                                            placeholder=" "
-                                            required
-                                            autoComplete="new-password"
-                                        />
-                                        <label
-                                            htmlFor="confirmarSenha"
-                                            className="absolute left-4 top-2 text-xs text-[#B4B4B4]"
-                                        >
-                                            Confirmar senha:
-                                        </label>
-                                        <button
-                                            type="button"
-                                            onClick={() => setIsVisible2(!isVisible2)}
-                                            className="absolute right-3 top-1/2 -translate-y-1/2 text-[#B4B4B4]"
-                                        >
-                                            {isVisible2 ? <IoMdEye size={20} /> : <IoMdEyeOff size={20} />}
-                                        </button>
-                                    </div>
+                                <div className="flex items-center space-x-3 text-[#F6CF45]">
+                                    <MdCheck size={20} />
+                                    <span>Relatórios detalhados e automáticos</span>
+                                </div>
+                                <div className="flex items-center space-x-3 text-[#F6CF45]">
+                                    <MdCheck size={20} />
+                                    <span>Controle de depreciação em tempo real</span>
+                                </div>
+                                <div className="flex items-center space-x-3 text-[#F6CF45]">
+                                    <MdCheck size={20} />
+                                    <span>Colaboração em equipe</span>
                                 </div>
                             </div>
                         </div>
 
-                        {/* Botão de cadastro */}
-                        <button
-                            className="mt-4 w-full rounded-full bg-[#F6CF45] py-4 font-semibold text-black hover:bg-[#f5d05b]"
-                            type="submit"
-                            disabled={isLoading}
-                        >
-                            {isLoading ? 'Cadastrando...' : 'Cadastrar'}
-                        </button>
-                    </form>
-
-                    {/* Divisor */}
-                    <div className="my-6 flex items-center">
-                        <div className="flex-grow border-t border-[#333]"></div>
-                        <span className="mx-4 text-sm text-[#999]">ou</span>
-                        <div className="flex-grow border-t border-[#333]"></div>
                     </div>
+                </motion.div>
 
-                    {/* Google Sign-In */}
-                    <div className="mb-6">
-                        <p className="mb-3 text-center text-sm text-[#B4B4B4]">Cadastre-se com Google:</p>
-                        <form action="/app/services/login" method="post">
+                {/* Seção esquerda - Formulário */}
+                <motion.div
+                    className="w-full max-w-md mx-auto order-1"
+                    initial={{ opacity: 0, x: -50 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ duration: 0.8, delay: 0.4 }}
+                >
+                    <div className="bg-[#1F1F1F] rounded-3xl p-8 shadow-2xl border border-[#2c2c2c]">
+                        {/* Header */}
+                        <div className="text-center mb-8">
+                            <div className="lg:hidden flex items-center justify-center space-x-3 mb-6">
+                                <Image className="w-40 -ml-3 -mb-4" src={logo} alt="logo cybox" />
+
+                            </div>
+
+                            <h2 className="text-2xl font-bold text-white mb-2">Criar sua conta</h2>
+                            <p className="text-[#8c8888]">Preencha os dados para começar</p>
+                        </div>
+
+                        {/* Google Signup */}
+                        <button
+                            onClick={() => signIn('google', { callbackUrl: '/departamentos' })}
+                            type="button"
+                            className="w-full flex items-center justify-center gap-3 bg-white text-gray-700 border border-gray-300 rounded-xl py-3 px-4 hover:bg-gray-50 transition-all duration-300 mb-6"
+                        >
+                            <FcGoogle size={20} />
+                            <span className="font-medium">Cadastrar com Google</span>
+                        </button>
+
+                        {/* Divisor */}
+                        <div className="flex items-center my-6">
+                            <div className="flex-1 h-px bg-[#2c2c2c]"></div>
+                            <span className="px-4 text-sm text-[#8c8888]">ou</span>
+                            <div className="flex-1 h-px bg-[#2c2c2c]"></div>
+                        </div>
+
+                        {/* Formulário */}
+                        <form onSubmit={handleSubmit} className="space-y-6">
+                            {/* Nome */}
+                            <div className="space-y-2">
+                                <label className="text-sm font-medium text-[#b4b4b4]">Nome completo</label>
+                                <div className="relative">
+                                    <MdPerson className="absolute left-3 top-1/2 transform -translate-y-1/2 text-[#8c8888]" size={20} />
+                                    <input
+                                        type="text"
+                                        value={formData.nome}
+                                        onChange={(e) => handleInputChange('nome', e.target.value)}
+                                        required
+                                        autoComplete="name"
+                                        className="w-full bg-[#2c2c2c] text-white pl-10 pr-4 py-3 rounded-xl border border-transparent focus:outline-none focus:ring-2 focus:ring-[#F6CF45] focus:border-transparent transition-all duration-300"
+                                        placeholder="Seu nome completo"
+                                    />
+                                </div>
+                            </div>
+
+                            {/* Email */}
+                            <div className="space-y-2">
+                                <label className="text-sm font-medium text-[#b4b4b4]">Email</label>
+                                <div className="relative">
+                                    <MdEmail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-[#8c8888]" size={20} />
+                                    <input
+                                        type="email"
+                                        value={formData.email}
+                                        onChange={(e) => handleInputChange('email', e.target.value)}
+                                        required
+                                        autoComplete="email"
+                                        className="w-full bg-[#2c2c2c] text-white pl-10 pr-4 py-3 rounded-xl border border-transparent focus:outline-none focus:ring-2 focus:ring-[#F6CF45] focus:border-transparent transition-all duration-300"
+                                        placeholder="seu@email.com"
+                                    />
+                                </div>
+                            </div>
+
+                            {/* Senha */}
+                            <div className="space-y-2">
+                                <label className="text-sm font-medium text-[#b4b4b4]">Senha</label>
+                                <div className="relative">
+                                    <MdLock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-[#8c8888]" size={20} />
+                                    <input
+                                        type={isVisible ? "text" : "password"}
+                                        value={formData.senha}
+                                        onChange={(e) => handleInputChange('senha', e.target.value)}
+                                        required
+                                        autoComplete="new-password"
+                                        className="w-full bg-[#2c2c2c] text-white pl-10 pr-12 py-3 rounded-xl border border-transparent focus:outline-none focus:ring-2 focus:ring-[#F6CF45] focus:border-transparent transition-all duration-300"
+                                        placeholder="••••••••"
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={() => setIsVisible(!isVisible)}
+                                        className="absolute right-3 top-1/2 transform -translate-y-1/2 text-[#8c8888] hover:text-white transition-colors"
+                                    >
+                                        {isVisible ? <IoMdEye size={20} /> : <IoMdEyeOff size={20} />}
+                                    </button>
+                                </div>
+
+                                {/* Indicador de força da senha */}
+                                {formData.senha && (
+                                    <div className="space-y-2">
+                                        <div className="flex justify-between items-center">
+                                            <span className="text-xs text-[#8c8888]">Força da senha:</span>
+                                            <span className={`text-xs font-medium ${passwordStrength.strength >= 75 ? 'text-green-400' :
+                                                passwordStrength.strength >= 50 ? 'text-yellow-400' :
+                                                    'text-red-400'
+                                                }`}>
+                                                {passwordStrength.text}
+                                            </span>
+                                        </div>
+                                        <div className="w-full bg-[#3c3c3c] rounded-full h-2">
+                                            <div
+                                                className={`h-2 rounded-full transition-all duration-300 ${passwordStrength.color}`}
+                                                style={{ width: `${passwordStrength.strength}%` }}
+                                            ></div>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Confirmar Senha */}
+                            <div className="space-y-2">
+                                <label className="text-sm font-medium text-[#b4b4b4]">Confirmar senha</label>
+                                <div className="relative">
+                                    <MdLock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-[#8c8888]" size={20} />
+                                    <input
+                                        type={isVisible2 ? "text" : "password"}
+                                        value={formData.confirmarSenha}
+                                        onChange={(e) => handleInputChange('confirmarSenha', e.target.value)}
+                                        required
+                                        autoComplete="new-password"
+                                        className="w-full bg-[#2c2c2c] text-white pl-10 pr-12 py-3 rounded-xl border border-transparent focus:outline-none focus:ring-2 focus:ring-[#F6CF45] focus:border-transparent transition-all duration-300"
+                                        placeholder="••••••••"
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={() => setIsVisible2(!isVisible2)}
+                                        className="absolute right-3 top-1/2 transform -translate-y-1/2 text-[#8c8888] hover:text-white transition-colors"
+                                    >
+                                        {isVisible2 ? <IoMdEye size={20} /> : <IoMdEyeOff size={20} />}
+                                    </button>
+                                </div>
+
+                                {/* Indicador de confirmação */}
+                                {formData.confirmarSenha && (
+                                    <div className="flex items-center space-x-2">
+                                        {formData.senha === formData.confirmarSenha ? (
+                                            <>
+                                                <MdCheck className="text-green-400" size={16} />
+                                                <span className="text-xs text-green-400">Senhas coincidem</span>
+                                            </>
+                                        ) : (
+                                            <>
+                                                <div className="w-4 h-4 border-2 border-red-400 rounded-full flex items-center justify-center">
+                                                    <div className="w-1 h-1 bg-red-400 rounded-full"></div>
+                                                </div>
+                                                <span className="text-xs text-red-400">Senhas não coincidem</span>
+                                            </>
+                                        )}
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Botão de cadastro */}
                             <button
                                 type="submit"
-                                name="action"
-                                value="google"
-                                className="flex w-full items-center justify-center rounded-full border border-[#F6CF45] bg-transparent py-3 text-[#F6CF45] transition-all hover:bg-[#F6CF45] hover:text-black"
+                                disabled={isLoading}
+                                className="w-full bg-[#F6CF45] text-black font-semibold py-3 px-4 rounded-xl hover:bg-[#F6CF45]/90 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                             >
-                                <div className="flex items-center justify-center">
-                                    <div className="mr-2 flex h-6 w-6 items-center justify-center rounded-full bg-white">
-                                        <FcGoogle size={18} />
-                                    </div>
-                                    <span>Continuar com Google</span>
-                                </div>
+                                {isLoading ? (
+                                    <>
+                                        <AiOutlineLoading3Quarters className="animate-spin" size={20} />
+                                        Criando conta...
+                                    </>
+                                ) : (
+                                    'Criar conta'
+                                )}
                             </button>
                         </form>
-                    </div>
 
-                    {/* Link para Login */}
-                    <div className="text-center">
-                        <p className="text-sm text-[#B4B4B4]">
-                            Já possui uma conta? <a href="/login" className="font-semibold text-white hover:underline">Faça login aqui.</a>
-                        </p>
+                        {/* Link para login */}
+                        <div className="text-center mt-8 pt-6 border-t border-[#2c2c2c]">
+                            <p className="text-sm text-[#8c8888]">
+                                Já tem uma conta?{' '}
+                                <a href="/login" className="text-[#F6CF45] font-medium hover:underline">
+                                    Fazer login
+                                </a>
+                            </p>
+                        </div>
+
+                        {/* Botão voltar */}
+                        <div className="text-center mt-4">
+                            <a
+                                href="/"
+                                className="inline-flex items-center gap-2 text-sm text-[#8c8888] hover:text-white transition-colors"
+                            >
+                                <MdArrowBack size={16} />
+                                Voltar ao início
+                            </a>
+                        </div>
                     </div>
-                </div>
-            </main>
+                </motion.div>
+            </motion.div>
         </div>
     );
 }

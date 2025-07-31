@@ -12,7 +12,7 @@ export async function getEmptyUser(): Promise<UserType> {
 
 export async function getUsers(): Promise<UserType[]> {
     try {
-        const users = await query('SELECT * FROM users');
+        const users = await query('SELECT * FROM users WHERE status != "deletado"');
         return users as UserType[];
     } catch (error) {
         console.error('Erro ao buscar usuários do banco:', error);
@@ -22,7 +22,7 @@ export async function getUsers(): Promise<UserType[]> {
 
 export async function getUsersByEmail(email: string): Promise<UserType | null> {
     try {
-        const users = await query('SELECT * FROM users WHERE email = ? LIMIT 1', [email]);
+        const users = await query('SELECT * FROM users WHERE email = ? AND status != "deletado" LIMIT 1', [email]);
         const userArray = users as UserType[];
         return userArray.length > 0 ? userArray[0] : null;
     } catch (error) {
@@ -61,7 +61,7 @@ export async function saveUser(formData: FormData, googleId?: string) {
         const userId = uuidv4(); // Gera um UUID para o novo usuário
 
         await query(
-            'INSERT INTO users (id, nome, email, senha, google_id) VALUES (?, ?, ?, ?, ?)',
+            'INSERT INTO users (id, nome, email, senha, google_id, status) VALUES (?, ?, ?, ?, ?, "ativo")',
             [userId, nome, email, hashedSenha, googleId || null]
         );
 
@@ -79,7 +79,8 @@ export async function removeUser(user: UserType) {
             throw new Error('ID do usuário é necessário para deletar.');
         }
 
-        await query('DELETE FROM users WHERE id = ?', [user.id]);
+        // Soft delete - marcar como deletado
+        await query('UPDATE users SET status = "deletado", updated_at = CURRENT_TIMESTAMP WHERE id = ?', [user.id]);
         redirect('/');
     } catch (error) {
         console.error('Erro ao remover usuário:', error);
@@ -94,10 +95,17 @@ export async function getUsersByDepartamento(departamentoId: number): Promise<Us
         }
 
         const users = await query(`
-            SELECT u.*
+            SELECT u.*, ud.role
             FROM users AS u
             JOIN users_departamentos AS ud ON u.id = ud.id_users
-            WHERE ud.id_departamentos = ?
+            WHERE ud.id_departamentos = ? AND u.status != "deletado" AND ud.status = "ativo"
+            ORDER BY 
+                CASE ud.role 
+                    WHEN 'owner' THEN 1 
+                    WHEN 'admin' THEN 2 
+                    WHEN 'member' THEN 3 
+                END,
+                u.nome ASC
         `, [departamentoId]);
 
         return users as UserType[];
@@ -117,7 +125,7 @@ export async function getHostByDepartamento(departamentoId: number): Promise<Use
             SELECT u.*
             FROM users AS u
             JOIN users_departamentos AS ud ON u.id = ud.id_users
-            WHERE ud.id_departamentos = ? AND ud.is_host = true
+            WHERE ud.id_departamentos = ? AND ud.role = "owner" AND u.status != "deletado" AND ud.status = "ativo"
             LIMIT 1
         `, [departamentoId]);
 

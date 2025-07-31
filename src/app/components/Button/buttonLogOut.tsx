@@ -1,3 +1,5 @@
+"use client"
+
 import { DoLogout } from "@/app/services/login";
 import { TbLogout2 } from "react-icons/tb";
 import { motion } from "framer-motion";
@@ -12,7 +14,7 @@ export default function Logout() {
                 whileTap={{ scale: 0.9 }}
                 title="Sair"
             >
-                <TbLogout2 className="text-xl cursor-pointer z-40" />
+                <TbLogout2 className="text-xl cursor-pointer " />
             </motion.button>
         </form>
     );

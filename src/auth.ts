@@ -21,6 +21,12 @@ export const {
 } = NextAuth({
     session: {
         strategy: 'jwt',
+        maxAge: 30 * 24 * 60 * 60, // 30 days
+    },
+
+    pages: {
+        signIn: '/login',
+        error: '/login',
     },
 
     providers: [
@@ -56,17 +62,15 @@ export const {
         }),
 
         GoogleProvider({
-            clientId: process.env.GOOGLE_CLIENT_ID as string,
-            clientSecret: process.env.GOOGLE_CLIENT_SECRET as string,
+            clientId: process.env.GOOGLE_CLIENT_ID!,
+            clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
             authorization: {
                 params: {
                     prompt: "consent",
                     access_type: "offline",
-                    response_type: "code",
-                    code_challenge_method: "S256",
+                    response_type: "code"
                 },
             },
-            checks: ["pkce"],
         }),
     ],
 
@@ -90,8 +94,8 @@ export const {
                         // Criar novo usuário se não existir
                         const userId = uuidv4(); // Gerar um UUID para o novo usuário
                         await query(
-                            `INSERT INTO users (id, nome, email, senha, google_id)
-                             VALUES (?, ?, ?, ?, ?)`,
+                            `INSERT INTO users (id, nome, email, senha, google_id, status)
+                             VALUES (?, ?, ?, ?, ?, 'ativo')`,
                             [userId, profile.name, profile.email, placeholderPassword, googleId]
                         );
                         token.id = userId;
@@ -127,4 +131,5 @@ export const {
 
     secret: process.env.AUTH_SECRET,
     debug: process.env.NODE_ENV === 'development',
+    trustHost: true,
 });

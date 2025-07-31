@@ -10,11 +10,11 @@ export async function getEmptyDepartamento(): Promise<DepartamentoType> {
         id_departamentos: null,
         titulo: "",
         descricao: "",
-        totalMembros: 1,
-        maximoMembros: 10,
         convite: "",
+        codigo_convite: "",
         localizacao: "",
-        fotoDepartamento: "placeholderImage.jpg"
+        fotoDepartamento: "placeholderImage.jpg",
+        status: "ativo"
     };
 }
 
@@ -23,6 +23,7 @@ export async function getDepartamentos(): Promise<DepartamentoType[]> {
         const departamentos = await query(`
             SELECT *, DATE_FORMAT(created_at, '%Y-%m-%d') as created_at 
             FROM departamentos 
+            WHERE status != 'deletado'
             ORDER BY titulo ASC
         `);
         return departamentos as DepartamentoType[];
@@ -35,10 +36,11 @@ export async function getDepartamentos(): Promise<DepartamentoType[]> {
 export async function getDepartamentosByUser(userId: string): Promise<DepartamentoType[]> {
     try {
         const departamentos = await query(`
-            SELECT d.*, DATE_FORMAT(d.created_at, '%Y-%m-%d') as created_at
+            SELECT d.*, DATE_FORMAT(d.created_at, '%Y-%m-%d') as created_at, ud.role,
+                   (SELECT COUNT(*) FROM users_departamentos WHERE id_departamentos = d.id_departamentos AND status = 'ativo') as num_participantes
             FROM departamentos AS d
             JOIN users_departamentos AS ud ON d.id_departamentos = ud.id_departamentos
-            WHERE ud.id_users = ?
+            WHERE ud.id_users = ? AND d.status != 'deletado' AND ud.status = 'ativo'
         `, [userId]);
 
         return departamentos as DepartamentoType[];
@@ -57,7 +59,7 @@ export async function getDepartamentosById(idDepartamento: string | number): Pro
         const departamentos = await query(`
             SELECT d.*, DATE_FORMAT(d.created_at, '%Y-%m-%d') as created_at
             FROM departamentos AS d
-            WHERE d.id_departamentos = ?
+            WHERE d.id_departamentos = ? AND d.status != 'deletado'
         `, [idDepartamento]);
 
         const departamentoArray = departamentos as DepartamentoType[];
@@ -74,8 +76,6 @@ export async function saveDepartamento(formData: FormData, userId: string) {
         const id_departamentos = +(formData.get('id_departamentos') as string) || null;
         const titulo = formData.get('titulo') as string;
         const descricao = formData.get('descricao') as string || null;
-        const totalMembros = Number(formData.get('totalMembros')) || 1;
-        const maximoMembros = Number(formData.get('maximoMembros')) || 10;
         const convite = formData.get('convite') as string || null;
         const localizacao = formData.get('localizacao') as string || null;
         const fotoDepartamento = formData.get('fotoDepartamento') as string || null;
@@ -86,51 +86,46 @@ export async function saveDepartamento(formData: FormData, userId: string) {
 
         if (!id_departamentos) {
             // Criação de um novo departamento
+            // Gerar código de convite único
+            const codigo_convite = `DEPT-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
+            
             const result = await query(`
                 INSERT INTO departamentos (
                     titulo,
                     descricao,
-                    totalMembros,
-                    maximoMembros,
                     convite,
+                    codigo_convite,
                     localizacao,
-                    fotoDepartamento
-                ) VALUES (?, ?, ?, ?, ?, ?, ?)
-            `, [titulo, descricao, totalMembros, maximoMembros, convite, localizacao, fotoDepartamento]);
+                    fotoDepartamento,
+                    status
+                ) VALUES (?, ?, ?, ?, ?, ?, 'ativo')
+            `, [titulo, descricao, convite, codigo_convite, localizacao, fotoDepartamento]);
 
             const insertId = (result as any).insertId;
 
-            // Insere o criador do departamento na tabela de relacionamento como host
+            // Insere o criador do departamento na tabela de relacionamento como owner
             await query(`
                 INSERT INTO users_departamentos (
                     id_users,
                     id_departamentos,
-                    is_host
-                ) VALUES (?, ?, ?)
-            `, [userId, insertId, true]);
+                    role,
+                    status
+                ) VALUES (?, ?, 'owner', 'ativo')
+            `, [userId, insertId]);
         } else {
             // Atualização de um departamento existente
             await query(`
                 UPDATE departamentos SET
                     titulo = ?,
                     descricao = ?,
-                    totalMembros = ?,
-                    maximoMembros = ?,
                     convite = ?,
                     localizacao = ?,
-                    fotoDepartamento = ?
-                WHERE id_departamentos = ?
-            `, [titulo, descricao, totalMembros, maximoMembros, convite, localizacao, fotoDepartamento, id_departamentos]);
-
-            // Garante que o usuário continua como host (para consistência)
-            await query(`
-                UPDATE users_departamentos
-                SET is_host = true
-                WHERE id_departamentos = ? AND id_users = ?
-            `, [id_departamentos, userId]);
+                    fotoDepartamento = ?,
+                    updated_at = CURRENT_TIMESTAMP
+                WHERE id_departamentos = ? AND status != 'deletado'
+            `, [titulo, descricao, convite, localizacao, fotoDepartamento, id_departamentos]);
         }
 
-        redirect("/departamentos");
     } catch (error) {
         console.error("Erro ao salvar departamento:", error);
         throw error;
@@ -143,8 +138,19 @@ export async function removeDepartamento(departamento: DepartamentoType) {
             throw new Error('O ID do departamento é necessário para deletar.');
         }
 
-        await query('DELETE FROM departamentos WHERE id_departamentos = ?', [departamento.id_departamentos]);
-        redirect('/departamentos');
+        // Soft delete - marcar como deletado ao invés de remover
+        await query(`
+            UPDATE departamentos 
+            SET status = 'deletado', updated_at = CURRENT_TIMESTAMP 
+            WHERE id_departamentos = ?
+        `, [departamento.id_departamentos]);
+        
+        // Marcar relacionamentos como deletados também
+        await query(`
+            UPDATE users_departamentos 
+            SET status = 'deletado', updated_at = CURRENT_TIMESTAMP 
+            WHERE id_departamentos = ?
+        `, [departamento.id_departamentos]);
     } catch (error) {
         console.error("Erro ao remover departamento:", error);
         throw error;
@@ -156,15 +162,17 @@ export async function irParaEndereco(idDepartamento: number | null | string) {
         throw new Error("O ID do departamento é necessário para redirecionar.");
     }
 
-    redirect(`/categorias/${idDepartamento}`);
+    redirect(`/departamentos/${idDepartamento}`);
 }
 
 export async function verificarAcessoDepartamento(userId: string | number | null, departamentoId: number): Promise<boolean> {
     try {
         const result = await query(`
             SELECT 1
-            FROM users_departamentos
-            WHERE id_users = ? AND id_departamentos = ?
+            FROM users_departamentos ud
+            JOIN departamentos d ON ud.id_departamentos = d.id_departamentos
+            WHERE ud.id_users = ? AND ud.id_departamentos = ? 
+            AND ud.status = 'ativo' AND d.status != 'deletado'
             LIMIT 1
         `, [userId, departamentoId]);
 
@@ -172,5 +180,22 @@ export async function verificarAcessoDepartamento(userId: string | number | null
     } catch (error) {
         console.error("Erro ao verificar acesso ao departamento:", error);
         return false;
+    }
+}
+
+export async function obterRoleUsuarioDepartamento(userId: string, departamentoId: number): Promise<'owner' | 'admin' | 'member' | null> {
+    try {
+        const result = await query(`
+            SELECT role
+            FROM users_departamentos
+            WHERE id_users = ? AND id_departamentos = ? AND status = 'ativo'
+            LIMIT 1
+        `, [userId, departamentoId]);
+
+        const roleArray = result as any[];
+        return roleArray.length > 0 ? roleArray[0].role : null;
+    } catch (error) {
+        console.error("Erro ao obter role do usuário:", error);
+        return null;
     }
 }

@@ -1,3 +1,5 @@
+"use client"
+
 import Image from "next/image";
 import { FaGear } from "react-icons/fa6";
 import { IoMdNotifications } from "react-icons/io";

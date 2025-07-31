@@ -1,20 +1,33 @@
+"use client"
+
 import Image from "next/image";
 import { FaGear, FaPlus, FaShare, FaArrowLeft } from "react-icons/fa6";
 import { FaUsers, FaChartLine } from "react-icons/fa";
 import { DepartamentoType, UserType } from "@/lib/types/types";
+import { MembroDepartamento } from "@/app/services/membros";
 import { motion } from "framer-motion";
 import Link from "next/link";
+import { useState } from "react";
+import { CompartilharModal } from "../modals";
 
 interface SidebarProps {
      departamento: DepartamentoType;
      user: UserType;
      host: UserType | null;
+     membros: MembroDepartamento[];
      onAddCategoryClick: () => void;
+     onConfigClick?: () => void;
+     onShareClick?: () => void;
+     hasInitiallyLoaded?: boolean;
 }
 
-export function SidebarCategorias({ departamento, user, host, onAddCategoryClick }: SidebarProps) {
-     // Variantes de animação
-     const sidebarVariants = {
+export function SidebarCategorias({ departamento, user, host, membros = [], onAddCategoryClick, onConfigClick, onShareClick, hasInitiallyLoaded = false }: SidebarProps) {
+     const [isShareModalOpen, setIsShareModalOpen] = useState(false);
+     
+     // Variantes de animação - só animam no carregamento inicial
+     const sidebarVariants = hasInitiallyLoaded ? {
+          visible: { x: 0, opacity: 1 }
+     } : {
           hidden: { x: -20, opacity: 0 },
           visible: {
                x: 0,
@@ -27,7 +40,9 @@ export function SidebarCategorias({ departamento, user, host, onAddCategoryClick
           }
      };
 
-     const itemVariants = {
+     const itemVariants = hasInitiallyLoaded ? {
+          visible: { y: 0, opacity: 1 }
+     } : {
           hidden: { y: 10, opacity: 0 },
           visible: {
                y: 0,
@@ -37,11 +52,28 @@ export function SidebarCategorias({ departamento, user, host, onAddCategoryClick
      };
 
      const isAdmin = host?.email === user.email;
+     
+     // Calcular dados dos membros
+     const totalMembros = membros.length;
+     const maxMembros = 50; // Limite padrão
+     const ocupacaoPercentual = maxMembros > 0 ? Math.round((totalMembros / maxMembros) * 100) : 0;
+     
+     // Cores para os avatares dos membros
+     const avatarColors = [
+          'bg-green-500',
+          'bg-blue-500', 
+          'bg-purple-500',
+          'bg-pink-500',
+          'bg-yellow-500',
+          'bg-red-500',
+          'bg-indigo-500',
+          'bg-orange-500'
+     ];
 
      return (
           <motion.aside
                className="w-80 bg-gradient-to-b from-[#111] to-[#1a1a1a] p-6 flex flex-col border-r border-[#2c2c2c] h-full shadow-xl"
-               initial="hidden"
+               initial={hasInitiallyLoaded ? "visible" : "hidden"}
                animate="visible"
                variants={sidebarVariants}
           >
@@ -87,7 +119,7 @@ export function SidebarCategorias({ departamento, user, host, onAddCategoryClick
                               <div className="flex items-center gap-2 mt-1">
                                    <div className="w-2 h-2 rounded-full bg-green-500"></div>
                                    <p className="text-sm text-[#b4b4b4]">
-                                        {isAdmin ? "Você é o administrador" : `Admin: ${host?.nome || 'Não definido'}`}
+                                        {isAdmin ? "Você é o proprietário" : `Proprietário: ${host?.nome || 'Não definido'}`}
                                    </p>
                               </div>
                          </div>
@@ -112,39 +144,37 @@ export function SidebarCategorias({ departamento, user, host, onAddCategoryClick
                               <FaUsers className="text-[#F6CF45]" />
                               <h3 className="text-sm font-medium text-white">Membros</h3>
                          </div>
-                         <span className="text-sm font-bold text-white bg-[#2c2c2c] px-2 py-1 rounded-full">{departamento.totalMembros}/{departamento.maximoMembros}</span>
+                         <span className="text-sm font-bold text-white bg-[#2c2c2c] px-2 py-1 rounded-full">{totalMembros}/{maxMembros}</span>
                     </div>
 
                     {/* Barra de progresso da ocupação */}
                     <div className="w-full h-2 bg-[#2c2c2c] rounded-full overflow-hidden mb-2">
                          <motion.div
-                              className={`h-full ${departamento.totalMembros / departamento.maximoMembros < 0.5 ? 'bg-green-500' :
-                                   departamento.totalMembros / departamento.maximoMembros < 0.8 ? 'bg-yellow-500' : 'bg-red-500'
-                                   }`}
+                              className={`h-full ${ocupacaoPercentual < 50 ? 'bg-green-500' : ocupacaoPercentual < 75 ? 'bg-yellow-500' : 'bg-red-500'}`}
                               initial={{ width: '0%' }}
-                              animate={{ width: `${(departamento.totalMembros / departamento.maximoMembros) * 100}%` }}
+                              animate={{ width: `${ocupacaoPercentual}%` }}
                               transition={{ duration: 1, ease: "easeOut" }}
                          />
                     </div>
 
                     <div className="flex justify-between items-center">
                          <div className="flex -space-x-2">
-                              {Array.from({ length: Math.min(4, departamento.totalMembros) }).map((_, index) => (
-                                   <div
-                                        key={index}
-                                        className={`w-7 h-7 rounded-full border-2 border-[#1c1c1c] 
-                                        ${index === 0 ? 'bg-green-500' :
-                                                  index === 1 ? 'bg-blue-500' :
-                                                       index === 2 ? 'bg-purple-500' : 'bg-yellow-500'} 
-                                        flex items-center justify-center text-xs font-bold text-white`}
+                              {membros.slice(0, 4).map((membro, index) => (
+                                   <div 
+                                        key={membro.id}
+                                        className={`w-7 h-7 rounded-full border-2 border-[#1c1c1c] ${avatarColors[index % avatarColors.length]} flex items-center justify-center text-xs font-bold text-white`}
+                                        title={membro.nome}
                                    >
-                                        {String.fromCharCode(65 + index)}
+                                        {membro.nome.charAt(0).toUpperCase()}
                                    </div>
                               ))}
-                              {departamento.totalMembros > 4 && (
-                                   <div className="w-7 h-7 rounded-full border-2 border-[#1c1c1c] bg-[#2c2c2c] flex items-center justify-center text-xs font-bold text-white">
-                                        +{departamento.totalMembros - 4}
+                              {totalMembros > 4 && (
+                                   <div className="w-7 h-7 rounded-full border-2 border-[#1c1c1c] bg-gray-600 flex items-center justify-center text-xs font-bold text-white">
+                                        +{totalMembros - 4}
                                    </div>
+                              )}
+                              {totalMembros === 0 && (
+                                   <div className="text-xs text-[#8c8888]">Nenhum membro</div>
                               )}
                          </div>
                          <div className="text-xs text-[#b4b4b4] italic">
@@ -180,6 +210,10 @@ export function SidebarCategorias({ departamento, user, host, onAddCategoryClick
                               whileHover={{ scale: 1.02, borderColor: "#F6CF45" }}
                               whileTap={{ scale: 0.98 }}
                               variants={itemVariants}
+                              onClick={() => {
+                                   // Esta função será passada como prop do componente pai
+                                   if (onConfigClick) onConfigClick();
+                              }}
                          >
                               <FaGear size={16} className="text-[#F6CF45]" /> Configurações
                          </motion.button>
@@ -190,6 +224,13 @@ export function SidebarCategorias({ departamento, user, host, onAddCategoryClick
                          whileHover={{ scale: 1.02, borderColor: "#F6CF45" }}
                          whileTap={{ scale: 0.98 }}
                          variants={itemVariants}
+                         onClick={() => {
+                              if (onShareClick) {
+                                   onShareClick();
+                              } else {
+                                   setIsShareModalOpen(true);
+                              }
+                         }}
                     >
                          <FaShare size={16} className="text-[#F6CF45]" /> Compartilhar
                     </motion.button>
@@ -205,6 +246,12 @@ export function SidebarCategorias({ departamento, user, host, onAddCategoryClick
                     </p>
 
                </motion.div>
+               
+               <CompartilharModal
+                    isOpen={isShareModalOpen}
+                    onClose={() => setIsShareModalOpen(false)}
+                    departamento={departamento}
+               />
           </motion.aside>
      );
 }

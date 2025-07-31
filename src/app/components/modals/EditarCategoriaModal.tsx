@@ -1,58 +1,93 @@
-'use client'
+"use client"
 
-import React, { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { MdClose, MdBusiness } from 'react-icons/md';
-import { FaPlus } from 'react-icons/fa';
-import { saveDepartamento } from '../../services/departamento';
+import { MdClose, MdCategory } from 'react-icons/md';
+import { FaSave } from 'react-icons/fa';
+import { saveCategoria, getPadroesDepreciacao } from '@/app/services/categoria';
 import { toast } from 'sonner';
 
-interface CreateDepartmentModalProps {
+interface Category {
+    id: number;
+    name: string;
+    observation: string;
+    padrao_depreciacao_id?: number | null;
+}
+
+interface EditarCategoriaModalProps {
     isOpen: boolean;
     onClose: () => void;
-    userId: string;
+    categoria: Category | null;
+    departamentoId: string | number | null;
     onSuccess?: () => void;
 }
 
-const CreateDepartmentModal = ({ isOpen, onClose, userId, onSuccess }: CreateDepartmentModalProps) => {
+export default function EditarCategoriaModal({ 
+    isOpen, 
+    onClose, 
+    categoria,
+    departamentoId,
+    onSuccess 
+}: EditarCategoriaModalProps) {
     const [isLoading, setIsLoading] = useState(false);
+    const [padroesDepreciacao, setPadroesDepreciacao] = useState<any[]>([]);
     const [formData, setFormData] = useState({
-        titulo: '',
+        nome: '',
         descricao: '',
-        localizacao: '',
-        fotoDepartamento: ''
+        padrao_depreciacao_id: ''
     });
 
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-        if (!formData.titulo.trim()) {
-            toast.error('O título é obrigatório');
-            return;
+    // Inicializar dados do formulário
+    useEffect(() => {
+        if (isOpen && categoria) {
+            setFormData({
+                nome: categoria.name || '',
+                descricao: categoria.observation || '',
+                padrao_depreciacao_id: categoria.padrao_depreciacao_id?.toString() || ''
+            });
         }
+    }, [isOpen, categoria]);
+
+    // Carregar padrões de depreciação ao abrir o modal
+    useEffect(() => {
+        if (isOpen) {
+            const carregarPadroes = async () => {
+                try {
+                    const padroes = await getPadroesDepreciacao();
+                    setPadroesDepreciacao(padroes);
+                } catch (error) {
+                    console.error('Erro ao carregar padrões de depreciação:', error);
+                }
+            };
+            carregarPadroes();
+        }
+    }, [isOpen]);
+
+    const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+        event.preventDefault();
+        if (!categoria) return;
 
         setIsLoading(true);
-        try {
-            const data = new FormData();
-            data.append('titulo', formData.titulo.trim());
-            data.append('descricao', formData.descricao.trim());
-            data.append('localizacao', formData.localizacao.trim());
-            data.append('fotoDepartamento', formData.fotoDepartamento.trim());
 
-            await saveDepartamento(data, userId);
-            toast.success('Departamento criado com sucesso!');
+        try {
+            const formDataToSend = new FormData(event.currentTarget);
+            formDataToSend.append('id', categoria.id.toString());
+            formDataToSend.append('id_departamento', departamentoId?.toString() || '');
+
+            await saveCategoria(formDataToSend);
+
+            toast.success("Categoria atualizada com sucesso!");
             onClose();
             if (onSuccess) onSuccess();
         } catch (error) {
-            console.error('Erro ao criar departamento:', error);
-            toast.error('Erro ao criar departamento');
+            toast.error("Erro ao atualizar categoria");
+            console.error('Erro ao atualizar categoria:', error);
         } finally {
             setIsLoading(false);
         }
     };
 
-    const handleInputChange = (field: string, value: string) => {
-        setFormData(prev => ({ ...prev, [field]: value }));
-    };
+    if (!categoria) return null;
 
     return (
         <AnimatePresence>
@@ -75,11 +110,11 @@ const CreateDepartmentModal = ({ isOpen, onClose, userId, onSuccess }: CreateDep
                         <div className="p-6 border-b border-[#2c2c2c] flex items-center justify-between h-28">
                             <div className="flex items-center gap-3">
                                 <div className="p-2 bg-[#F6CF45] rounded-lg">
-                                    <MdBusiness className="text-black" size={20} />
+                                    <MdCategory className="text-black" size={20} />
                                 </div>
                                 <div>
-                                    <h2 className="text-xl font-bold text-white">Novo Departamento</h2>
-                                    <p className="text-[#8c8888] text-sm">Organize seus patrimônios por departamento</p>
+                                    <h2 className="text-xl font-bold text-white">Editar Categoria</h2>
+                                    <p className="text-[#8c8888] text-sm">Atualize as informações da categoria &quot;{categoria.name}&quot;</p>
                                 </div>
                             </div>
                             <button
@@ -97,17 +132,16 @@ const CreateDepartmentModal = ({ isOpen, onClose, userId, onSuccess }: CreateDep
                                     animate={{ opacity: 1, y: 0 }}
                                     transition={{ duration: 0.3, delay: 0.1 }}
                                 >
-                                    <label className="block text-sm font-medium text-[#b4b4b4] mb-2">
-                                        Nome do departamento *
-                                    </label>
+                                    <label className="block text-sm font-medium text-[#b4b4b4] mb-2">Nome da categoria</label>
                                     <input
+                                        autoComplete='off'
                                         type="text"
+                                        name="nome"
                                         required
-                                        maxLength={100}
+                                        value={formData.nome}
+                                        onChange={(e) => setFormData(prev => ({ ...prev, nome: e.target.value }))}
                                         className="w-full bg-[#2c2c2c] text-white px-4 py-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#F6CF45]/50 placeholder-[#6c6c6c]"
-                                        placeholder="Ex: Tecnologia da Informação, Recursos Humanos..."
-                                        value={formData.titulo}
-                                        onChange={(e) => handleInputChange('titulo', e.target.value)}
+                                        placeholder="Ex: Notebooks, Mobiliário, Veículos..."
                                     />
                                 </motion.div>
 
@@ -116,20 +150,15 @@ const CreateDepartmentModal = ({ isOpen, onClose, userId, onSuccess }: CreateDep
                                     animate={{ opacity: 1, y: 0 }}
                                     transition={{ duration: 0.3, delay: 0.2 }}
                                 >
-                                    <label className="block text-sm font-medium text-[#b4b4b4] mb-2">
-                                        Descrição
-                                    </label>
+                                    <label className="block text-sm font-medium text-[#b4b4b4] mb-2">Descrição</label>
                                     <textarea
-                                        rows={4}
-                                        maxLength={500}
-                                        className="w-full bg-[#2c2c2c] text-white px-4 py-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#F6CF45]/50 resize-none placeholder-[#6c6c6c]"
-                                        placeholder="Descreva o propósito e responsabilidades deste departamento..."
+                                        name="descricao"
                                         value={formData.descricao}
-                                        onChange={(e) => handleInputChange('descricao', e.target.value)}
-                                    />
-                                    <p className="text-xs text-[#8c8888] mt-1">
-                                        {formData.descricao.length}/500 caracteres
-                                    </p>
+                                        onChange={(e) => setFormData(prev => ({ ...prev, descricao: e.target.value }))}
+                                        rows={4}
+                                        className="w-full bg-[#2c2c2c] text-white px-4 py-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#F6CF45]/50 resize-none placeholder-[#6c6c6c]"
+                                        placeholder="Adicione uma descrição ou observação sobre esta categoria..."
+                                    ></textarea>
                                 </motion.div>
 
                                 <motion.div
@@ -137,47 +166,33 @@ const CreateDepartmentModal = ({ isOpen, onClose, userId, onSuccess }: CreateDep
                                     animate={{ opacity: 1, y: 0 }}
                                     transition={{ duration: 0.3, delay: 0.3 }}
                                 >
-                                    <label className="block text-sm font-medium text-[#b4b4b4] mb-2">
-                                        Localização
-                                    </label>
-                                    <input
-                                        type="text"
-                                        maxLength={200}
-                                        className="w-full bg-[#2c2c2c] text-white px-4 py-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#F6CF45]/50 placeholder-[#6c6c6c]"
-                                        placeholder="Ex: Prédio A - 2º Andar, Sala 205..."
-                                        value={formData.localizacao}
-                                        onChange={(e) => handleInputChange('localizacao', e.target.value)}
-                                    />
-                                </motion.div>
-
-                                <motion.div
-                                    initial={{ opacity: 0, y: 20 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    transition={{ duration: 0.3, delay: 0.4 }}
-                                >
-                                    <label className="block text-sm font-medium text-[#b4b4b4] mb-2">
-                                        URL da imagem (opcional)
-                                    </label>
-                                    <input
-                                        type="url"
-                                        className="w-full bg-[#2c2c2c] text-white px-4 py-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#F6CF45]/50 placeholder-[#6c6c6c]"
-                                        placeholder="https://exemplo.com/imagem.jpg"
-                                        value={formData.fotoDepartamento}
-                                        onChange={(e) => handleInputChange('fotoDepartamento', e.target.value)}
-                                    />
-                                    <p className="text-xs text-[#8c8888] mt-1">
-                                        Cole a URL de uma imagem para representar este departamento
+                                    <label className="block text-sm font-medium text-[#b4b4b4] mb-2">Padrão de Depreciação</label>
+                                    <select
+                                        name="padrao_depreciacao_id"
+                                        value={formData.padrao_depreciacao_id}
+                                        onChange={(e) => setFormData(prev => ({ ...prev, padrao_depreciacao_id: e.target.value }))}
+                                        className="w-full bg-[#2c2c2c] text-white px-4 py-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#F6CF45]/50"
+                                    >
+                                        <option value="">Selecione um padrão (opcional)</option>
+                                        {padroesDepreciacao.map(padrao => (
+                                            <option key={padrao.id} value={padrao.id}>
+                                                {padrao.categoria} - {padrao.taxa_anual_percent}% a.a. ({padrao.vida_util_anos} anos)
+                                            </option>
+                                        ))}
+                                    </select>
+                                    <p className="text-xs text-[#8c8888] mt-2">
+                                        Baseado nos padrões da Receita Federal para depreciação de ativos
                                     </p>
                                 </motion.div>
 
-                                <motion.div
+                                <motion.div 
                                     className="flex items-center justify-between pt-6 border-t border-[#2c2c2c]"
                                     initial={{ opacity: 0 }}
                                     animate={{ opacity: 1 }}
-                                    transition={{ duration: 0.3, delay: 0.5 }}
+                                    transition={{ duration: 0.3, delay: 0.4 }}
                                 >
-                                    <div className="text-sm w-1/3 text-[#8c8888]">
-                                        Você será o proprietário deste departamento
+                                    <div className="text-sm text-[#8c8888]">
+                                        Atualize as informações desta categoria
                                     </div>
                                     <div className="flex items-center gap-3">
                                         <button
@@ -189,18 +204,18 @@ const CreateDepartmentModal = ({ isOpen, onClose, userId, onSuccess }: CreateDep
                                         </button>
                                         <button
                                             type="submit"
-                                            disabled={isLoading || !formData.titulo.trim()}
+                                            disabled={isLoading}
                                             className="px-6 py-3 bg-[#F6CF45] text-black font-medium rounded-lg hover:bg-[#F6CF45]/90 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                                         >
                                             {isLoading ? (
                                                 <>
                                                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-black"></div>
-                                                    Criando...
+                                                    Salvando...
                                                 </>
                                             ) : (
                                                 <>
-                                                    <FaPlus size={16} />
-                                                    Criar Departamento
+                                                    <FaSave size={16} />
+                                                    Salvar Alterações
                                                 </>
                                             )}
                                         </button>
@@ -213,6 +228,4 @@ const CreateDepartmentModal = ({ isOpen, onClose, userId, onSuccess }: CreateDep
             )}
         </AnimatePresence>
     );
-};
-
-export default CreateDepartmentModal;
+}

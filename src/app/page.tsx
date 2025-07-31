@@ -11,7 +11,7 @@ export default async function Home() {
 
   // Se o usuário estiver logado, redirecione para o sistema
   if (session?.user) {
-    redirect("/departamentoTeste");
+    redirect("/departamentos");
   }
 
   return <FrontHome />;

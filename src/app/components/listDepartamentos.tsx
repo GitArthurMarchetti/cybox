@@ -1,3 +1,5 @@
+"use client"
+
 import Image from "next/image";
 import { format, isValid, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
