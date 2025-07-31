@@ -124,8 +124,7 @@ export default function CriarPatrimonioModal({
                 selectedCategory,
                 selectedCategoryId: selectedCategory?.id,
                 formDataKeys: Array.from(formData.keys()),
-                id_categoria_value: formData.get('id_categoria'),
-                selectedCategoryForPatrimonio: selectedCategoryForPatrimonio
+                id_categoria_value: formData.get('id_categoria')
             });
 
             // Garantir que o ID da categoria está no FormData

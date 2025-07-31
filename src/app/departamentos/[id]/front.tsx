@@ -344,6 +344,7 @@ export default function CategoriaFront({
 
      // Variantes de animação - só animam no carregamento inicial
      const containerVariants = hasInitiallyLoaded ? {
+          hidden: { opacity: 1 },
           visible: { opacity: 1 }
      } : {
           hidden: { opacity: 0 },
@@ -358,6 +359,7 @@ export default function CategoriaFront({
      };
 
      const itemVariants = hasInitiallyLoaded ? {
+          hidden: { y: 0, opacity: 1 },
           visible: { y: 0, opacity: 1 }
      } : {
           hidden: { y: 20, opacity: 0 },

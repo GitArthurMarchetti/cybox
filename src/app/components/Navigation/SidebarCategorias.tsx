@@ -26,6 +26,7 @@ export function SidebarCategorias({ departamento, user, host, membros = [], onAd
      
      // Variantes de animação - só animam no carregamento inicial
      const sidebarVariants = hasInitiallyLoaded ? {
+          hidden: { x: 0, opacity: 1 },
           visible: { x: 0, opacity: 1 }
      } : {
           hidden: { x: -20, opacity: 0 },
@@ -41,6 +42,7 @@ export function SidebarCategorias({ departamento, user, host, membros = [], onAd
      };
 
      const itemVariants = hasInitiallyLoaded ? {
+          hidden: { y: 0, opacity: 1 },
           visible: { y: 0, opacity: 1 }
      } : {
           hidden: { y: 10, opacity: 0 },
