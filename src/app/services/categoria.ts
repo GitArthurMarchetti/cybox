@@ -1,8 +1,7 @@
 "use server"
 
 import { query } from '@/lib/mysql';
-import { CategoriaType } from "@/lib/types/types";
-import { redirect } from 'next/navigation';
+import { CategoriaType, CategoriaComPatrimoniosType, PadraoDepreciacaoType } from "@/lib/types/types";
 
 export async function getCategoriasByDepartamento(departamentoId: number): Promise<CategoriaType[]> {
      try {
@@ -66,13 +65,11 @@ export async function saveCategoria(formData: FormData) {
           }
 
           if (!id) {
-               // Criação de uma nova categoria
                await query(`
                 INSERT INTO categorias (id_departamento, nome, descricao, padrao_depreciacao_id, status)
                 VALUES (?, ?, ?, ?, 'ativo')
             `, [id_departamento, nome, descricao, padrao_depreciacao_id]);
           } else {
-               // Atualização de uma categoria existente
                await query(`
                 UPDATE categorias SET
                     nome = ?,
@@ -95,14 +92,12 @@ export async function removeCategoria(categoriaId: number, departamentoId: numbe
                throw new Error("ID da categoria é necessário para deletar.");
           }
 
-          // Soft delete - marcar como deletado ao invés de remover
           await query(`
             UPDATE categorias 
             SET status = 'deletado', updated_at = CURRENT_TIMESTAMP 
             WHERE id = ?
           `, [categoriaId]);
           
-          // Marcar patrimônios relacionados como deletados também
           await query(`
             UPDATE patrimonios 
             SET status = 'deletado', updated_at = CURRENT_TIMESTAMP 
@@ -115,7 +110,7 @@ export async function removeCategoria(categoriaId: number, departamentoId: numbe
      }
 }
 
-export async function getCategoriasComTotalPatrimonios(departamentoId: number): Promise<any[]> {
+export async function getCategoriasComTotalPatrimonios(departamentoId: number): Promise<CategoriaComPatrimoniosType[]> {
      try {
           if (!departamentoId) {
                throw new Error("ID do departamento é necessário.");
@@ -140,14 +135,14 @@ export async function getCategoriasComTotalPatrimonios(departamentoId: number): 
             ORDER BY c.nome ASC
         `, [departamentoId]);
 
-          return categorias as any[];
+          return categorias as CategoriaComPatrimoniosType[];
      } catch (error) {
           console.error("Erro ao buscar categorias com total de patrimônios:", error);
           return [];
      }
 }
 
-export async function getPadroesDepreciacao(): Promise<any[]> {
+export async function getPadroesDepreciacao(): Promise<PadraoDepreciacaoType[]> {
      try {
           const padroes = await query(`
             SELECT * FROM padroes_depreciacao 
@@ -155,7 +150,7 @@ export async function getPadroesDepreciacao(): Promise<any[]> {
             ORDER BY categoria ASC
           `);
 
-          return padroes as any[];
+          return padroes as PadraoDepreciacaoType[];
      } catch (error) {
           console.error("Erro ao buscar padrões de depreciação:", error);
           return [];

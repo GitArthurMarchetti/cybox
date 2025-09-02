@@ -9,7 +9,7 @@ export function HomeFooter() {
                <div className="w-10/12 mx-auto">
                     <div className="grid grid-cols-4 gap-8 mb-12">
                          <div className="col-span-1">
-                              <Image src={logo} alt="CyBox Logo" width={100} className="mb-4" />
+                              <Image src={logo} alt="Cybox Logo" width={100} className="mb-4" />
                               <p className="text-gray-400 text-sm">
                                    Gestão Estratégica de Ativos: Monitorando, Avaliando e Otimizando Seu Patrimônio Empresarial
                               </p>
@@ -72,12 +72,6 @@ export function HomeFooter() {
                                         <a href="#" className="text-gray-400 hover:text-[#F6CF45] transition-colors">
                                              <FaInstagram size={24} />
                                         </a>
-                                        {/* <a href="#" className="text-gray-400 hover:text-[#F6CF45] transition-colors">
-                                             <FaFacebook size={24} />
-                                        </a>
-                                        <a href="#" className="text-gray-400 hover:text-[#F6CF45] transition-colors">
-                                             <FaTwitter size={24} />
-                                        </a> */}
                                    </div>
                               </div>
                          </div>
@@ -86,7 +80,7 @@ export function HomeFooter() {
                     <div className="border-t border-gray-700 pt-8">
                          <div className="flex justify-between items-center">
                               <p className="text-gray-400 text-sm">
-                                   © 2024 CyBox. Todos os direitos reservados.
+                                   © 2024 Cybox. Todos os direitos reservados.
                               </p>
 
                          </div>

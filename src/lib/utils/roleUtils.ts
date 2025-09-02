@@ -1,6 +1,3 @@
-/**
- * Traduz roles do inglês para português
- */
 export function traduzirRole(role: string): string {
     switch (role.toLowerCase()) {
         case 'owner':
@@ -14,9 +11,6 @@ export function traduzirRole(role: string): string {
     }
 }
 
-/**
- * Retorna a cor do badge baseada no role
- */
 export function getCorPorRole(role: string): { background: string; text: string } {
     switch (role.toLowerCase()) {
         case 'owner':

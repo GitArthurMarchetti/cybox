@@ -2,20 +2,16 @@
 
 import React, { useState, useEffect } from 'react';
 import Navbar from '../../components/Navigation/navbar';
-import { DepartamentoType, UserType } from '@/lib/types/types';
-import { MembroDepartamento } from '@/app/services/membros';
+import { DepartamentoType } from '@/lib/types/types';
+import { Category, PatrimonioDetalhadoType, CategoriasProps } from '@/lib/types/categoria.types';
 import { motion, AnimatePresence } from 'framer-motion';
-import { IoMdSearch } from 'react-icons/io';
 import { MdFilterList, MdKeyboardArrowLeft, MdKeyboardArrowRight, MdModeEdit, MdSearch, MdAdd } from 'react-icons/md';
 import { RiDeleteBinLine } from 'react-icons/ri';
-import { FaShare, FaArrowLeft, FaChartLine, FaFilter, FaPlus } from 'react-icons/fa';
-import Image from 'next/image';
+import { FaShare } from 'react-icons/fa';
 import { SidebarCategorias } from '@/app/components/Navigation/SidebarCategorias';
-import { useRouter } from 'next/navigation';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from 'recharts';
 import { getPatrimoniosByCategoria, removePatrimonio } from '@/app/services/patrimonios';
 import { removeCategoria, getCategoriasComTotalPatrimonios } from '@/app/services/categoria';
-import { getDepartamentosById, removeDepartamento } from '@/app/services/departamento';
+import { removeDepartamento } from '@/app/services/departamento';
 import { toast } from 'sonner';
 import {
      CriarCategoriaModal,
@@ -28,55 +24,6 @@ import {
      DetalhesPatrimonioModal
 } from '@/app/components/modals';
 import { enviarConvitesPorEmail } from '@/app/services/convites';
-import { getPadroesDepreciacao } from '@/app/services/categoria';
-
-
-// Definindo a interface para o tipo da categoria
-interface Category {
-     id: number;
-     name: string;
-     observation: string;
-     total: number;
-     notebooks?: PatrimonioDetalhadoType[];
-     padrao_depreciacao_id?: number | null;
-}
-
-// Interface para o patrimônio detalhado
-interface PatrimonioDetalhadoType {
-     id?: number;
-     name: string;
-     codigo?: string;
-     finalValue: number;
-     especificacoes?: string | null;
-     data_aquisicao?: string;
-     local?: string | null;
-     preco_inicial?: number;
-     valor_atual?: number;
-     depreciacao_percentual?: number;
-     depreciacao_valor?: number;
-     gastos_totais?: number;
-     status?: number;
-     gastos?: GastoType[];
-     depreciacao_historico?: { data: string; valor: number }[];
-     gastos_mensais?: { mes: string; valor: number }[];
-}
-
-// Interface para os gastos
-interface GastoType {
-     id: number;
-     tipo: string;
-     descricao: string;
-     valor: number;
-     data: string;
-}
-
-interface CategoriasProps {
-     departamento: DepartamentoType;
-     user: UserType;
-     host: UserType | null;
-     membros: MembroDepartamento[];
-     categorias: any[];
-}
 
 export default function CategoriaFront({
      departamento,
@@ -85,12 +32,10 @@ export default function CategoriaFront({
      membros = [],
      categorias = []
 }: CategoriasProps) {
-     // Encontrar o role do usuário atual no departamento
      const currentUserMembro = membros.find(m => m.id === user.id);
      const userRole = currentUserMembro?.role || 'member';
      const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
      const [searchTerm, setSearchTerm] = useState("");
-     const [isLoaded, setIsLoaded] = useState(false);
      const [hasInitiallyLoaded, setHasInitiallyLoaded] = useState(false);
      const [isAddNewOpen, setIsAddNewOpen] = useState(false);
      const [isAddPatrimonioOpen, setIsAddPatrimonioOpen] = useState(false);
@@ -103,21 +48,14 @@ export default function CategoriaFront({
      const [isConfirmDeleteOpen, setIsConfirmDeleteOpen] = useState(false);
      const [itemToDelete, setItemToDelete] = useState<{ tipo: string, nome: string, onConfirm: () => void } | null>(null);
      const [isShareModalOpen, setIsShareModalOpen] = useState(false);
-     const router = useRouter();
-
-
-     // Função para abrir modal de patrimônio
      const handleOpenPatrimonioModal = (category: Category) => {
           setSelectedCategoryForPatrimonio(category);
           setIsAddPatrimonioOpen(true);
      };
 
-     // Estados para o modal de detalhes do patrimônio
      const [isModalOpen, setIsModalOpen] = useState(false);
      const [selectedPatrimonio, setSelectedPatrimonio] = useState<PatrimonioDetalhadoType | null>(null);
      
-
-     // Função para gerar dados de depreciação para o gráfico
      const gerarDadosDepreciacao = (dataAquisicao: string, valorInicial: number, valorAtual: number) => {
           if (!dataAquisicao || !valorInicial) return [];
 
@@ -141,20 +79,16 @@ export default function CategoriaFront({
 
           return dados;
      };
-
-     // Função para gerar dados de gastos para o gráfico
      const gerarDadosGastos = () => {
           const meses = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun'];
           return meses.map(mes => ({
                mes,
-               valor: Math.random() * 500 + 100 // Dados de exemplo
+               valor: Math.random() * 500 + 100 
           }));
      };
-
-     // Função para carregar patrimônios de uma categoria
      const carregarPatrimonios = async (categoriaId: number, forceReload = false) => {
           if (patrimoniosPorCategoria[categoriaId] && !forceReload) {
-               return; // Já carregados
+               return; 
           }
 
           setLoadingPatrimonios(prev => ({ ...prev, [categoriaId]: true }));
@@ -185,35 +119,22 @@ export default function CategoriaFront({
                     [categoriaId]: patrimoniosFormatados
                }));
           } catch (error) {
-               console.error('Erro ao carregar patrimônios:', error);
                toast.error('Erro ao carregar patrimônios da categoria');
           } finally {
                setLoadingPatrimonios(prev => ({ ...prev, [categoriaId]: false }));
           }
      };
-
-     // Estado para armazenar patrimônios de cada categoria
      const [patrimoniosPorCategoria, setPatrimoniosPorCategoria] = useState<{ [key: number]: PatrimonioDetalhadoType[] }>({});
      const [loadingPatrimonios, setLoadingPatrimonios] = useState<{ [key: number]: boolean }>({});
      const [categories, setCategories] = useState<Category[]>([]);
-     const [padroesDepreciacao, setPadroesDepreciacao] = useState<any[]>([]);
      const [departamentoLocal, setDepartamentoLocal] = useState(departamento);
-
-     // Controlar carregamento inicial para animações
      useEffect(() => {
-          if (!hasInitiallyLoaded) {
-               setIsLoaded(true);
-               setHasInitiallyLoaded(true);
-          }
-     }, [hasInitiallyLoaded]);
-
-     // Sincronizar departamento local com prop inicial
+          setHasInitiallyLoaded(true);
+     }, []);
      useEffect(() => {
           setDepartamentoLocal(departamento);
      }, [departamento]);
-
-
-     // Atualizar categorias quando patrimônios mudarem
+     
      useEffect(() => {
           const updatedCategories: Category[] = categorias.map(cat => ({
                id: cat.id,
@@ -225,27 +146,10 @@ export default function CategoriaFront({
           }));
           setCategories(updatedCategories);
      }, [categorias, patrimoniosPorCategoria]);
-
-
-     // Função para recarregar dados do departamento
-     const recarregarDepartamento = async () => {
-          try {
-               const departamentoAtualizado = await getDepartamentosById(Number(departamentoLocal.id_departamentos));
-               if (departamentoAtualizado) {
-                    setDepartamentoLocal(departamentoAtualizado);
-               }
-          } catch (error) {
-               console.error('Erro ao recarregar departamento:', error);
-               toast.error('Erro ao atualizar departamento');
-          }
-     };
-
-     // Função para recarregar apenas as categorias
+     
      const recarregarCategorias = async () => {
           try {
                const categoriasAtualizadas = await getCategoriasComTotalPatrimonios(Number(departamentoLocal.id_departamentos));
-               
-               // Atualizar o array de categorias com os novos dados
                const updatedCategories: Category[] = categoriasAtualizadas.map(cat => ({
                     id: cat.id,
                     name: cat.nome,
@@ -257,30 +161,26 @@ export default function CategoriaFront({
                
                setCategories(updatedCategories);
           } catch (error) {
-               console.error('Erro ao recarregar categorias:', error);
                toast.error('Erro ao atualizar categorias');
           }
      };
-
-     // Função para atualizar departamento editado
      const handleDepartamentoSuccess = async (departamentoAtualizado: DepartamentoType) => {
           setIsConfigDepartamentoOpen(false);
-          setDepartamentoLocal(departamentoAtualizado); // Atualizar estado local com dados atualizados
+          setDepartamentoLocal(departamentoAtualizado); 
      };
-
-     // Função para atualizar categoria editada
      const handleCategoriaSuccess = async () => {
           setIsEditCategoriaOpen(false);
-          await recarregarCategorias(); // Recarregar apenas as categorias
+          await recarregarCategorias(); 
      };
 
-     // Função para enviar convites
      const handleInvite = async (emails: string[]) => {
           try {
                const result = await enviarConvitesPorEmail(
                     Number(departamentoLocal.id_departamentos),
                     user.id as string,
-                    emails
+                    emails,
+                    departamentoLocal.titulo,
+                    user.nome
                );
 
                if (result.success) {
@@ -289,60 +189,22 @@ export default function CategoriaFront({
                     toast.error(result.message);
                }
           } catch (error) {
-               console.error('Erro ao enviar convites:', error);
                toast.error('Erro ao enviar convites');
           }
      };
-
-     // Obter categoria selecionada atualizada
      const getUpdatedSelectedCategory = () => {
           if (!selectedCategory) return null;
           return categories.find(cat => cat.id === selectedCategory.id) || selectedCategory;
      };
-
-     // Filtrar categorias baseado na busca
      const filteredCategories = categories.filter(cat =>
           cat.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
           cat.observation.toLowerCase().includes(searchTerm.toLowerCase())
      );
-
-     // Função para abrir o modal de detalhes do patrimônio
      const handleOpenModal = (patrimonio: PatrimonioDetalhadoType) => {
           setSelectedPatrimonio(patrimonio);
           setIsModalOpen(true);
      };
-
-     // Formatar data para DD/MM/YYYY
-     const formatarData = (dataString: string) => {
-          if (!dataString) return "";
-          const data = new Date(dataString);
-          return data.toLocaleDateString('pt-BR');
-     };
-
-     // Formatar preço em reais
-     const formatarPreco = (valor: number | null | undefined) => {
-          if (!valor || isNaN(Number(valor))) return "R$ 0,00";
-          return Number(valor).toLocaleString('pt-BR', {
-               style: 'currency',
-               currency: 'BRL'
-          });
-     };
-
-     // Carregar padrões de depreciação na inicialização
-     useEffect(() => {
-          const carregarPadroes = async () => {
-               try {
-                    const padroes = await getPadroesDepreciacao();
-                    setPadroesDepreciacao(padroes);
-               } catch (error) {
-                    console.error('Erro ao carregar padrões de depreciação:', error);
-               }
-          };
-          carregarPadroes();
-     }, []);
-
-
-     // Variantes de animação - só animam no carregamento inicial
+     
      const containerVariants = hasInitiallyLoaded ? {
           hidden: { opacity: 1 },
           visible: { opacity: 1 }
@@ -434,9 +296,7 @@ export default function CategoriaFront({
                                                             : 'bg-[#1a1a1a] hover:bg-[#2c2c2c]'
                                                             }`}
                                                        onClick={async () => {
-                                                            // Primeiro carrega os patrimônios
                                                             await carregarPatrimonios(category.id);
-                                                            // Depois seleciona a categoria
                                                             setSelectedCategory(category);
                                                        }}
                                                        variants={itemVariants}
@@ -530,11 +390,10 @@ export default function CategoriaFront({
                                                                                           await removeCategoria(currentCategory.id, Number(departamentoLocal.id_departamentos));
                                                                                           toast.success('Categoria excluída com sucesso!');
                                                                                           setSelectedCategory(null);
-                                                                                          // Recarregar categorias para refletir a exclusão
+                                                                                          
                                                                                           await recarregarCategorias();
                                                                                      } catch (error) {
                                                                                           toast.error('Erro ao excluir categoria');
-                                                                                          console.error('Erro ao excluir categoria:', error);
                                                                                      }
                                                                                 }
                                                                            });
@@ -659,7 +518,6 @@ export default function CategoriaFront({
                                         }
                                    } catch (error) {
                                         toast.error('Erro ao excluir patrimônio');
-                                        console.error('Erro ao excluir patrimônio:', error);
                                    }
                               }
                          });
@@ -729,7 +587,6 @@ export default function CategoriaFront({
                                         window.location.href = '/departamentos';
                                    } catch (error) {
                                         toast.error('Erro ao excluir departamento');
-                                        console.error('Erro ao excluir departamento:', error);
                                    }
                               }
                          });

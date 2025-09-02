@@ -1,7 +1,4 @@
-// lib/mysql.ts
 import mysql from 'mysql2/promise';
-
-// Configuração da conexão com o MySQL
 export async function getConnection() {
      try {
           const connection = await mysql.createConnection({
@@ -18,7 +15,6 @@ export async function getConnection() {
      }
 }
 
-// Pool de conexões para melhor performance
 const pool = mysql.createPool({
      host: process.env.MYSQL_HOST,
      user: process.env.MYSQL_USER,
@@ -29,7 +25,7 @@ const pool = mysql.createPool({
      queueLimit: 0
 });
 
-export async function query(sql: string, params: any[] = []) {
+export async function query(sql: string, params: (string | number | boolean | null)[] = []) {
      try {
           const [rows, fields] = await pool.execute(sql, params);
           return rows;

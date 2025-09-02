@@ -18,11 +18,10 @@ const EnterDepartmentModal = ({ isOpen, onClose }: {
           
           setIsLoading(true);
           try {
-               // Add your logic here to handle the department code submission
-               await new Promise(resolve => setTimeout(resolve, 1000)); // Simular delay
+               
+               await new Promise(resolve => setTimeout(resolve, 1000)); 
                onClose();
           } catch (error) {
-               console.error('Erro ao entrar no departamento:', error);
           } finally {
                setIsLoading(false);
           }

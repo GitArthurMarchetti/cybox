@@ -19,8 +19,7 @@ const CreateDepartmentModal = ({ isOpen, onClose, userId, onSuccess }: CreateDep
     const [formData, setFormData] = useState({
         titulo: '',
         descricao: '',
-        localizacao: '',
-        fotoDepartamento: ''
+        localizacao: ''
     });
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -36,14 +35,12 @@ const CreateDepartmentModal = ({ isOpen, onClose, userId, onSuccess }: CreateDep
             data.append('titulo', formData.titulo.trim());
             data.append('descricao', formData.descricao.trim());
             data.append('localizacao', formData.localizacao.trim());
-            data.append('fotoDepartamento', formData.fotoDepartamento.trim());
 
             await saveDepartamento(data, userId);
             toast.success('Departamento criado com sucesso!');
             onClose();
             if (onSuccess) onSuccess();
         } catch (error) {
-            console.error('Erro ao criar departamento:', error);
             toast.error('Erro ao criar departamento');
         } finally {
             setIsLoading(false);
@@ -150,25 +147,6 @@ const CreateDepartmentModal = ({ isOpen, onClose, userId, onSuccess }: CreateDep
                                     />
                                 </motion.div>
 
-                                <motion.div
-                                    initial={{ opacity: 0, y: 20 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    transition={{ duration: 0.3, delay: 0.4 }}
-                                >
-                                    <label className="block text-sm font-medium text-[#b4b4b4] mb-2">
-                                        URL da imagem (opcional)
-                                    </label>
-                                    <input
-                                        type="url"
-                                        className="w-full bg-[#2c2c2c] text-white px-4 py-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#F6CF45]/50 placeholder-[#6c6c6c]"
-                                        placeholder="https://exemplo.com/imagem.jpg"
-                                        value={formData.fotoDepartamento}
-                                        onChange={(e) => handleInputChange('fotoDepartamento', e.target.value)}
-                                    />
-                                    <p className="text-xs text-[#8c8888] mt-1">
-                                        Cole a URL de uma imagem para representar este departamento
-                                    </p>
-                                </motion.div>
 
                                 <motion.div
                                     className="flex items-center justify-between pt-6 border-t border-[#2c2c2c]"

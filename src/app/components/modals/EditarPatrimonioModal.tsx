@@ -46,7 +46,6 @@ export default function EditarPatrimonioModal({
         data_aquisicao: ''
     });
 
-    // Função para formatar valor monetário
     const formatarValor = (valor: string) => {
         const numero = valor.replace(/\D/g, '');
         if (numero === '') return '';
@@ -57,7 +56,6 @@ export default function EditarPatrimonioModal({
         });
     };
 
-    // Inicializar dados do formulário
     useEffect(() => {
         if (isOpen && patrimonio) {
             setFormData({
@@ -83,19 +81,11 @@ export default function EditarPatrimonioModal({
             const formDataToSend = new FormData(event.currentTarget);
             formDataToSend.append('id', patrimonio.id.toString());
             
-            // Adicionar id_categoria se disponível
             if (categoryId) {
                 formDataToSend.append('id_categoria', categoryId.toString());
             }
 
-            console.log('DEBUG EditarPatrimonioModal:', {
-                patrimonioId: patrimonio.id,
-                categoryId,
-                formDataKeys: Array.from(formDataToSend.keys()),
-                id_categoria_value: formDataToSend.get('id_categoria')
-            });
 
-            // Converter valores formatados para números
             const valorInicialNum = parseFloat(formData.valor_inicial.replace(/\./g, '').replace(',', '.'));
             const valorAtualNum = parseFloat(formData.valor_atual.replace(/\./g, '').replace(',', '.'));
 
@@ -109,7 +99,6 @@ export default function EditarPatrimonioModal({
             if (onSuccess) onSuccess();
         } catch (error) {
             toast.error("Erro ao atualizar patrimônio");
-            console.error('Erro ao atualizar patrimônio:', error);
         } finally {
             setIsLoading(false);
         }
@@ -135,7 +124,7 @@ export default function EditarPatrimonioModal({
                         transition={{ type: 'spring', damping: 25, stiffness: 300 }}
                         onClick={(e) => e.stopPropagation()}
                     >
-                        {/* Header */}
+                        
                         <div className="p-6 border-b border-[#2c2c2c] flex items-center justify-between">
                             <div className="flex items-center gap-3">
                                 <div className="p-2 bg-[#F6CF45] rounded-lg">
@@ -154,10 +143,10 @@ export default function EditarPatrimonioModal({
                             </button>
                         </div>
 
-                        {/* Content */}
+                        
                         <div className="p-6 max-h-[70vh] overflow-y-auto">
                             <form className="space-y-6" onSubmit={handleSubmit}>
-                                {/* Primeira linha - Nome e Código */}
+                                
                                 <div className="grid grid-cols-2 gap-6">
                                     <div>
                                         <label className="block text-sm text-[#b4b4b4] mb-2">Nome do Patrimônio</label>
@@ -187,7 +176,7 @@ export default function EditarPatrimonioModal({
                                     </div>
                                 </div>
 
-                                {/* Segunda linha - Descrição */}
+                                
                                 <div>
                                     <label className="block text-sm text-[#b4b4b4] mb-2">Descrição</label>
                                     <textarea
@@ -200,7 +189,7 @@ export default function EditarPatrimonioModal({
                                     />
                                 </div>
 
-                                {/* Terceira linha - Localização e Taxa */}
+                                
                                 <div className="grid grid-cols-2 gap-6">
                                     <div>
                                         <label className="block text-sm text-[#b4b4b4] mb-2">Localização</label>
@@ -232,7 +221,7 @@ export default function EditarPatrimonioModal({
                                     </div>
                                 </div>
 
-                                {/* Quarta linha - Valores e Data */}
+                                
                                 <div className="grid grid-cols-3 gap-6">
                                     <div>
                                         <label className="block text-sm text-[#b4b4b4] mb-2">Valor Inicial (R$)</label>
@@ -288,7 +277,7 @@ export default function EditarPatrimonioModal({
                                     </div>
                                 </div>
 
-                                {/* Status atual */}
+                                
                                 <div className="bg-[#2c2c2c] rounded-lg p-4 border border-[#3c3c3c]">
                                     <h4 className="text-white font-medium mb-3">Status Atual</h4>
                                     <div className="grid grid-cols-3 gap-4 text-sm">
@@ -323,7 +312,7 @@ export default function EditarPatrimonioModal({
                                     </div>
                                 </div>
 
-                                {/* Botões de ação */}
+                                
                                 <div className="flex items-center justify-between pt-6 border-t border-[#2c2c2c]">
                                     <button
                                         type="button"

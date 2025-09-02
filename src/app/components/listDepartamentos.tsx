@@ -1,6 +1,5 @@
 "use client"
 
-import Image from "next/image";
 import { format, isValid, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { FaBuilding, FaCalendarAlt } from "react-icons/fa";
@@ -13,13 +12,11 @@ interface ListDepartamentosProps {
 }
 
 export function ListDepartamentos({ titulo, data, onClick }: ListDepartamentosProps) {
-     // Formatar a data de maneira amigável
      const formatarData = (dataString: string) => {
           try {
                const data = parseISO(dataString);
                if (!isValid(data)) return "Data inválida";
 
-               // Se for o ano atual, mostra só o dia e mês
                const dataAtual = new Date();
                const formatoData = data.getFullYear() === dataAtual.getFullYear()
                     ? 'd MMM'
@@ -35,11 +32,12 @@ export function ListDepartamentos({ titulo, data, onClick }: ListDepartamentosPr
 
      return (
           <motion.li
-               className="group p-2 rounded-lg hover:bg-[#2C2C2C] transition-colors duration-300 cursor-pointer"
+               className="list-none group p-2 rounded-lg hover:bg-[#2C2C2C] transition-colors duration-300 cursor-pointer"
                onClick={onClick}
                whileHover={{ x: 5 }}
                whileTap={{ scale: 0.98 }}
           >
+
                <div className="flex items-center gap-3">
                     <div className="relative flex-shrink-0">
                          <div className="w-10 h-10 bg-[#3D3D3D] group-hover:bg-[#4D4D4D] text-[#F6CF45] rounded-lg flex items-center justify-center transition-colors duration-300">

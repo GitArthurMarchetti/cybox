@@ -7,11 +7,9 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "seed": "node src/script/seed.js",
     "seed:improved": "node src/script/seed-improved.js",
     "db:show-tables": "node scripts/show-tables.js",
     "db:table": "node scripts/table.js",
-    "db:migrate": "node scripts/migrate-database.js",
     "db:reset": "node scripts/reset-database.js"
   },
   "dependencies": {
@@ -32,7 +30,7 @@
     "mysql2": "^3.12.0",
     "next": "14.2.7",
     "next-auth": "^5.0.0-beta.22",
-    "nodemailer": "^6.9.15",
+    "nodemailer": "^6.10.1",
     "pg": "^8.12.0",
     "postgres": "^3.4.4",
     "react": "^18",
@@ -48,7 +46,7 @@
   "devDependencies": {
     "@types/bcryptjs": "^2.4.6",
     "@types/node": "^20",
-    "@types/nodemailer": "^6.4.16",
+    "@types/nodemailer": "^6.4.19",
     "@types/react": "^18",
     "@types/react-dom": "^18",
     "eslint": "^8",

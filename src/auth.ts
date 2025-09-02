@@ -21,7 +21,7 @@ export const {
 } = NextAuth({
     session: {
         strategy: 'jwt',
-        maxAge: 30 * 24 * 60 * 60, // 30 days
+        maxAge: 30 * 24 * 60 * 60
     },
 
     pages: {
@@ -91,22 +91,20 @@ export const {
                     const placeholderPassword = await bcrypt.hash('GoogleOAuthPassword', 10);
 
                     if (!existingUser) {
-                        // Criar novo usuário se não existir
-                        const userId = uuidv4(); // Gerar um UUID para o novo usuário
+                        const userId = uuidv4();
                         await query(
                             `INSERT INTO users (id, nome, email, senha, google_id, status)
                              VALUES (?, ?, ?, ?, ?, 'ativo')`,
-                            [userId, profile.name, profile.email, placeholderPassword, googleId]
+                            [userId, profile.name || '', profile.email || '', placeholderPassword, googleId || '']
                         );
                         token.id = userId;
                     } else {
                         token.id = existingUser.id;
 
-                        // Atualizar googleId se necessário
                         if (!existingUser.google_id) {
                             await query(
                                 `UPDATE users SET google_id = ? WHERE id = ?`,
-                                [googleId, existingUser.id]
+                                [googleId || '', existingUser.id]
                             );
                         }
                     }

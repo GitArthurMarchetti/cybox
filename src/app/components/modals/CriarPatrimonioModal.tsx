@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { savePatrimonio } from '@/app/services/patrimonios';
 import { getPadroesDepreciacao } from '@/app/services/categoria';
+import { PadraoDepreciacaoType } from '@/lib/types/types';
 import { toast } from 'sonner';
 import { MdClose, MdCheck } from 'react-icons/md';
 import { AiOutlineLoading3Quarters } from 'react-icons/ai';
@@ -33,10 +34,9 @@ export default function CriarPatrimonioModal({
     const [valorAtual, setValorAtual] = useState('');
     const [taxaDepreciacao, setTaxaDepreciacao] = useState('');
     const [dataAquisicao, setDataAquisicao] = useState('');
-    const [padroesDepreciacao, setPadroesDepreciacao] = useState<any[]>([]);
+    const [padroesDepreciacao, setPadroesDepreciacao] = useState<PadraoDepreciacaoType[]>([]);
     const [isLoadingPadroes, setIsLoadingPadroes] = useState(false);
 
-    // Função para formatar valor monetário
     const formatarValor = (valor: string) => {
         const numero = valor.replace(/\D/g, '');
         if (numero === '') return '';
@@ -47,7 +47,6 @@ export default function CriarPatrimonioModal({
         });
     };
 
-    // Função para calcular valor atual baseado na depreciação
     const calcularValorAtual = (valorInicialStr: string, taxaStr: string, dataAquisicaoStr: string) => {
         const valorInicialNum = parseFloat(valorInicialStr.replace(/\./g, '').replace(',', '.'));
         const taxaNum = parseFloat(taxaStr);
@@ -56,11 +55,9 @@ export default function CriarPatrimonioModal({
             const dataAquisicaoDate = new Date(dataAquisicaoStr);
             const dataAtual = new Date();
 
-            // Calcular diferença em anos
             const diferencaEmAnos = (dataAtual.getTime() - dataAquisicaoDate.getTime()) / (1000 * 60 * 60 * 24 * 365.25);
 
-            // Aplicar depreciação baseada no tempo decorrido
-            const depreciacaoTotal = Math.min(taxaNum * diferencaEmAnos, 100); // Máximo 100% de depreciação
+            const depreciacaoTotal = Math.min(taxaNum * diferencaEmAnos, 100);
             const valorAtualCalculado = valorInicialNum * (1 - depreciacaoTotal / 100);
 
             return Math.max(0, valorAtualCalculado).toLocaleString('pt-BR', {
@@ -71,7 +68,6 @@ export default function CriarPatrimonioModal({
         return '';
     };
 
-    // Atualizar valor atual quando valor inicial, taxa ou data mudam
     useEffect(() => {
         if (valorInicial && taxaDepreciacao && dataAquisicao) {
             const novoValorAtual = calcularValorAtual(valorInicial, taxaDepreciacao, dataAquisicao);
@@ -79,23 +75,19 @@ export default function CriarPatrimonioModal({
         }
     }, [valorInicial, taxaDepreciacao, dataAquisicao]);
 
-    // Limpar campos e carregar padrões ao abrir modal
     useEffect(() => {
         if (isOpen) {
-            // Primeiro limpar campos
             setValorInicial('');
             setValorAtual('');
             setTaxaDepreciacao('');
             setDataAquisicao('');
             
-            // Depois carregar padrões
             const carregarPadroes = async () => {
                 setIsLoadingPadroes(true);
                 try {
                     const padroes = await getPadroesDepreciacao();
                     setPadroesDepreciacao(padroes);
                     
-                    // Pre-preencher taxa se a categoria tem padrão
                     if (selectedCategory?.padrao_depreciacao_id) {
                         const padrao = padroes.find(p => p.id === selectedCategory.padrao_depreciacao_id);
                         if (padrao) {
@@ -103,7 +95,6 @@ export default function CriarPatrimonioModal({
                         }
                     }
                 } catch (error) {
-                    console.error('Erro ao carregar padrões de depreciação:', error);
                 } finally {
                     setIsLoadingPadroes(false);
                 }
@@ -120,19 +111,11 @@ export default function CriarPatrimonioModal({
 
         try {
             const formData = new FormData(event.currentTarget);
-            console.log('DEBUG CriarPatrimonioModal:', {
-                selectedCategory,
-                selectedCategoryId: selectedCategory?.id,
-                formDataKeys: Array.from(formData.keys()),
-                id_categoria_value: formData.get('id_categoria')
-            });
 
-            // Garantir que o ID da categoria está no FormData
             if (selectedCategory?.id && !formData.get('id_categoria')) {
                 formData.set('id_categoria', selectedCategory.id.toString());
             }
 
-            // Converter valores formatados para números
             const valorInicialNum = parseFloat(valorInicial.replace(/\./g, '').replace(',', '.'));
             const valorAtualNum = parseFloat(valorAtual.replace(/\./g, '').replace(',', '.'));
 
@@ -146,7 +129,6 @@ export default function CriarPatrimonioModal({
             if (onSuccess) onSuccess();
         } catch (error) {
             toast.error("Erro ao criar patrimônio");
-            console.error('Erro ao criar patrimônio:', error);
         } finally {
             setIsLoading(false);
         }
@@ -173,7 +155,7 @@ export default function CriarPatrimonioModal({
                         onClick={(e) => e.stopPropagation()}
                     >
                         <div className="p-8">
-                            {/* Header */}
+                            
                             <div className="flex items-center justify-between mb-8">
                                 <div>
                                     <h2 className="text-2xl font-bold text-white mb-1">Adicionar Patrimônio</h2>
@@ -191,13 +173,13 @@ export default function CriarPatrimonioModal({
                             </div>
 
                             <form className="space-y-6" onSubmit={handleSubmit}>
-                                {/* Campo hidden para ID da categoria */}
+                                
                                 <input type="hidden" name="id_categoria" value={selectedCategory?.id || ''} />
                                 {selectedCategory?.id && (
                                     <input type="hidden" name="categoria_id_backup" value={selectedCategory.id} />
                                 )}
                                 
-                                {/* Primeira linha - Nome e Desvalorização */}
+                                
                                 <div className="grid grid-cols-2 gap-6">
                                     <div className="group">
                                         <label className="block text-xs text-[#8c8888] mb-2 group-focus-within:text-[#F6CF45] transition-colors">
@@ -241,7 +223,7 @@ export default function CriarPatrimonioModal({
                                     </div>
                                 </div>
 
-                                {/* Segunda linha - Descrição, Localização e Valor Inicial */}
+                                
                                 <div className="grid grid-cols-2 gap-6">
                                     <div className="group">
                                         <label className="block text-xs text-[#8c8888] mb-2 group-focus-within:text-[#F6CF45] transition-colors">
@@ -293,7 +275,7 @@ export default function CriarPatrimonioModal({
                                     </div>
                                 </div>
 
-                                {/* Terceira linha - Código, Data e Valor Atual */}
+                                
                                 <div className="grid grid-cols-3 gap-6">
                                     <div className="group">
                                         <label className="block text-xs text-[#8c8888] mb-2 group-focus-within:text-[#F6CF45] transition-colors">
@@ -346,7 +328,7 @@ export default function CriarPatrimonioModal({
                                     </div>
                                 </div>
 
-                                {/* Botões de ação */}
+                                
                                 <div className="flex items-center justify-between pt-6 border-t border-[#2c2c2c]">
                                     <button
                                         type="button"

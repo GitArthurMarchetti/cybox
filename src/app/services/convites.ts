@@ -2,6 +2,8 @@
 
 import { query } from '@/lib/mysql';
 import { getUsersByEmail } from './user';
+import { ConviteDetalhadoType } from '@/lib/types/types';
+import { sendEmail, createInviteEmailTemplate } from '@/lib/email';
 
 export async function enviarConvite(
     idDepartamento: number,
@@ -9,7 +11,6 @@ export async function enviarConvite(
     idDestinatario: string
 ): Promise<void> {
     try {
-        // Verifica se já existe um convite pendente
         const conviteExistente = await query(
             `SELECT * 
              FROM convites 
@@ -20,18 +21,15 @@ export async function enviarConvite(
             [idDepartamento, idDestinatario]
         );
 
-        if ((conviteExistente as any[]).length > 0) {
+        if ((conviteExistente as unknown[]).length > 0) {
             throw new Error("O usuário já foi convidado para este departamento.");
         }
 
-        // Gerar código de convite único
         const codigo_convite = `INV-${Math.random().toString(36).substring(2, 10).toUpperCase()}`;
-        
-        // Data de expiração: 7 dias a partir de agora
+
         const dataExpiracao = new Date();
         dataExpiracao.setDate(dataExpiracao.getDate() + 7);
 
-        // Insere o convite na tabela
         await query(
             `INSERT INTO convites (
                 id_departamentos, id_remetente, id_destinatario, codigo_convite, data_expiracao
@@ -39,12 +37,11 @@ export async function enviarConvite(
             [idDepartamento, idRemetente, idDestinatario, codigo_convite, dataExpiracao.toISOString().slice(0, 19).replace('T', ' ')]
         );
     } catch (error) {
-        console.error("Erro ao enviar convite:", error);
         throw new Error("Não foi possível enviar o convite.");
     }
 }
 
-export async function listarConvites(idUsuario: string): Promise<any[]> {
+export async function listarConvites(idUsuario: string): Promise<ConviteDetalhadoType[]> {
     try {
         const convites = await query(
             `SELECT c.*, d.titulo AS departamento_titulo, u.nome AS remetente_nome
@@ -57,16 +54,14 @@ export async function listarConvites(idUsuario: string): Promise<any[]> {
             [idUsuario]
         );
 
-        return convites as any[];
+        return convites as ConviteDetalhadoType[];
     } catch (error) {
-        console.error("Erro ao listar convites:", error);
         return [];
     }
 }
 
 export async function responderConvite(idConvite: number, status: "aceito" | "recusado"): Promise<void> {
     try {
-        // Atualiza o status do convite
         await query(
             `UPDATE convites
              SET status = ?, updated_at = CURRENT_TIMESTAMP
@@ -75,7 +70,6 @@ export async function responderConvite(idConvite: number, status: "aceito" | "re
         );
 
         if (status === "aceito") {
-            // Busca os dados do convite aceito
             const convites = await query(
                 `SELECT id_departamentos, id_destinatario 
                  FROM convites 
@@ -84,13 +78,12 @@ export async function responderConvite(idConvite: number, status: "aceito" | "re
                 [idConvite]
             );
 
-            if ((convites as any[]).length === 0) {
+            if ((convites as unknown[]).length === 0) {
                 throw new Error("Convite não encontrado.");
             }
 
-            const convite = (convites as any[])[0];
+            const convite = (convites as { id_departamentos: number; id_destinatario: string }[])[0];
 
-            // Verifica se o usuário já não está no departamento
             const jaExiste = await query(
                 `SELECT id FROM users_departamentos 
                  WHERE id_users = ? AND id_departamentos = ? AND status = 'ativo'
@@ -98,8 +91,7 @@ export async function responderConvite(idConvite: number, status: "aceito" | "re
                 [convite.id_destinatario, convite.id_departamentos]
             );
 
-            if ((jaExiste as any[]).length === 0) {
-                // Adiciona o usuário à tabela `users_departamentos` com role 'member'
+            if ((jaExiste as unknown[]).length === 0) {
                 await query(
                     `INSERT INTO users_departamentos (id_users, id_departamentos, role, status)
                      VALUES (?, ?, 'member', 'ativo')`,
@@ -108,12 +100,11 @@ export async function responderConvite(idConvite: number, status: "aceito" | "re
             }
         }
     } catch (error) {
-        console.error("Erro ao responder convite:", error);
         throw new Error("Não foi possível responder ao convite.");
     }
 }
 
-export async function getConviteDetalhes(idConvite: number): Promise<any | null> {
+export async function getConviteDetalhes(idConvite: number): Promise<ConviteDetalhadoType | null> {
     try {
         const convites = await query(
             `SELECT c.*, d.titulo AS departamento_titulo, u.nome AS remetente_nome
@@ -125,10 +116,9 @@ export async function getConviteDetalhes(idConvite: number): Promise<any | null>
             [idConvite]
         );
 
-        const conviteArray = convites as any[];
+        const conviteArray = convites as ConviteDetalhadoType[];
         return conviteArray.length > 0 ? conviteArray[0] : null;
     } catch (error) {
-        console.error("Erro ao buscar detalhes do convite:", error);
         return null;
     }
 }
@@ -136,7 +126,9 @@ export async function getConviteDetalhes(idConvite: number): Promise<any | null>
 export async function enviarConvitesPorEmail(
     idDepartamento: number,
     idRemetente: string,
-    emails: string[]
+    emails: string[],
+    departmentoNome: string,
+    remetenteNome: string
 ): Promise<{ success: boolean; message: string; enviados: number }> {
     try {
         let enviados = 0;
@@ -144,32 +136,61 @@ export async function enviarConvitesPorEmail(
 
         for (const email of emails) {
             try {
-                // Busca o usuário pelo email
                 const usuario = await getUsersByEmail(email);
-                
-                if (!usuario) {
-                    erros.push(`Usuário com email ${email} não encontrado no sistema`);
-                    continue;
+                let codigo_convite;
+
+                if (usuario) {
+                    const jaEstaNoDepartamento = await query(
+                        `SELECT * FROM users_departamentos 
+                         WHERE id_users = ? AND id_departamentos = ? AND status = 'ativo'
+                         LIMIT 1`,
+                        [usuario.id, idDepartamento]
+                    );
+
+                    if ((jaEstaNoDepartamento as unknown[]).length > 0) {
+                        erros.push(`${email} já é membro do departamento`);
+                        continue;
+                    }
+
+                    codigo_convite = `INV-${Math.random().toString(36).substring(2, 10).toUpperCase()}`;
+                    const dataExpiracao = new Date();
+                    dataExpiracao.setDate(dataExpiracao.getDate() + 7);
+
+                    await query(
+                        `INSERT INTO convites (
+                            id_departamentos, id_remetente, id_destinatario, codigo_convite, data_expiracao
+                        ) VALUES (?, ?, ?, ?, ?)`,
+                        [idDepartamento, idRemetente, usuario.id, codigo_convite, dataExpiracao.toISOString().slice(0, 19).replace('T', ' ')]
+                    );
+                } else {
+                    codigo_convite = `INV-${Math.random().toString(36).substring(2, 10).toUpperCase()}`;
+                    const dataExpiracao = new Date();
+                    dataExpiracao.setDate(dataExpiracao.getDate() + 7);
+
+                    await query(
+                        `INSERT INTO convites_externos (
+                            id_departamentos, id_remetente, email_destinatario, codigo_convite, data_expiracao
+                        ) VALUES (?, ?, ?, ?, ?)`,
+                        [idDepartamento, idRemetente, email, codigo_convite, dataExpiracao.toISOString().slice(0, 19).replace('T', ' ')]
+                    );
                 }
 
-                // Verifica se o usuário já está no departamento
-                const jaEstaNoDepartamento = await query(
-                    `SELECT * FROM users_departamentos 
-                     WHERE id_users = ? AND id_departamentos = ? AND status = 'ativo'
-                     LIMIT 1`,
-                    [usuario.id, idDepartamento]
+                const inviteLink = `${process.env.NEXTAUTH_URL}/convite/${codigo_convite}`;
+
+                const emailHtml = createInviteEmailTemplate(
+                    departmentoNome,
+                    remetenteNome,
+                    inviteLink
                 );
 
-                if ((jaEstaNoDepartamento as any[]).length > 0) {
-                    erros.push(`${email} já é membro do departamento`);
-                    continue;
-                }
+                await sendEmail({
+                    to: email,
+                    subject: `Convite para o departamento ${departmentoNome} - Cybox`,
+                    html: emailHtml
+                });
 
-                // Envia o convite
-                await enviarConvite(idDepartamento, idRemetente, usuario.id as string);
                 enviados++;
             } catch (error) {
-                console.error(`Erro ao enviar convite para ${email}:`, error);
                 erros.push(`Erro ao enviar convite para ${email}`);
             }
         }
@@ -184,13 +205,12 @@ export async function enviarConvitesPorEmail(
 
         return {
             success: true,
-            message: erros.length > 0 
-                ? `${enviados} convite(s) enviado(s). Erros: ${erros.join(', ')}` 
+            message: erros.length > 0
+                ? `${enviados} convite(s) enviado(s). Erros: ${erros.join(', ')}`
                 : `${enviados} convite(s) enviado(s) com sucesso!`,
             enviados
         };
     } catch (error) {
-        console.error("Erro ao enviar convites por email:", error);
         throw new Error("Não foi possível enviar os convites.");
     }
 }

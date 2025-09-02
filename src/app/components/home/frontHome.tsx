@@ -9,17 +9,12 @@ import {
 } from "@/components/ui/tooltip"
 import ajuda from "../../../../public/ajuda.png"
 
-
-//icons
 import { FaCalculator, FaChevronUp } from "react-icons/fa6";
 import { BsFillClockFill } from "react-icons/bs";
 import { MdOutlineAttachMoney } from "react-icons/md";
 import { RiBarChartFill } from "react-icons/ri";
 import { FaArrowTrendUp } from "react-icons/fa6";
 import { IoExtensionPuzzle } from "react-icons/io5";
-import { FaLinkedin, FaInstagram, FaFacebook, FaTwitter } from "react-icons/fa";
-import { MdEmail, MdPhone, MdLocationOn } from "react-icons/md";
-import { useRouter } from "next/navigation";
 import { PlansCard } from "./PlansCard";
 import { HomeFooter } from "./HomeFooter";
 

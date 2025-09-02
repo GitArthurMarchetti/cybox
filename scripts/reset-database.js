@@ -86,7 +86,7 @@ async function createNewDatabaseStructure(connection) {
             taxa_anual_percent DECIMAL(5,2) NOT NULL,
             vida_util_anos INT NOT NULL,
             observacoes TEXT,
-            ativo BOOLEAN DEFAULT TRUE,
+            ativo TINYINT(1) DEFAULT 1,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
             
@@ -241,7 +241,28 @@ async function createNewDatabaseStructure(connection) {
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
     `);
 
-    // 9. Tabela de notificações
+    // 9. Tabela de convites externos
+    console.log('📧 Criando tabela convites_externos...');
+    await connection.query(`
+        CREATE TABLE convites_externos (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            id_departamentos INT NOT NULL,
+            id_remetente VARCHAR(255) NOT NULL,
+            email_destinatario VARCHAR(255) NOT NULL,
+            codigo_convite VARCHAR(50) UNIQUE NOT NULL,
+            data_expiracao DATETIME NOT NULL,
+            status ENUM('pendente', 'aceito', 'recusado', 'expirado') DEFAULT 'pendente',
+            criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+            
+            FOREIGN KEY (id_departamentos) REFERENCES departamentos(id_departamentos) ON DELETE CASCADE,
+            INDEX idx_codigo_convite (codigo_convite),
+            INDEX idx_email_destinatario (email_destinatario),
+            INDEX idx_status (status)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+    `);
+
+    // 10. Tabela de notificações
     console.log('🔔 Criando tabela notificacoes...');
     await connection.query(`
         CREATE TABLE notificacoes (
@@ -250,7 +271,7 @@ async function createNewDatabaseStructure(connection) {
             titulo VARCHAR(255) NOT NULL,
             mensagem TEXT NOT NULL,
             tipo ENUM('info', 'warning', 'success', 'error', 'depreciacao', 'manutencao', 'vencimento', 'convite') NOT NULL,
-            lida BOOLEAN DEFAULT FALSE,
+            lida TINYINT(1) DEFAULT 0,
             acao_url VARCHAR(500),
             acao_texto VARCHAR(100),
             data_expiracao TIMESTAMP NULL,

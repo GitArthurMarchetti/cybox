@@ -51,25 +51,23 @@ export async function saveUser(formData: FormData, googleId?: string) {
             throw new Error('A confirmação da senha não corresponde à senha.');
         }
 
-        // Verifica se o usuário já existe
         const existingUser = await getUsersByEmail(email);
         if (existingUser) {
             throw new Error('Este email já está em uso.');
         }
 
         const hashedSenha = await bcrypt.hash(senha, 10);
-        const userId = uuidv4(); // Gera um UUID para o novo usuário
+        const userId = uuidv4();
 
         await query(
             'INSERT INTO users (id, nome, email, senha, google_id, status) VALUES (?, ?, ?, ?, ?, "ativo")',
             [userId, nome, email, hashedSenha, googleId || null]
         );
 
-        // Em vez de redirecionar, retorna sucesso
         return { success: true, userId };
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error('Erro ao salvar usuário:', error);
-        throw new Error(error.message || 'Erro ao processar o cadastro.');
+        throw new Error((error as Error).message || 'Erro ao processar o cadastro.');
     }
 }
 
@@ -79,7 +77,6 @@ export async function removeUser(user: UserType) {
             throw new Error('ID do usuário é necessário para deletar.');
         }
 
-        // Soft delete - marcar como deletado
         await query('UPDATE users SET status = "deletado", updated_at = CURRENT_TIMESTAMP WHERE id = ?', [user.id]);
         redirect('/');
     } catch (error) {

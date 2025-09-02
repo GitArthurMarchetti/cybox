@@ -150,14 +150,35 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+/* Remove outline padrão e adiciona estilo customizado para todos os elementos focáveis */
+* {
+  outline: none !important;
+}
+
 /* Melhorias para elementos focáveis */
-button, a, input, select, textarea {
+button, a, input, select, textarea, [tabindex], [role="button"] {
   transition: all 0.2s ease;
 }
 
-button:focus, a:focus, input:focus, select:focus, textarea:focus {
-  outline: none;
-  box-shadow: 0 0 0 2px rgba(246, 207, 69, 0.5);
+/* Estilo de foco sutil e elegante - apenas para elementos sem estilo customizado */
+button:focus-visible:not(.custom-focus), 
+a:focus-visible:not(.custom-focus), 
+input:focus:not(.custom-focus), 
+select:focus:not(.custom-focus), 
+textarea:focus:not(.custom-focus),
+[tabindex]:focus-visible:not(.custom-focus),
+[role="button"]:focus-visible:not(.custom-focus) {
+  outline: none !important;
+  box-shadow: 0 0 0 1px rgba(246, 207, 69, 0.3) !important;
+}
+
+/* Remove qualquer outline padrão do browser */
+button:focus,
+a:focus,
+div:focus,
+span:focus {
+  outline: none !important;
+  border: none !important;
 }
 
 /* Remove as setinhas dos inputs numéricos */

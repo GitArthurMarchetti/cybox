@@ -12,7 +12,6 @@ import {
     AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { UserType } from "@/lib/types/types";
-import { useState } from "react";
 
 import { IoArrowRedoSharp } from "react-icons/io5";
 
@@ -22,9 +21,6 @@ type ConviteProps = {
 };
 
 export default function Convite({ users, departamentoNome }: ConviteProps) {
-    const [selectedUsers, setSelectedUsers] = useState<UserType[]>();
-
-
 
     return (
         <>
@@ -48,13 +44,6 @@ export default function Convite({ users, departamentoNome }: ConviteProps) {
                                     ))}
                                 </datalist>
 
-                                    <div>
-
-                                    </div>
-
-                                <div className="mt-4">
-                                    
-                                </div>
                             </AlertDialogDescription>
 
                         </AlertDialogHeader>

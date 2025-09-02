@@ -2,7 +2,7 @@
 
 import Image from 'next/image'
 import { MdDashboard } from "react-icons/md";
-import { IoMdNotifications, IoMdSearch } from "react-icons/io";
+import { IoMdSearch } from "react-icons/io";
 import { FaFilter, FaGear } from "react-icons/fa6";
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -18,9 +18,8 @@ interface NavbarProps {
 
 export default function Navbar({ type, user }: NavbarProps) {
     const [searchFocus, setSearchFocus] = useState(false);
-    const [notificationCount, setNotificationCount] = useState(3); // Simulação de notificações
+    const [notificationCount, setNotificationCount] = useState(3);
 
-    // Variantes de animação
     const navbarVariants = {
         hidden: { y: -20, opacity: 0 },
         visible: {
@@ -30,7 +29,6 @@ export default function Navbar({ type, user }: NavbarProps) {
         }
     };
 
-    // Navbar tipo 1 - Homepage pública
     if (type === "1") {
         return (
             <motion.header
@@ -108,7 +106,6 @@ export default function Navbar({ type, user }: NavbarProps) {
             </motion.header>
         );
     }
-    // Navbar tipo 2 - Área logada
     else if (type === '2') {
         return (
             <motion.header
@@ -118,7 +115,6 @@ export default function Navbar({ type, user }: NavbarProps) {
                 variants={navbarVariants}
             >
                 <nav className='flex items-center w-full justify-between px-10 h-full'>
-                    {/* Logo */}
                     <div className='flex items-center'>
                         <Link href="/departamentos">
                             <Image
@@ -131,7 +127,6 @@ export default function Navbar({ type, user }: NavbarProps) {
                         </Link>
                     </div>
 
-                    {/* Barra de pesquisa */}
                     <div className="flex items-center w-2/5 gap-5">
                         <div
                             className={`flex items-center bg-[#2C2C2C] w-full px-4 rounded-full transition-all duration-300 ${searchFocus ? 'ring-2 ring-[#F6CF45]/50' : ''
@@ -155,9 +150,7 @@ export default function Navbar({ type, user }: NavbarProps) {
                         </motion.button>
                     </div>
 
-                    {/* Perfil e notificações */}
                     <div className='flex justify-end items-center gap-6'>
-                        {/* Botão de notificações */}
                         <motion.div
                             className="relative cursor-pointer"
                             whileHover={{ scale: 1.1 }}
@@ -171,14 +164,12 @@ export default function Navbar({ type, user }: NavbarProps) {
                             )}
                         </motion.div>
 
-                        {/* Informações do usuário */}
                         <div className="flex items-center gap-4">
                             <div className="text-right">
                                 <p className='text-white font-medium'>{user?.nome || 'Usuário'}</p>
                                 <p className='text-[#B4B4B4] text-sm'>{user?.email || 'email@exemplo.com'}</p>
                             </div>
 
-                            {/* Avatar do usuário */}
                             <motion.div
                                 className='w-12 h-12 rounded-full bg-[#3D3D3D] flex items-center justify-center text-white text-lg font-medium cursor-pointer'
                                 whileHover={{ scale: 1.05 }}
@@ -193,6 +184,5 @@ export default function Navbar({ type, user }: NavbarProps) {
         );
     }
 
-    // Tipo de navbar inválido
     return null;
 }

@@ -75,22 +75,22 @@ export default function ConfirmarExclusaoModal({
                         onClick={(e) => e.stopPropagation()}
                     >
                         <div className="p-8 text-center">
-                            {/* Ícone de aviso */}
+
                             <div className="mx-auto mb-6 w-16 h-16 bg-red-500/10 rounded-full flex items-center justify-center">
                                 <MdWarning className="text-red-500 text-3xl" />
                             </div>
 
-                            {/* Título */}
+
                             <h2 className="text-2xl font-bold text-white mb-3">
                                 {titulo}
                             </h2>
 
-                            {/* Descrição */}
+
                             <p className="text-[#b4b4b4] mb-2 leading-relaxed">
                                 {descricao}
                             </p>
 
-                            {/* Nome do item se fornecido */}
+
                             {itemNome && (
                                 <div className="bg-[#2c2c2c] rounded-lg p-4 mb-6 border border-red-500/20">
                                     <div className="flex items-center justify-center gap-3">
@@ -104,14 +104,14 @@ export default function ConfirmarExclusaoModal({
                                 </div>
                             )}
 
-                            {/* Aviso adicional */}
+
                             <div className="bg-amber-500/10 border border-amber-500/20 rounded-lg p-3 mb-8">
                                 <p className="text-amber-400 text-sm">
-                                    ⚠️ Esta ação não pode ser desfeita!
+                                    Esta ação não pode ser desfeita!
                                 </p>
                             </div>
 
-                            {/* Botões de ação */}
+
                             <div className="flex gap-3">
                                 <button
                                     onClick={onClose}

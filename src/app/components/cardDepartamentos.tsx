@@ -11,14 +11,12 @@ import { traduzirRole } from "@/lib/utils/roleUtils";
 
 interface CardDepartamentoProps {
      departamento: DepartamentoType;
-     id_departamento: string | number | null;
      titulo: string;
      fotoDepartamento?: string;
      cargo: string;
      desc?: string | null;
      maximoParticipante: number;
      NParticipantes: number;
-     userId: string;
      onShare?: (departamento: DepartamentoType) => void;
      onViewMembers?: (departamento: DepartamentoType) => void;
      onSettings?: (departamento: DepartamentoType) => void;
@@ -26,23 +24,19 @@ interface CardDepartamentoProps {
 
 export function CardDepartamento({
      departamento,
-     id_departamento,
      titulo,
      fotoDepartamento,
      cargo,
      desc,
      NParticipantes,
      maximoParticipante,
-     userId,
      onShare,
      onViewMembers,
      onSettings
 }: CardDepartamentoProps) {
-     const [isHovered, setIsHovered] = useState(false);
      const [isMenuOpen, setIsMenuOpen] = useState(false);
      const menuRef = useRef<HTMLDivElement>(null);
 
-     // Fechar menu quando clicar fora
      useEffect(() => {
           const handleClickOutside = (event: MouseEvent) => {
                if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
@@ -59,18 +53,14 @@ export function CardDepartamento({
           };
      }, [isMenuOpen]);
 
-     // Calcular percentual de ocupação
      const ocupacaoPercentual = Math.round((NParticipantes / maximoParticipante) * 100);
 
-     // Determinar cor da barra de progresso baseada na ocupação
      const getBarColor = () => {
           if (ocupacaoPercentual < 50) return "bg-green-500";
           if (ocupacaoPercentual < 75) return "bg-yellow-500";
           return "bg-red-500";
      };
 
-     // Simular participantes para demonstração
-     // Em produção, isso viria do backend
      const participantes = [
           { id: 1, nome: "Ana Silva", cargo: "Proprietário" },
           { id: 2, nome: "Bruno Costa", cargo: "Administrador" },
@@ -79,7 +69,6 @@ export function CardDepartamento({
           { id: 5, nome: "Elisa Santos", cargo: "Membro" }
      ].slice(0, NParticipantes);
 
-     // Gerar cores aleatórias para os avatares (apenas para demonstração)
      const avatarColors = [
           "bg-green-500",
           "bg-yellow-500",
@@ -94,18 +83,14 @@ export function CardDepartamento({
                className="bg-[#2C2C2C] p-6 rounded-xl relative cursor-pointer group"
                whileHover={{ scale: 1.02 }}
                whileTap={{ scale: 0.98 }}
-               onHoverStart={() => setIsHovered(true)}
-               onHoverEnd={() => setIsHovered(false)}
                transition={{ duration: 0.2 }}
           >
-               {/* Efeito de brilho no hover */}
                <div className={`absolute inset-0 bg-gradient-to-r from-[#F6CF45]/0 via-[#F6CF45]/5 to-[#F6CF45]/0 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none`}></div>
 
-               {/* Conteúdo do card */}
                <div className="flex justify-between items-start mb-6">
                     <div className="flex items-center gap-4">
                          <div className="relative">
-                              {fotoDepartamento ? (
+                              {fotoDepartamento && fotoDepartamento.startsWith('/') ? (
                                    <Image
                                         src={fotoDepartamento}
                                         alt="Foto Departamento"
@@ -119,7 +104,6 @@ export function CardDepartamento({
                                    </div>
                               )}
 
-                              {/* Indicador de status (online/offline) */}
                               <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 border-2 border-[#2C2C2C] rounded-full"></div>
                          </div>
 
@@ -151,7 +135,6 @@ export function CardDepartamento({
                                    <BsThreeDotsVertical size={16} />
                               </motion.button>
 
-                              {/* Dropdown Menu */}
                               {isMenuOpen && (
                                    <motion.div
                                         initial={{ opacity: 0, scale: 0.95, y: -10 }}
@@ -204,9 +187,7 @@ export function CardDepartamento({
                     </div>
                </div>
 
-               {/* Footer com informações de usuários e estatísticas */}
                <div className="mt-8">
-                    {/* Barra de progresso de ocupação */}
                     <div className="mb-3">
                          <div className="flex justify-between items-center mb-1 text-xs">
                               <span className="text-[#B4B4B4]">Ocupação</span>
@@ -220,7 +201,6 @@ export function CardDepartamento({
                          </div>
                     </div>
 
-                    {/* Avatares dos participantes */}
                     <div className="flex justify-between items-center">
                          <div className="flex -space-x-3">
                               {participantes.slice(0, 4).map((participante, index) => (

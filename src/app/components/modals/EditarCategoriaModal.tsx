@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { MdClose, MdCategory } from 'react-icons/md';
 import { FaSave } from 'react-icons/fa';
 import { saveCategoria, getPadroesDepreciacao } from '@/app/services/categoria';
+import { PadraoDepreciacaoType } from '@/lib/types/types';
 import { toast } from 'sonner';
 
 interface Category {
@@ -30,14 +31,13 @@ export default function EditarCategoriaModal({
     onSuccess 
 }: EditarCategoriaModalProps) {
     const [isLoading, setIsLoading] = useState(false);
-    const [padroesDepreciacao, setPadroesDepreciacao] = useState<any[]>([]);
+    const [padroesDepreciacao, setPadroesDepreciacao] = useState<PadraoDepreciacaoType[]>([]);
     const [formData, setFormData] = useState({
         nome: '',
         descricao: '',
         padrao_depreciacao_id: ''
     });
 
-    // Inicializar dados do formulário
     useEffect(() => {
         if (isOpen && categoria) {
             setFormData({
@@ -48,7 +48,6 @@ export default function EditarCategoriaModal({
         }
     }, [isOpen, categoria]);
 
-    // Carregar padrões de depreciação ao abrir o modal
     useEffect(() => {
         if (isOpen) {
             const carregarPadroes = async () => {
@@ -56,7 +55,6 @@ export default function EditarCategoriaModal({
                     const padroes = await getPadroesDepreciacao();
                     setPadroesDepreciacao(padroes);
                 } catch (error) {
-                    console.error('Erro ao carregar padrões de depreciação:', error);
                 }
             };
             carregarPadroes();
@@ -81,7 +79,6 @@ export default function EditarCategoriaModal({
             if (onSuccess) onSuccess();
         } catch (error) {
             toast.error("Erro ao atualizar categoria");
-            console.error('Erro ao atualizar categoria:', error);
         } finally {
             setIsLoading(false);
         }

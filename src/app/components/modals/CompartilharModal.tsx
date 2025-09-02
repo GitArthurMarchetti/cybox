@@ -19,12 +19,11 @@ export function CompartilharModal({ isOpen, onClose, departamento, onInvite }: C
     const [isLoading, setIsLoading] = useState(false);
     const [shareLink, setShareLink] = useState('');
 
-    // Definir o link de compartilhamento apenas no cliente
     useEffect(() => {
         if (typeof window !== 'undefined' && departamento) {
             const link = departamento.codigo_convite
                 ? `${window.location.origin}/convite/${departamento.codigo_convite}`
-                : `${window.location.origin}/convite/${departamento.id_departamentos}`;
+                : `${window.location.origin}/departamentos/${departamento.id_departamentos}`;
             setShareLink(link);
         }
     }, [departamento]);

@@ -23,8 +23,7 @@ interface SidebarProps {
 
 export function SidebarCategorias({ departamento, user, host, membros = [], onAddCategoryClick, onConfigClick, onShareClick, hasInitiallyLoaded = false }: SidebarProps) {
      const [isShareModalOpen, setIsShareModalOpen] = useState(false);
-     
-     // Variantes de animação - só animam no carregamento inicial
+
      const sidebarVariants = hasInitiallyLoaded ? {
           hidden: { x: 0, opacity: 1 },
           visible: { x: 0, opacity: 1 }
@@ -54,16 +53,14 @@ export function SidebarCategorias({ departamento, user, host, membros = [], onAd
      };
 
      const isAdmin = host?.email === user.email;
-     
-     // Calcular dados dos membros
+
      const totalMembros = membros.length;
-     const maxMembros = 50; // Limite padrão
+     const maxMembros = 50;
      const ocupacaoPercentual = maxMembros > 0 ? Math.round((totalMembros / maxMembros) * 100) : 0;
-     
-     // Cores para os avatares dos membros
+
      const avatarColors = [
           'bg-green-500',
-          'bg-blue-500', 
+          'bg-blue-500',
           'bg-purple-500',
           'bg-pink-500',
           'bg-yellow-500',
@@ -79,7 +76,6 @@ export function SidebarCategorias({ departamento, user, host, membros = [], onAd
                animate="visible"
                variants={sidebarVariants}
           >
-               {/* Botão de voltar aos departamentos */}
                <motion.div
                     className="mb-6"
                     variants={itemVariants}
@@ -90,7 +86,6 @@ export function SidebarCategorias({ departamento, user, host, membros = [], onAd
                     </Link>
                </motion.div>
 
-               {/* Cabeçalho do departamento */}
                <motion.div
                     className="mb-8"
                     variants={itemVariants}
@@ -98,7 +93,7 @@ export function SidebarCategorias({ departamento, user, host, membros = [], onAd
                     <div className="flex items-center gap-4 mb-4">
                          <div className="relative group">
                               <div className="w-16 h-16 rounded-xl bg-gradient-to-br from-[#2c2c2c] to-[#252525] flex items-center justify-center text-[#F6CF45] overflow-hidden border border-[#333] group-hover:border-[#F6CF45] transition-all duration-300">
-                                   {departamento.fotoDepartamento ? (
+                                   {departamento.fotoDepartamento && departamento.fotoDepartamento.startsWith('/') ? (
                                         <Image
                                              src={departamento.fotoDepartamento}
                                              alt={departamento.titulo}
@@ -119,24 +114,20 @@ export function SidebarCategorias({ departamento, user, host, membros = [], onAd
                          <div>
                               <h2 className="text-xl font-bold text-white group-hover:text-[#F6CF45] transition-colors duration-300">{departamento.titulo}</h2>
                               <div className="flex items-center gap-2 mt-1">
-                                   <div className="w-2 h-2 rounded-full bg-green-500"></div>
-                                   <p className="text-sm text-[#b4b4b4]">
+                                   <p className="text-xs text-[#b4b4b4]/60">
                                         {isAdmin ? "Você é o proprietário" : `Proprietário: ${host?.nome || 'Não definido'}`}
                                    </p>
                               </div>
                          </div>
                     </div>
 
-                    {/* Descrição com gradiente de transparência */}
-                    <div className="relative mt-4 max-h-24 overflow-hidden">
-                         <p className="text-sm text-[#b4b4b4] leading-relaxed">
+                    <div className="mt-4 max-h-32 overflow-y-auto scrollbar-thin scrollbar-thumb-[#F6CF45] scrollbar-track-transparent">
+                         <p className="text-sm text-[#b4b4b4] leading-relaxed pr-2">
                               {departamento.descricao || "Sem descrição disponível para este departamento."}
                          </p>
-                         <div className="absolute bottom-0 left-0 right-0 h-8 bg-gradient-to-t from-[#1a1a1a] to-transparent"></div>
                     </div>
                </motion.div>
 
-               {/* Status e estatísticas */}
                <motion.div
                     className="mb-8 bg-[#1c1c1c] p-4 rounded-xl border border-[#2c2c2c]"
                     variants={itemVariants}
@@ -149,7 +140,6 @@ export function SidebarCategorias({ departamento, user, host, membros = [], onAd
                          <span className="text-sm font-bold text-white bg-[#2c2c2c] px-2 py-1 rounded-full">{totalMembros}/{maxMembros}</span>
                     </div>
 
-                    {/* Barra de progresso da ocupação */}
                     <div className="w-full h-2 bg-[#2c2c2c] rounded-full overflow-hidden mb-2">
                          <motion.div
                               className={`h-full ${ocupacaoPercentual < 50 ? 'bg-green-500' : ocupacaoPercentual < 75 ? 'bg-yellow-500' : 'bg-red-500'}`}
@@ -162,7 +152,7 @@ export function SidebarCategorias({ departamento, user, host, membros = [], onAd
                     <div className="flex justify-between items-center">
                          <div className="flex -space-x-2">
                               {membros.slice(0, 4).map((membro, index) => (
-                                   <div 
+                                   <div
                                         key={membro.id}
                                         className={`w-7 h-7 rounded-full border-2 border-[#1c1c1c] ${avatarColors[index % avatarColors.length]} flex items-center justify-center text-xs font-bold text-white`}
                                         title={membro.nome}
@@ -185,7 +175,6 @@ export function SidebarCategorias({ departamento, user, host, membros = [], onAd
                     </div>
                </motion.div>
 
-               {/* Botões de ação */}
                <div className="space-y-3 mt-4">
                     <motion.button
                          className="w-full flex items-center justify-center gap-2 bg-[#F6CF45] hover:bg-[#f7d665] text-black font-medium py-3 px-4 rounded-xl transition-colors duration-300 shadow-lg shadow-[#F6CF45]/10"
@@ -197,14 +186,6 @@ export function SidebarCategorias({ departamento, user, host, membros = [], onAd
                          <FaPlus size={16} /> Criar categoria
                     </motion.button>
 
-                    {/* <motion.button
-                         className="w-full flex items-center justify-center gap-2 border border-[#333] bg-[#1c1c1c] hover:bg-[#252525] text-white font-medium py-3 px-4 rounded-xl transition-colors duration-300"
-                         whileHover={{ scale: 1.02, borderColor: "#F6CF45" }}
-                         whileTap={{ scale: 0.98 }}
-                         variants={itemVariants}
-                    >
-                         <FaChartLine size={16} className="text-[#F6CF45]" /> Dashboard
-                    </motion.button> */}
 
                     {isAdmin && (
                          <motion.button
@@ -213,7 +194,6 @@ export function SidebarCategorias({ departamento, user, host, membros = [], onAd
                               whileTap={{ scale: 0.98 }}
                               variants={itemVariants}
                               onClick={() => {
-                                   // Esta função será passada como prop do componente pai
                                    if (onConfigClick) onConfigClick();
                               }}
                          >
@@ -238,7 +218,6 @@ export function SidebarCategorias({ departamento, user, host, membros = [], onAd
                     </motion.button>
                </div>
 
-               {/* Rodapé com informações adicionais */}
                <motion.div
                     className="mt-auto pt-6 border-t border-[#2c2c2c] text-xs text-[#8c8888]"
                     variants={itemVariants}
@@ -248,7 +227,7 @@ export function SidebarCategorias({ departamento, user, host, membros = [], onAd
                     </p>
 
                </motion.div>
-               
+
                <CompartilharModal
                     isOpen={isShareModalOpen}
                     onClose={() => setIsShareModalOpen(false)}

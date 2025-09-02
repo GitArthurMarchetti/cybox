@@ -1,4 +1,3 @@
-// types.ts
 export type UserType = {
     id: string | null;
     nome: string;
@@ -117,6 +116,38 @@ export type NotificacaoType = {
     acao_url?: string | null;
     acao_texto?: string | null;
     data_expiracao?: string | null;
-    metadados?: any;
+    metadados?: Record<string, unknown>;
     created_at?: string | null;
+};
+
+export type CategoriaComPatrimoniosType = {
+    id: number;
+    nome: string;
+    descricao?: string | null;
+    padrao_depreciacao_id?: number | null;
+    padrao_categoria?: string | null;
+    taxa_anual_percent?: number | null;
+    created_at?: string | null;
+    total_patrimonios: number;
+    valor_total: number;
+};
+
+export type ResumoPatrimoniosType = {
+    total_patrimonios: number;
+    valor_total_inicial: number;
+    valor_total_atual: number;
+};
+
+export type ConviteDetalhadoType = {
+    id: number;
+    id_departamentos: number;
+    id_remetente: string;
+    id_destinatario: string;
+    status: "pendente" | "aceito" | "recusado";
+    codigo_convite?: string | null;
+    data_expiracao?: string | null;
+    criado_em: string;
+    updated_at?: string | null;
+    departamento_titulo?: string;
+    remetente_nome?: string;
 };

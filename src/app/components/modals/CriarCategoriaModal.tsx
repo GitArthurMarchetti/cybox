@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { MdClose, MdCategory } from 'react-icons/md';
 import { FaPlus } from 'react-icons/fa';
 import { saveCategoria, getPadroesDepreciacao } from '@/app/services/categoria';
+import { PadraoDepreciacaoType } from '@/lib/types/types';
 import { toast } from 'sonner';
 
 interface CriarCategoriaModalProps {
@@ -21,9 +22,8 @@ export default function CriarCategoriaModal({
     onSuccess
 }: CriarCategoriaModalProps) {
     const [isLoading, setIsLoading] = useState(false);
-    const [padroesDepreciacao, setPadroesDepreciacao] = useState<any[]>([]);
+    const [padroesDepreciacao, setPadroesDepreciacao] = useState<PadraoDepreciacaoType[]>([]);
 
-    // Carregar padrões de depreciação ao abrir o modal
     useEffect(() => {
         if (isOpen) {
             const carregarPadroes = async () => {
@@ -31,7 +31,6 @@ export default function CriarCategoriaModal({
                     const padroes = await getPadroesDepreciacao();
                     setPadroesDepreciacao(padroes);
                 } catch (error) {
-                    console.error('Erro ao carregar padrões de depreciação:', error);
                 }
             };
             carregarPadroes();
@@ -53,7 +52,6 @@ export default function CriarCategoriaModal({
             if (onSuccess) onSuccess();
         } catch (error) {
             toast.error("Erro ao criar categoria");
-            console.error('Erro ao criar categoria:', error);
         } finally {
             setIsLoading(false);
         }

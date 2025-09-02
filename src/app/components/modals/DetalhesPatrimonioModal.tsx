@@ -54,14 +54,14 @@ export function DetalhesPatrimonioModal({
 
     if (!patrimonio) return null;
 
-    // Formatar data para DD/MM/YYYY
+    
     const formatarData = (dataString: string) => {
         if (!dataString) return "";
         const data = new Date(dataString);
         return data.toLocaleDateString('pt-BR');
     };
 
-    // Formatar preço em reais
+    
     const formatarPreco = (valor: number | null | undefined) => {
         if (!valor || isNaN(Number(valor))) return "R$ 0,00";
         return Number(valor).toLocaleString('pt-BR', {
@@ -88,7 +88,7 @@ export function DetalhesPatrimonioModal({
                         transition={{ type: 'spring', damping: 25, stiffness: 300 }}
                         onClick={(e) => e.stopPropagation()}
                     >
-                        {/* Header */}
+                        
                         <div className="p-6 border-b border-[#2c2c2c] flex items-center justify-between">
                             <div className="flex items-center gap-3">
                                 <button
@@ -115,10 +115,10 @@ export function DetalhesPatrimonioModal({
                             </div>
                         </div>
 
-                        {/* Content */}
+                        
                         <div className="h-[calc(85vh-140px)] overflow-auto p-6">
                             <div className="grid grid-cols-3 gap-6">
-                                {/* Coluna 1 - Informações gerais */}
+                                
                                 <div>
                                     <div className="flex items-center gap-4 mb-6">
                                         <div className={`w-16 h-16 flex items-center justify-center rounded-md text-2xl font-bold ${
@@ -179,9 +179,9 @@ export function DetalhesPatrimonioModal({
                                     </div>
                                 </div>
 
-                                {/* Coluna 2 - Gráficos */}
+                                
                                 <div className="col-span-2 space-y-6">
-                                    {/* Tabs */}
+                                    
                                     <div className="flex gap-4 mb-2">
                                         <button
                                             className={`py-2 px-4 rounded-md transition-colors duration-300 flex items-center gap-2 ${
@@ -203,9 +203,9 @@ export function DetalhesPatrimonioModal({
                                         </button>
                                     </div>
 
-                                    {/* Gráficos baseados na tab ativa */}
+                                    
                                     <div className="grid grid-cols-2 gap-6">
-                                        {/* Gráfico principal */}
+                                        
                                         <div className="col-span-2 bg-[#2c2c2c] p-4 rounded-md">
                                             <div className="flex justify-between items-center mb-4">
                                                 <h3 className="font-medium">
@@ -262,7 +262,7 @@ export function DetalhesPatrimonioModal({
                                             </div>
                                         </div>
 
-                                        {/* Histórico de gastos */}
+                                        
                                         <div className="col-span-2 bg-[#2c2c2c] p-4 rounded-md">
                                             <div className="flex justify-between items-center mb-4">
                                                 <h3 className="font-medium">Histórico de gastos</h3>
@@ -322,7 +322,7 @@ export function DetalhesPatrimonioModal({
                             </div>
                         </div>
 
-                        {/* Footer */}
+                        
                         <div className="px-6 py-2 border-t border-[#2c2c2c] flex justify-end">
                             <button
                                 className="px-4 py-2 bg-[#2c2c2c] text-white rounded-md hover:bg-[#3c3c3c] transition-colors duration-300"

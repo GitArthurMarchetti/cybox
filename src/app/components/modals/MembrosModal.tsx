@@ -26,7 +26,6 @@ export default function MembrosModal({ isOpen, onClose, departamento }: MembrosM
                 const membrosData = await getMembrosPerDepartamento(departamento.id_departamentos);
                 setMembros(membrosData);
             } catch (error) {
-                console.error('Erro ao carregar membros:', error);
             } finally {
                 setIsLoading(false);
             }
@@ -123,12 +122,12 @@ export default function MembrosModal({ isOpen, onClose, departamento }: MembrosM
                                         className="flex items-center justify-between p-4 bg-[#2c2c2c] rounded-lg hover:bg-[#333333] transition-colors duration-200"
                                     >
                                         <div className="flex items-center gap-4">
-                                            {/* Avatar */}
+                                            
                                             <div className="w-12 h-12 bg-[#F6CF45] rounded-full flex items-center justify-center text-black font-bold">
                                                 {membro.nome.charAt(0)}
                                             </div>
                                             
-                                            {/* Info do membro */}
+                                            
                                             <div>
                                                 <div className="flex items-center gap-2">
                                                     <h3 className="text-white font-medium">{membro.nome}</h3>
@@ -144,7 +143,7 @@ export default function MembrosModal({ isOpen, onClose, departamento }: MembrosM
                                             </div>
                                         </div>
 
-                                        {/* Badge do role */}
+                                        
                                         <div className={`px-3 py-1 rounded-full text-xs font-medium border ${getRoleBadgeColor(membro.role)}`}>
                                             {getRoleText(membro.role)}
                                         </div>
@@ -158,7 +157,7 @@ export default function MembrosModal({ isOpen, onClose, departamento }: MembrosM
                                 </div>
                             )}
 
-                            {/* Footer com estatísticas */}
+                            
                             {!isLoading && membros.length > 0 && (
                                 <div className="mt-6 pt-6 border-t border-[#2c2c2c]">
                                 <div className="grid grid-cols-3 gap-4 text-center">

@@ -13,7 +13,7 @@ interface ItemDetailsProps {
           initialValue: number;
           currentValue: number;
           acquisitionDate: string;
-          depreciationPeriod: number; // em meses
+          depreciationPeriod: number;
           history?: {
                date: string;
                value: number;
@@ -24,12 +24,10 @@ interface ItemDetailsProps {
 
 export function ItemDetails({ item, onClose }: ItemDetailsProps) {
      const [isEditing, setIsEditing] = useState(false);
-     const [activeTab, setActiveTab] = useState('info'); // 'info' ou 'history'
+     const [activeTab, setActiveTab] = useState('info');
 
-     // Calcular percentual de depreciação
      const depreciationPercent = Math.round((1 - (item.currentValue / item.initialValue)) * 100);
 
-     // Formatar valores monetários
      const formatCurrency = (value: number) => {
           return new Intl.NumberFormat('pt-BR', {
                style: 'currency',
@@ -37,13 +35,11 @@ export function ItemDetails({ item, onClose }: ItemDetailsProps) {
           }).format(value);
      };
 
-     // Formatar datas
      const formatDate = (dateString: string) => {
           const date = new Date(dateString);
           return new Intl.DateTimeFormat('pt-BR').format(date);
      };
 
-     // Determinar cor baseada no percentual de depreciação
      const getValueColor = () => {
           if (depreciationPercent < 30) return "text-green-500";
           if (depreciationPercent < 60) return "text-yellow-500";
@@ -64,7 +60,6 @@ export function ItemDetails({ item, onClose }: ItemDetailsProps) {
                     exit={{ scale: 0.9, opacity: 0 }}
                     transition={{ type: 'spring', damping: 25, stiffness: 300 }}
                >
-                    {/* Cabeçalho */}
                     <div className="p-6 border-b border-[#2c2c2c] flex items-center justify-between">
                          <div className="flex items-center gap-3">
                               <button
@@ -109,7 +104,6 @@ export function ItemDetails({ item, onClose }: ItemDetailsProps) {
                          </div>
                     </div>
 
-                    {/* Tabs de navegação */}
                     <div className="border-b border-[#2c2c2c] px-6">
                          <div className="flex">
                               <button
@@ -141,7 +135,6 @@ export function ItemDetails({ item, onClose }: ItemDetailsProps) {
                          </div>
                     </div>
 
-                    {/* Conteúdo */}
                     <div className="p-6">
                          <AnimatePresence mode="wait">
                               {activeTab === 'info' ? (
@@ -153,7 +146,6 @@ export function ItemDetails({ item, onClose }: ItemDetailsProps) {
                                         transition={{ duration: 0.2 }}
                                         className="space-y-6"
                                    >
-                                        {/* Resumo de valores */}
                                         <div className="grid grid-cols-2 gap-4">
                                              <div className="bg-[#2c2c2c] p-4 rounded-lg">
                                                   <div className="flex items-center gap-3 mb-2">
@@ -171,9 +163,7 @@ export function ItemDetails({ item, onClose }: ItemDetailsProps) {
                                              </div>
                                         </div>
 
-                                        {/* Informações adicionais */}
                                         <div className="space-y-4">
-                                             {/* Data de aquisição */}
                                              <div className="flex items-center justify-between">
                                                   <div className="flex items-center gap-3">
                                                        <div className="p-2 bg-[#2c2c2c] rounded-lg">
@@ -184,7 +174,6 @@ export function ItemDetails({ item, onClose }: ItemDetailsProps) {
                                                   <p className="text-white">{formatDate(item.acquisitionDate)}</p>
                                              </div>
 
-                                             {/* Período de depreciação */}
                                              <div className="flex items-center justify-between">
                                                   <div className="flex items-center gap-3">
                                                        <div className="p-2 bg-[#2c2c2c] rounded-lg">
@@ -195,7 +184,6 @@ export function ItemDetails({ item, onClose }: ItemDetailsProps) {
                                                   <p className="text-white">{item.depreciationPeriod} meses</p>
                                              </div>
 
-                                             {/* Percentual de depreciação */}
                                              <div className="flex items-center justify-between">
                                                   <div className="flex items-center gap-3">
                                                        <div className="p-2 bg-[#2c2c2c] rounded-lg">
@@ -207,7 +195,6 @@ export function ItemDetails({ item, onClose }: ItemDetailsProps) {
                                              </div>
                                         </div>
 
-                                        {/* Descrição */}
                                         <div>
                                              <h3 className="text-white font-medium mb-2">Descrição</h3>
                                              <div className="bg-[#2c2c2c] p-4 rounded-lg">
@@ -217,7 +204,6 @@ export function ItemDetails({ item, onClose }: ItemDetailsProps) {
                                              </div>
                                         </div>
 
-                                        {/* Progresso de depreciação */}
                                         <div>
                                              <div className="flex justify-between items-center mb-2">
                                                   <h3 className="text-white font-medium">Progresso de depreciação</h3>
@@ -273,7 +259,6 @@ export function ItemDetails({ item, onClose }: ItemDetailsProps) {
                          </AnimatePresence>
                     </div>
 
-                    {/* Rodapé */}
                     <div className="p-6 border-t border-[#2c2c2c] flex justify-end">
                          <button
                               className="px-4 py-2 bg-[#2c2c2c] text-white rounded-lg hover:bg-[#3c3c3c] transition-colors duration-300"

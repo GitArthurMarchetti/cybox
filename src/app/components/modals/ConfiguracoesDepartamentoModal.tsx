@@ -10,7 +10,6 @@ import { saveDepartamento } from '@/app/services/departamento';
 import { MembroDepartamento } from '@/app/services/membros';
 import { toast } from 'sonner';
 
-// Função para traduzir roles
 const traduzirRole = (role: string | undefined | null) => {
     if (!role) return 'Membro';
     
@@ -52,7 +51,6 @@ function ConfiguracoesDepartamentoModal({
         codigo_convite: ''
     });
 
-    // Inicializar dados do formulário
     useEffect(() => {
         if (isOpen && departamento) {
             setFormData({
@@ -78,9 +76,8 @@ function ConfiguracoesDepartamentoModal({
             formDataToSend.append('descricao', formData.descricao);
             formDataToSend.append('localizacao', formData.localizacao);
 
-            await saveDepartamento(formDataToSend, ''); // userId não é usado para updates
+            await saveDepartamento(formDataToSend, '');
 
-            // Criar o objeto departamento atualizado
             const departamentoAtualizado: DepartamentoType = {
                 ...departamento!,
                 titulo: formData.titulo,
@@ -93,7 +90,6 @@ function ConfiguracoesDepartamentoModal({
             if (onSuccess) onSuccess(departamentoAtualizado);
         } catch (error) {
             toast.error('Erro ao atualizar departamento');
-            console.error('Erro ao atualizar departamento:', error);
         } finally {
             setIsLoading(false);
         }
@@ -134,7 +130,7 @@ function ConfiguracoesDepartamentoModal({
                         transition={{ type: 'spring', damping: 25, stiffness: 300 }}
                         onClick={(e) => e.stopPropagation()}
                     >
-                        {/* Header */}
+                        
                         <div className="p-6 border-b border-[#2c2c2c] flex items-center justify-between h-28">
                             <div className="flex items-center gap-3">
                                 <div className="p-2 bg-[#F6CF45] rounded-lg">
@@ -154,13 +150,13 @@ function ConfiguracoesDepartamentoModal({
                         </div>
 
                         <div className="flex h-[calc(80vh-112px)]">
-                            {/* Sidebar com tabs */}
+                            
                             <div className="w-64 bg-[#1a1a1a] border-r border-[#2c2c2c] p-4">
                                 <div className="space-y-2">
                                     {tabs.map((tab) => (
                                         <button
                                             key={tab.id}
-                                            onClick={() => setActiveTab(tab.id as any)}
+                                            onClick={() => setActiveTab(tab.id as 'geral' | 'avancado')}
                                             className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-300 ${activeTab === tab.id
                                                 ? 'bg-[#F6CF45] text-black'
                                                 : 'text-[#8c8888] hover:text-white hover:bg-[#2c2c2c]'
@@ -173,7 +169,7 @@ function ConfiguracoesDepartamentoModal({
                                 </div>
                             </div>
 
-                            {/* Conteúdo das tabs */}
+                            
                             <div className="flex-1 p-6 overflow-y-auto">
                                 {activeTab === 'geral' && (
                                     <motion.div
@@ -299,7 +295,7 @@ function ConfiguracoesDepartamentoModal({
                                         <h3 className="text-lg font-bold text-white mb-6">Configurações Avançadas</h3>
 
                                         <div className="space-y-6">
-                                            {/* Código de convite */}
+                                            
                                             <div>
                                                 <label className="block text-sm text-[#b4b4b4] mb-2">Código de Convite</label>
                                                 <div className="flex gap-3">
@@ -331,7 +327,7 @@ function ConfiguracoesDepartamentoModal({
                                                 </p>
                                             </div>
 
-                                            {/* Zona de perigo - apenas para owners */}
+                                            
                                             {isOwner && (
                                                 <div className="border border-red-500/20 rounded-lg p-6 bg-red-500/5">
                                                     <h4 className="text-red-400 font-medium mb-3 flex items-center gap-2">

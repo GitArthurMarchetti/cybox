@@ -1,4 +1,4 @@
-interface plansCardProps {
+interface PlansCardProps {
      name: string
      description: string
      price: number
@@ -7,7 +7,7 @@ interface plansCardProps {
 }
 
 
-export function PlansCard({ name, description, price, colorButton, advantages }: plansCardProps) {
+export function PlansCard({ name, description, price, colorButton, advantages }: PlansCardProps) {
      return (
           <>
                <div className="bg-[#1E1E1E] rounded-2xl p-8 max-w-sm w-full text-center">
