@@ -1,4 +1,6 @@
 // scripts/seed-improved.js
+const path = require('path');
+require('dotenv').config({ path: path.resolve(__dirname, '../../.env') });
 const mysql = require('mysql2/promise');
 const bcrypt = require('bcryptjs');
 const { v4: uuidv4 } = require('uuid');
@@ -7,22 +9,39 @@ async function seed() {
      let connection;
 
      try {
+          console.log('🔍 Tentando conectar ao banco de dados...');
+          console.log(`   Host: ${process.env.MYSQL_HOST}`);
+          console.log(`   User: ${process.env.MYSQL_USER}`);
+          console.log(`   Database: ${process.env.MYSQL_DATABASE || 'cybox'}`);
+          console.log(`   Port: ${process.env.MYSQL_PORT || '25060'}`);
+
           // Conectar ao banco de dados
+          const isRemote = process.env.MYSQL_HOST && process.env.MYSQL_HOST.includes('digitalocean');
+
           connection = await mysql.createConnection({
-               host: process.env.MYSQL_HOST || 'localhost',
-               user: process.env.MYSQL_USER || 'root',
-               password: process.env.MYSQL_PASSWORD || 'duduborges22',
-               database: "cybox",
+               host: process.env.MYSQL_HOST,
+               user: process.env.MYSQL_USER,
+               password: process.env.MYSQL_PASSWORD,
+               database: process.env.MYSQL_DATABASE || "cybox",
                multipleStatements: true,
-               port: 3306
+               port: parseInt(process.env.MYSQL_PORT || '25060'),
+               connectTimeout: 60000,
+               waitForConnections: true,
+               connectionLimit: 10,
+               queueLimit: 0,
+               ...(isRemote && {
+                    ssl: {
+                         rejectUnauthorized: false
+                    }
+               })
           });
 
           console.log('🔗 Conectado ao banco de dados');
           console.log('🔧 Criando/atualizando estrutura das tabelas...');
 
-          // Criar ou atualizar tabelas com estrutura melhorada
+          // Criar ou atualizar tabelas com estrutura correta
           const createTablesQuery = `
-          -- Tabela de Usuários (melhorada)
+          -- Tabela de Usuários
           CREATE TABLE IF NOT EXISTS users (
                id VARCHAR(36) PRIMARY KEY,
                nome VARCHAR(255) NOT NULL,
@@ -30,215 +49,183 @@ async function seed() {
                senha VARCHAR(255),
                google_id VARCHAR(255) UNIQUE,
                avatar_url VARCHAR(500),
-               status ENUM('ativo', 'inativo', 'suspenso') DEFAULT 'ativo',
+               status ENUM('ativo', 'inativo', 'suspenso', 'deletado') DEFAULT 'ativo',
                ultimo_login TIMESTAMP NULL,
                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-               
+
                INDEX idx_email (email),
                INDEX idx_google_id (google_id),
                INDEX idx_status (status)
           ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-          -- Tabela de Departamentos (melhorada)
-          CREATE TABLE IF NOT EXISTS departamentos (
+          -- Tabela de Padrões de Depreciação
+          CREATE TABLE IF NOT EXISTS padroes_depreciacao (
                id INT AUTO_INCREMENT PRIMARY KEY,
-               titulo VARCHAR(255) NOT NULL,
+               categoria VARCHAR(255) NOT NULL UNIQUE,
                descricao TEXT,
-               codigo VARCHAR(50) UNIQUE,
-               total_membros INT DEFAULT 1,
-               maximo_membros INT DEFAULT 10,
-               codigo_convite VARCHAR(255) UNIQUE,
-               localizacao VARCHAR(255),
-               foto_url VARCHAR(500),
-               cor_tema VARCHAR(7) DEFAULT '#F6CF45',
-               status ENUM('ativo', 'inativo', 'arquivado') DEFAULT 'ativo',
+               taxa_anual_percent DECIMAL(5,2) NOT NULL,
+               vida_util_anos INT NOT NULL,
+               observacoes TEXT,
+               ativo TINYINT(1) DEFAULT 1,
                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-               
-               INDEX idx_codigo (codigo),
+
+               INDEX idx_categoria (categoria),
+               INDEX idx_ativo (ativo)
+          ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+          -- Tabela de Departamentos
+          CREATE TABLE IF NOT EXISTS departamentos (
+               id_departamentos INT AUTO_INCREMENT PRIMARY KEY,
+               titulo VARCHAR(255) NOT NULL,
+               descricao TEXT,
+               convite VARCHAR(255),
+               codigo_convite VARCHAR(255) UNIQUE,
+               localizacao VARCHAR(255),
+               fotoDepartamento VARCHAR(255),
+               status ENUM('ativo', 'inativo', 'deletado') DEFAULT 'ativo',
+               created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+               updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+
+               INDEX idx_codigo_convite (codigo_convite),
+               INDEX idx_status (status)
+          ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+          -- Tabela de Relacionamento entre Usuários e Departamentos
+          CREATE TABLE IF NOT EXISTS users_departamentos (
+               id INT AUTO_INCREMENT PRIMARY KEY,
+               id_users VARCHAR(36) NOT NULL,
+               id_departamentos INT NOT NULL,
+               role ENUM('member', 'admin', 'owner') DEFAULT 'member',
+               status ENUM('ativo', 'inativo', 'deletado') DEFAULT 'ativo',
+               created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+               updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+
+               FOREIGN KEY (id_users) REFERENCES users(id) ON DELETE CASCADE,
+               FOREIGN KEY (id_departamentos) REFERENCES departamentos(id_departamentos) ON DELETE CASCADE,
+               UNIQUE KEY unique_user_departamento (id_users, id_departamentos),
+               INDEX idx_role (role),
+               INDEX idx_status (status)
+          ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+          -- Tabela de Convites (entre usuários cadastrados)
+          CREATE TABLE IF NOT EXISTS convites (
+               id INT AUTO_INCREMENT PRIMARY KEY,
+               id_departamentos INT NOT NULL,
+               id_remetente VARCHAR(36) NOT NULL,
+               id_destinatario VARCHAR(36) NOT NULL,
+               status ENUM('pendente', 'aceito', 'recusado') DEFAULT 'pendente',
+               codigo_convite VARCHAR(50),
+               data_expiracao DATETIME,
+               criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+               updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+
+               FOREIGN KEY (id_departamentos) REFERENCES departamentos(id_departamentos) ON DELETE CASCADE,
+               FOREIGN KEY (id_remetente) REFERENCES users(id) ON DELETE CASCADE,
+               FOREIGN KEY (id_destinatario) REFERENCES users(id) ON DELETE CASCADE,
                INDEX idx_status (status),
                INDEX idx_codigo_convite (codigo_convite)
           ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-          -- Tabela de Relacionamento entre Usuários e Departamentos (melhorada)
-          CREATE TABLE IF NOT EXISTS users_departamentos (
+          -- Tabela de Convites Externos (para emails não cadastrados)
+          CREATE TABLE IF NOT EXISTS convites_externos (
                id INT AUTO_INCREMENT PRIMARY KEY,
-               user_id VARCHAR(36) NOT NULL,
-               departamento_id INT NOT NULL,
-               papel ENUM('host', 'admin', 'membro', 'observador') DEFAULT 'membro',
-               permissoes JSON,
-               data_entrada TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-               data_saida TIMESTAMP NULL,
-               status ENUM('ativo', 'inativo') DEFAULT 'ativo',
-               created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+               id_departamentos INT NOT NULL,
+               id_remetente VARCHAR(255) NOT NULL,
+               email_destinatario VARCHAR(255) NOT NULL,
+               codigo_convite VARCHAR(50) NOT NULL UNIQUE,
+               data_expiracao DATETIME NOT NULL,
+               status ENUM('pendente', 'aceito', 'recusado', 'expirado') DEFAULT 'pendente',
+               criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-               
-               FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-               FOREIGN KEY (departamento_id) REFERENCES departamentos(id) ON DELETE CASCADE,
-               UNIQUE KEY uk_user_departamento (user_id, departamento_id),
-               INDEX idx_papel (papel),
+
+               FOREIGN KEY (id_departamentos) REFERENCES departamentos(id_departamentos) ON DELETE CASCADE,
+               INDEX idx_codigo_convite (codigo_convite),
+               INDEX idx_email_destinatario (email_destinatario),
                INDEX idx_status (status)
           ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-          -- Tabela de Convites (melhorada)
-          CREATE TABLE IF NOT EXISTS convites (
-               id INT AUTO_INCREMENT PRIMARY KEY,
-               departamento_id INT NOT NULL,
-               remetente_id VARCHAR(36) NOT NULL,
-               destinatario_id VARCHAR(36) NOT NULL,
-               email_destinatario VARCHAR(255),
-               papel_oferecido ENUM('host', 'admin', 'membro', 'observador') DEFAULT 'membro',
-               mensagem TEXT,
-               status ENUM('pendente', 'aceito', 'recusado', 'expirado') DEFAULT 'pendente',
-               token VARCHAR(255) UNIQUE,
-               data_expiracao TIMESTAMP,
-               data_resposta TIMESTAMP NULL,
-               created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-               updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-               
-               FOREIGN KEY (departamento_id) REFERENCES departamentos(id) ON DELETE CASCADE,
-               FOREIGN KEY (remetente_id) REFERENCES users(id) ON DELETE CASCADE,
-               FOREIGN KEY (destinatario_id) REFERENCES users(id) ON DELETE CASCADE,
-               INDEX idx_status (status),
-               INDEX idx_token (token),
-               INDEX idx_email_destinatario (email_destinatario)
-          ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
-          -- Tabela de Categorias (melhorada)
+          -- Tabela de Categorias
           CREATE TABLE IF NOT EXISTS categorias (
                id INT AUTO_INCREMENT PRIMARY KEY,
-               departamento_id INT NOT NULL,
+               id_departamento INT NOT NULL,
                nome VARCHAR(255) NOT NULL,
                descricao TEXT,
-               codigo VARCHAR(50),
-               cor VARCHAR(7) DEFAULT '#8B5CF6',
-               icone VARCHAR(50) DEFAULT 'folder',
-               ordem INT DEFAULT 0,
-               status ENUM('ativo', 'inativo', 'arquivado') DEFAULT 'ativo',
+               padrao_depreciacao_id INT,
+               status ENUM('ativo', 'inativo', 'deletado') DEFAULT 'ativo',
                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-               
-               FOREIGN KEY (departamento_id) REFERENCES departamentos(id) ON DELETE CASCADE,
-               INDEX idx_departamento_status (departamento_id, status),
-               INDEX idx_ordem (ordem)
+
+               FOREIGN KEY (id_departamento) REFERENCES departamentos(id_departamentos) ON DELETE CASCADE,
+               FOREIGN KEY (padrao_depreciacao_id) REFERENCES padroes_depreciacao(id) ON DELETE SET NULL,
+               INDEX idx_departamento_status (id_departamento, status)
           ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-          -- Tabela de Patrimônios (melhorada)
+          -- Tabela de Patrimônios
           CREATE TABLE IF NOT EXISTS patrimonios (
                id INT AUTO_INCREMENT PRIMARY KEY,
-               categoria_id INT NOT NULL,
+               id_categoria INT NOT NULL,
                nome VARCHAR(255) NOT NULL,
                descricao TEXT,
                codigo_patrimonio VARCHAR(100),
-               codigo_barras VARCHAR(100),
-               numero_serie VARCHAR(100),
-               marca VARCHAR(100),
-               modelo VARCHAR(100),
                localizacao VARCHAR(255),
-               responsavel_id VARCHAR(36),
-               
-               -- Valores monetários
-               valor_inicial DECIMAL(15,2) NOT NULL,
-               valor_atual DECIMAL(15,2) NOT NULL,
-               valor_residual DECIMAL(15,2) DEFAULT 0,
-               
-               -- Datas importantes
+               valor_inicial DECIMAL(10,2) NOT NULL,
+               valor_atual DECIMAL(10,2) NOT NULL,
                data_aquisicao DATE NOT NULL,
-               data_garantia DATE,
-               data_ultima_manutencao DATE,
-               data_proxima_manutencao DATE,
-               
-               -- Depreciação
-               metodo_depreciacao ENUM('linear', 'acelerada', 'soma_digitos') DEFAULT 'linear',
-               vida_util_meses INT NOT NULL,
-               taxa_depreciacao_anual DECIMAL(5,2),
-               
-               -- Status e condição
-               status ENUM('ativo', 'inativo', 'manutencao', 'baixado', 'perdido') DEFAULT 'ativo',
-               condicao ENUM('novo', 'bom', 'regular', 'ruim', 'danificado') DEFAULT 'bom',
-               
-               -- Metadados
-               observacoes TEXT,
-               tags JSON,
-               anexos JSON,
-               historico_localizacao JSON,
-               
+               tempo_depreciacao INT NOT NULL,
+               status ENUM('ativo', 'inativo', 'manutencao', 'baixado', 'deletado') DEFAULT 'ativo',
                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-               
-               FOREIGN KEY (categoria_id) REFERENCES categorias(id) ON DELETE CASCADE,
-               FOREIGN KEY (responsavel_id) REFERENCES users(id) ON DELETE SET NULL,
+
+               FOREIGN KEY (id_categoria) REFERENCES categorias(id) ON DELETE CASCADE,
                INDEX idx_codigo_patrimonio (codigo_patrimonio),
-               INDEX idx_codigo_barras (codigo_barras),
-               INDEX idx_numero_serie (numero_serie),
                INDEX idx_status (status),
-               INDEX idx_categoria_status (categoria_id, status),
-               INDEX idx_responsavel (responsavel_id)
+               INDEX idx_categoria_status (id_categoria, status)
           ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-          -- Tabela de Movimentações de Patrimônio
-          CREATE TABLE IF NOT EXISTS patrimonio_movimentacoes (
+          -- Tabela de Gastos
+          CREATE TABLE IF NOT EXISTS gastos (
                id INT AUTO_INCREMENT PRIMARY KEY,
                patrimonio_id INT NOT NULL,
-               usuario_id VARCHAR(36) NOT NULL,
-               tipo ENUM('transferencia', 'manutencao', 'baixa', 'reativacao', 'atualizacao_valor') NOT NULL,
-               localizacao_origem VARCHAR(255),
-               localizacao_destino VARCHAR(255),
-               responsavel_origem_id VARCHAR(36),
-               responsavel_destino_id VARCHAR(36),
-               valor_anterior DECIMAL(15,2),
-               valor_novo DECIMAL(15,2),
-               observacoes TEXT,
-               data_movimentacao TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-               
-               FOREIGN KEY (patrimonio_id) REFERENCES patrimonios(id) ON DELETE CASCADE,
-               FOREIGN KEY (usuario_id) REFERENCES users(id) ON DELETE CASCADE,
-               FOREIGN KEY (responsavel_origem_id) REFERENCES users(id) ON DELETE SET NULL,
-               FOREIGN KEY (responsavel_destino_id) REFERENCES users(id) ON DELETE SET NULL,
-               INDEX idx_patrimonio_data (patrimonio_id, data_movimentacao),
-               INDEX idx_tipo (tipo)
-          ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
-          -- Tabela de Manutenções
-          CREATE TABLE IF NOT EXISTS patrimonio_manutencoes (
-               id INT AUTO_INCREMENT PRIMARY KEY,
-               patrimonio_id INT NOT NULL,
-               usuario_id VARCHAR(36) NOT NULL,
-               tipo ENUM('preventiva', 'corretiva', 'preditiva', 'emergencial') NOT NULL,
+               tipo ENUM('manutencao', 'reparo', 'upgrade', 'seguro', 'licenca', 'outros') NOT NULL,
                descricao TEXT NOT NULL,
-               custo DECIMAL(10,2) DEFAULT 0,
+               valor DECIMAL(10,2) NOT NULL,
+               data_gasto DATE NOT NULL,
                fornecedor VARCHAR(255),
-               data_inicio DATE NOT NULL,
-               data_fim DATE,
-               data_proxima_manutencao DATE,
-               status ENUM('agendada', 'em_andamento', 'concluida', 'cancelada') DEFAULT 'agendada',
+               numero_nota_fiscal VARCHAR(100),
                observacoes TEXT,
-               anexos JSON,
+               comprovante_url VARCHAR(500),
+               usuario_id VARCHAR(36) NOT NULL,
+               status ENUM('pendente', 'aprovado', 'pago', 'cancelado') DEFAULT 'pendente',
                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-               
+
                FOREIGN KEY (patrimonio_id) REFERENCES patrimonios(id) ON DELETE CASCADE,
                FOREIGN KEY (usuario_id) REFERENCES users(id) ON DELETE CASCADE,
-               INDEX idx_patrimonio_data (patrimonio_id, data_inicio),
-               INDEX idx_status (status),
-               INDEX idx_tipo (tipo)
+               INDEX idx_patrimonio_data (patrimonio_id, data_gasto),
+               INDEX idx_tipo (tipo),
+               INDEX idx_status (status)
           ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-          -- Tabela de Depreciações (histórico)
-          CREATE TABLE IF NOT EXISTS patrimonio_depreciacoes (
+          -- Tabela de Notificações
+          CREATE TABLE IF NOT EXISTS notificacoes (
                id INT AUTO_INCREMENT PRIMARY KEY,
-               patrimonio_id INT NOT NULL,
-               mes_ano DATE NOT NULL,
-               valor_inicial DECIMAL(15,2) NOT NULL,
-               valor_depreciacao_mensal DECIMAL(15,2) NOT NULL,
-               valor_acumulado DECIMAL(15,2) NOT NULL,
-               valor_liquido DECIMAL(15,2) NOT NULL,
+               usuario_id VARCHAR(36) NOT NULL,
+               titulo VARCHAR(255) NOT NULL,
+               mensagem TEXT NOT NULL,
+               tipo ENUM('info', 'warning', 'success', 'error', 'depreciacao', 'manutencao', 'vencimento', 'convite') NOT NULL,
+               lida TINYINT(1) DEFAULT 0,
+               acao_url VARCHAR(500),
+               acao_texto VARCHAR(100),
+               data_expiracao TIMESTAMP NULL,
+               metadados JSON,
                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-               
-               FOREIGN KEY (patrimonio_id) REFERENCES patrimonios(id) ON DELETE CASCADE,
-               UNIQUE KEY uk_patrimonio_mes (patrimonio_id, mes_ano),
-               INDEX idx_mes_ano (mes_ano)
+
+               FOREIGN KEY (usuario_id) REFERENCES users(id) ON DELETE CASCADE,
+               INDEX idx_usuario_lida (usuario_id, lida),
+               INDEX idx_tipo (tipo),
+               INDEX idx_data_expiracao (data_expiracao)
           ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
           `;
 
@@ -259,7 +246,7 @@ async function seed() {
                const hashedPassword = await bcrypt.hash('senha123', 10);
 
                await connection.query(`
-                    INSERT INTO users (id, nome, email, senha, status) VALUES 
+                    INSERT INTO users (id, nome, email, senha, status) VALUES
                     (?, 'Eduardo Borges', 'admin@cybox.com', ?, 'ativo'),
                     (?, 'Gerente TI', 'ti@cybox.com', ?, 'ativo'),
                     (?, 'Analista Financeiro', 'financeiro@cybox.com', ?, 'ativo')
@@ -267,74 +254,97 @@ async function seed() {
 
                console.log('✅ Usuários criados com sucesso!');
 
+               // Criar padrões de depreciação
+               console.log('📊 Criando padrões de depreciação...');
+
+               await connection.query(`
+                    INSERT INTO padroes_depreciacao (categoria, descricao, taxa_anual_percent, vida_util_anos, observacoes) VALUES
+                    ('Computadores e Periféricos', 'Equipamentos de informática, notebooks, desktops, impressoras', 20.00, 5, 'Taxa baseada na legislação fiscal brasileira'),
+                    ('Móveis e Utensílios', 'Mesas, cadeiras, armários e mobiliário em geral', 10.00, 10, 'Depreciação de acordo com uso normal'),
+                    ('Equipamentos de Comunicação', 'Telefones, rádios, equipamentos de rede', 20.00, 5, 'Alta obsolescência tecnológica'),
+                    ('Veículos', 'Carros, motos, veículos corporativos', 20.00, 5, 'Baseado em tabela FIPE e uso comercial'),
+                    ('Máquinas e Equipamentos', 'Equipamentos industriais e comerciais', 10.00, 10, 'Variável conforme tipo de equipamento'),
+                    ('Equipamentos de Áudio e Vídeo', 'Câmeras, microfones, projetores', 15.00, 7, 'Média obsolescência tecnológica'),
+                    ('Ferramentas', 'Ferramentas manuais e elétricas', 15.00, 7, 'Depreciação por uso e desgaste'),
+                    ('Equipamentos Médicos', 'Aparelhos e instrumentos médicos', 10.00, 10, 'Conforme regulamentação ANVISA')
+               `);
+
+               console.log('✅ Padrões de depreciação criados!');
+
                // Criar departamentos de teste
                console.log('🏢 Criando departamentos iniciais...');
 
                await connection.query(`
-                    INSERT INTO departamentos (titulo, descricao, codigo, total_membros, maximo_membros, localizacao, cor_tema) VALUES 
-                    ('Tecnologia da Informação', 'Gerenciamento de equipamentos e infraestrutura de TI', 'TI-001', 1, 15, 'Bloco A - 3º Andar', '#3B82F6'),
-                    ('Departamento Financeiro', 'Controle e gestão de ativos financeiros e patrimoniais', 'FIN-001', 1, 10, 'Bloco B - 2º Andar', '#10B981'),
-                    ('Marketing e Comunicação', 'Equipamentos de mídia e comunicação corporativa', 'MKT-001', 1, 12, 'Bloco C - 1º Andar', '#8B5CF6')
+                    INSERT INTO departamentos (titulo, descricao, localizacao, status) VALUES
+                    ('Tecnologia da Informação', 'Gerenciamento de equipamentos e infraestrutura de TI', 'Bloco A - 3º Andar', 'ativo'),
+                    ('Departamento Financeiro', 'Controle e gestão de ativos financeiros e patrimoniais', 'Bloco B - 2º Andar', 'ativo'),
+                    ('Marketing e Comunicação', 'Equipamentos de mídia e comunicação corporativa', 'Bloco C - 1º Andar', 'ativo')
                `);
 
                // Obter IDs dos departamentos
-               const [departamentos] = await connection.query('SELECT id, codigo FROM departamentos ORDER BY id');
+               const [departamentos] = await connection.query('SELECT id_departamentos FROM departamentos ORDER BY id_departamentos');
 
                // Associar usuários aos departamentos
                console.log('🔗 Associando usuários aos departamentos...');
 
                await connection.query(`
-                    INSERT INTO users_departamentos (user_id, departamento_id, papel) VALUES 
-                    (?, ?, 'host'),
-                    (?, ?, 'host'),
-                    (?, ?, 'host')
+                    INSERT INTO users_departamentos (id_users, id_departamentos, role) VALUES
+                    (?, ?, 'owner'),
+                    (?, ?, 'owner'),
+                    (?, ?, 'owner')
                `, [
-                    adminId, departamentos[0].id,
-                    user1Id, departamentos[1].id,
-                    user2Id, departamentos[2].id
+                    adminId, departamentos[0].id_departamentos,
+                    user1Id, departamentos[1].id_departamentos,
+                    user2Id, departamentos[2].id_departamentos
                ]);
+
+               // Obter padrões de depreciação
+               const [padroes] = await connection.query('SELECT id, categoria FROM padroes_depreciacao');
+               const padraoComputadores = padroes.find(p => p.categoria === 'Computadores e Periféricos');
+               const padraoMoveis = padroes.find(p => p.categoria === 'Móveis e Utensílios');
+               const padraoAudioVideo = padroes.find(p => p.categoria === 'Equipamentos de Áudio e Vídeo');
 
                // Criar categorias de exemplo
                console.log('📂 Criando categorias iniciais...');
 
                await connection.query(`
-                    INSERT INTO categorias (departamento_id, nome, descricao, codigo, cor, icone) VALUES 
-                    (?, 'Computadores e Notebooks', 'Equipamentos de informática portáteis e desktops', 'COMP', '#3B82F6', 'laptop'),
-                    (?, 'Monitores e Displays', 'Monitores, projetores e equipamentos de exibição', 'MON', '#06B6D4', 'monitor'),
-                    (?, 'Servidores e Rede', 'Equipamentos de infraestrutura de rede e servidores', 'SRV', '#8B5CF6', 'server'),
-                    (?, 'Mobiliário Corporativo', 'Mesas, cadeiras e móveis de escritório', 'MOB', '#10B981', 'chair'),
-                    (?, 'Equipamentos Financeiros', 'Calculadoras, cofres e equipamentos específicos', 'EQF', '#F59E0B', 'calculator'),
-                    (?, 'Equipamentos de Áudio/Vídeo', 'Microfones, câmeras e equipamentos de produção', 'AV', '#EF4444', 'mic')
+                    INSERT INTO categorias (id_departamento, nome, descricao, padrao_depreciacao_id) VALUES
+                    (?, 'Computadores e Notebooks', 'Equipamentos de informática portáteis e desktops', ?),
+                    (?, 'Monitores e Displays', 'Monitores, projetores e equipamentos de exibição', ?),
+                    (?, 'Servidores e Rede', 'Equipamentos de infraestrutura de rede e servidores', ?),
+                    (?, 'Mobiliário Corporativo', 'Mesas, cadeiras e móveis de escritório', ?),
+                    (?, 'Equipamentos Financeiros', 'Calculadoras, cofres e equipamentos específicos', ?),
+                    (?, 'Equipamentos de Áudio/Vídeo', 'Microfones, câmeras e equipamentos de produção', ?)
                `, [
-                    departamentos[0].id, // TI - Computadores
-                    departamentos[0].id, // TI - Monitores  
-                    departamentos[0].id, // TI - Servidores
-                    departamentos[1].id, // Financeiro - Mobiliário
-                    departamentos[1].id, // Financeiro - Equipamentos
-                    departamentos[2].id  // Marketing - Áudio/Vídeo
+                    departamentos[0].id_departamentos, padraoComputadores?.id,
+                    departamentos[0].id_departamentos, padraoComputadores?.id,
+                    departamentos[0].id_departamentos, padraoComputadores?.id,
+                    departamentos[1].id_departamentos, padraoMoveis?.id,
+                    departamentos[1].id_departamentos, padraoComputadores?.id,
+                    departamentos[2].id_departamentos, padraoAudioVideo?.id
                ]);
 
                // Obter IDs das categorias
-               const [categorias] = await connection.query('SELECT id, nome, departamento_id FROM categorias ORDER BY id');
+               const [categorias] = await connection.query('SELECT id, nome, id_departamento FROM categorias ORDER BY id');
 
                // Criar patrimônios de exemplo
                console.log('💼 Criando patrimônios iniciais...');
 
                const dataAtual = new Date();
-               const dataAquisicao = new Date(dataAtual.getFullYear(), dataAtual.getMonth() - 6, 15); // 6 meses atrás
+               const dataAquisicao = new Date(dataAtual.getFullYear(), dataAtual.getMonth() - 6, 15);
 
                // Patrimônios para TI
                for (const categoria of categorias) {
                     if (categoria.nome === 'Computadores e Notebooks') {
                          await connection.query(`
                               INSERT INTO patrimonios (
-                                   categoria_id, nome, descricao, codigo_patrimonio, marca, modelo,
-                                   localizacao, valor_inicial, valor_atual, data_aquisicao, vida_util_meses,
-                                   taxa_depreciacao_anual, status, condicao, observacoes
-                              ) VALUES 
-                              (?, 'Notebook Dell Inspiron 15', 'Notebook corporativo i7 16GB RAM 512GB SSD', 'NB-2024-001', 'Dell', 'Inspiron 15 3000', 'TI - Sala 301', 4500.00, 3600.00, ?, 48, 20.00, 'ativo', 'bom', 'Equipamento em uso pela equipe de desenvolvimento'),
-                              (?, 'Desktop HP EliteDesk', 'Desktop corporativo i5 8GB RAM 256GB SSD', 'DT-2024-001', 'HP', 'EliteDesk 800 G6', 'TI - Sala 302', 3200.00, 2560.00, ?, 60, 15.00, 'ativo', 'bom', 'Estação de trabalho para suporte técnico'),
-                              (?, 'MacBook Pro 14"', 'MacBook Pro M2 32GB RAM 1TB SSD', 'MB-2024-001', 'Apple', 'MacBook Pro 14', 'TI - Sala 303', 12000.00, 9600.00, ?, 48, 25.00, 'ativo', 'novo', 'Equipamento para desenvolvimento mobile')
+                                   id_categoria, nome, descricao, codigo_patrimonio,
+                                   localizacao, valor_inicial, valor_atual, data_aquisicao, tempo_depreciacao,
+                                   status
+                              ) VALUES
+                              (?, 'Notebook Dell Inspiron 15', 'Notebook corporativo i7 16GB RAM 512GB SSD', 'NB-2024-001', 'TI - Sala 301', 4500.00, 3600.00, ?, 20, 'ativo'),
+                              (?, 'Desktop HP EliteDesk', 'Desktop corporativo i5 8GB RAM 256GB SSD', 'DT-2024-001', 'TI - Sala 302', 3200.00, 2560.00, ?, 20, 'ativo'),
+                              (?, 'MacBook Pro 14"', 'MacBook Pro M2 32GB RAM 1TB SSD', 'MB-2024-001', 'TI - Sala 303', 12000.00, 9600.00, ?, 25, 'ativo')
                          `, [
                               categoria.id, dataAquisicao.toISOString().split('T')[0],
                               categoria.id, dataAquisicao.toISOString().split('T')[0],
@@ -343,13 +353,13 @@ async function seed() {
                     } else if (categoria.nome === 'Monitores e Displays') {
                          await connection.query(`
                               INSERT INTO patrimonios (
-                                   categoria_id, nome, descricao, codigo_patrimonio, marca, modelo,
-                                   localizacao, valor_inicial, valor_atual, data_aquisicao, vida_util_meses,
-                                   taxa_depreciacao_anual, status, condicao
-                              ) VALUES 
-                              (?, 'Monitor LG UltraWide 29"', 'Monitor UltraWide 29" Full HD IPS', 'MN-2024-001', 'LG', '29WK500-P', 'TI - Sala 301', 1200.00, 1080.00, ?, 60, 10.00, 'ativo', 'bom'),
-                              (?, 'Monitor Dell 27"', 'Monitor 27" 4K USB-C', 'MN-2024-002', 'Dell', 'U2723QE', 'TI - Sala 302', 2800.00, 2520.00, ?, 72, 12.00, 'ativo', 'novo'),
-                              (?, 'Projetor Epson', 'Projetor Full HD 3500 lumens', 'PJ-2024-001', 'Epson', 'PowerLite X41+', 'TI - Sala de Reuniões', 3500.00, 2800.00, ?, 84, 15.00, 'ativo', 'bom')
+                                   id_categoria, nome, descricao, codigo_patrimonio,
+                                   localizacao, valor_inicial, valor_atual, data_aquisicao, tempo_depreciacao,
+                                   status
+                              ) VALUES
+                              (?, 'Monitor LG UltraWide 29"', 'Monitor UltraWide 29" Full HD IPS', 'MN-2024-001', 'TI - Sala 301', 1200.00, 1080.00, ?, 10, 'ativo'),
+                              (?, 'Monitor Dell 27"', 'Monitor 27" 4K USB-C', 'MN-2024-002', 'TI - Sala 302', 2800.00, 2520.00, ?, 12, 'ativo'),
+                              (?, 'Projetor Epson', 'Projetor Full HD 3500 lumens', 'PJ-2024-001', 'TI - Sala de Reuniões', 3500.00, 2800.00, ?, 15, 'ativo')
                          `, [
                               categoria.id, dataAquisicao.toISOString().split('T')[0],
                               categoria.id, dataAquisicao.toISOString().split('T')[0],
@@ -363,13 +373,13 @@ async function seed() {
                if (categoriaFinanceiro) {
                     await connection.query(`
                          INSERT INTO patrimonios (
-                              categoria_id, nome, descricao, codigo_patrimonio, marca,
-                              localizacao, valor_inicial, valor_atual, data_aquisicao, vida_util_meses,
-                              taxa_depreciacao_anual, status, condicao
-                         ) VALUES 
-                         (?, 'Mesa Executiva L', 'Mesa em L com gavetas e suporte para CPU', 'MS-2024-001', 'Móveis Escritório Pro', 'Financeiro - Sala 201', 2200.00, 1980.00, ?, 120, 5.00, 'ativo', 'bom'),
-                         (?, 'Cadeira Presidente', 'Cadeira ergonômica com apoio lombar ajustável', 'CD-2024-001', 'FlexForm', 'Financeiro - Sala 201', 1800.00, 1620.00, ?, 84, 8.00, 'ativo', 'bom'),
-                         (?, 'Armário de Arquivo', 'Armário de aço 4 gavetas com fechadura', 'AR-2024-001', 'ArquivoSeguro', 'Financeiro - Arquivo', 1500.00, 1350.00, ?, 180, 3.00, 'ativo', 'bom')
+                              id_categoria, nome, descricao, codigo_patrimonio,
+                              localizacao, valor_inicial, valor_atual, data_aquisicao, tempo_depreciacao,
+                              status
+                         ) VALUES
+                         (?, 'Mesa Executiva L', 'Mesa em L com gavetas e suporte para CPU', 'MS-2024-001', 'Financeiro - Sala 201', 2200.00, 1980.00, ?, 5, 'ativo'),
+                         (?, 'Cadeira Presidente', 'Cadeira ergonômica com apoio lombar ajustável', 'CD-2024-001', 'Financeiro - Sala 201', 1800.00, 1620.00, ?, 8, 'ativo'),
+                         (?, 'Armário de Arquivo', 'Armário de aço 4 gavetas com fechadura', 'AR-2024-001', 'Financeiro - Arquivo', 1500.00, 1350.00, ?, 3, 'ativo')
                     `, [
                          categoriaFinanceiro.id, dataAquisicao.toISOString().split('T')[0],
                          categoriaFinanceiro.id, dataAquisicao.toISOString().split('T')[0],
@@ -382,13 +392,13 @@ async function seed() {
                if (categoriaMarketing) {
                     await connection.query(`
                          INSERT INTO patrimonios (
-                              categoria_id, nome, descricao, codigo_patrimonio, marca, modelo,
-                              localizacao, valor_inicial, valor_atual, data_aquisicao, vida_util_meses,
-                              taxa_depreciacao_anual, status, condicao
-                         ) VALUES 
-                         (?, 'Microfone Rode PodMic', 'Microfone dinâmico para podcast e streaming', 'MC-2024-001', 'Rode', 'PodMic', 'Marketing - Estúdio', 850.00, 765.00, ?, 60, 10.00, 'ativo', 'novo'),
-                         (?, 'Câmera Sony A7 III', 'Câmera mirrorless full-frame para produção de conteúdo', 'CM-2024-001', 'Sony', 'Alpha A7 III', 'Marketing - Estúdio', 12500.00, 10000.00, ?, 72, 18.00, 'ativo', 'bom'),
-                         (?, 'Tripé Manfrotto', 'Tripé profissional de fibra de carbono', 'TP-2024-001', 'Manfrotto', 'MT055CXPRO4', 'Marketing - Estúdio', 1200.00, 1080.00, ?, 120, 5.00, 'ativo', 'bom')
+                              id_categoria, nome, descricao, codigo_patrimonio,
+                              localizacao, valor_inicial, valor_atual, data_aquisicao, tempo_depreciacao,
+                              status
+                         ) VALUES
+                         (?, 'Microfone Rode PodMic', 'Microfone dinâmico para podcast e streaming', 'MC-2024-001', 'Marketing - Estúdio', 850.00, 765.00, ?, 10, 'ativo'),
+                         (?, 'Câmera Sony A7 III', 'Câmera mirrorless full-frame para produção de conteúdo', 'CM-2024-001', 'Marketing - Estúdio', 12500.00, 10000.00, ?, 18, 'ativo'),
+                         (?, 'Tripé Manfrotto', 'Tripé profissional de fibra de carbono', 'TP-2024-001', 'Marketing - Estúdio', 1200.00, 1080.00, ?, 5, 'ativo')
                     `, [
                          categoriaMarketing.id, dataAquisicao.toISOString().split('T')[0],
                          categoriaMarketing.id, dataAquisicao.toISOString().split('T')[0],
@@ -398,37 +408,6 @@ async function seed() {
 
                console.log('✅ Patrimônios criados com sucesso!');
 
-               // Gerar histórico de depreciação para alguns patrimônios
-               console.log('📊 Gerando histórico de depreciação...');
-               
-               const [patrimoniosParaDepreciacao] = await connection.query('SELECT id, valor_inicial, vida_util_meses, data_aquisicao FROM patrimonios LIMIT 5');
-               
-               for (const patrimonio of patrimoniosParaDepreciacao) {
-                    const dataInicio = new Date(patrimonio.data_aquisicao);
-                    const depreciacaoMensal = patrimonio.valor_inicial / patrimonio.vida_util_meses;
-                    
-                    // Gerar 6 meses de histórico
-                    for (let i = 0; i < 6; i++) {
-                         const mesAno = new Date(dataInicio.getFullYear(), dataInicio.getMonth() + i, 1);
-                         const valorAcumulado = depreciacaoMensal * (i + 1);
-                         const valorLiquido = patrimonio.valor_inicial - valorAcumulado;
-                         
-                         await connection.query(`
-                              INSERT IGNORE INTO patrimonio_depreciacoes 
-                              (patrimonio_id, mes_ano, valor_inicial, valor_depreciacao_mensal, valor_acumulado, valor_liquido)
-                              VALUES (?, ?, ?, ?, ?, ?)
-                         `, [
-                              patrimonio.id,
-                              mesAno.toISOString().split('T')[0],
-                              patrimonio.valor_inicial,
-                              depreciacaoMensal,
-                              valorAcumulado,
-                              Math.max(0, valorLiquido)
-                         ]);
-                    }
-               }
-
-               console.log('✅ Histórico de depreciação gerado!');
           } else {
                console.log('ℹ️  Banco de dados já possui dados. Pulando a criação de dados iniciais.');
           }
@@ -438,9 +417,9 @@ async function seed() {
           console.log('📋 Resumo:');
           console.log('   • Usuários de teste criados com senha: senha123');
           console.log('   • 3 Departamentos com diferentes categorias');
-          console.log('   • Patrimônios com códigos, marcas e modelos');
-          console.log('   • Histórico de depreciação automático');
-          console.log('   • Estrutura otimizada para relatórios');
+          console.log('   • Patrimônios com códigos e valores');
+          console.log('   • Padrões de depreciação configurados');
+          console.log('   • Estrutura completa e otimizada');
 
      } catch (error) {
           console.error('❌ Erro ao configurar o banco de dados:', error);

@@ -1,9 +1,9 @@
 "use client"
 
 import { motion } from "framer-motion";
-import { MdDashboard } from "react-icons/md";
 import { CardDepartamento } from "./cardDepartamentos";
 import { DepartamentoType } from "@/lib/types/types";
+import { FaBuilding } from "react-icons/fa";
 
 interface DepartmentGridProps {
     departamentos: DepartamentoType[];
@@ -18,7 +18,7 @@ interface DepartmentGridProps {
     };
     itemVariants: {
         hidden: { opacity: number; y: number };
-        visible: { opacity: number; y: number; transition: { delay?: number } };
+        visible: { opacity: number; y: number; transition: { delay?: number; duration?: number } };
     };
 }
 
@@ -42,8 +42,8 @@ export default function DepartmentGrid({
                 className="flex flex-col items-center justify-center h-64 text-center"
                 variants={itemVariants}
             >
-                <div className="bg-[#2C2C2C] p-8 rounded-xl mb-4 w-16 h-16 flex items-center justify-center">
-                    <MdDashboard color="#F6CF45" />
+                <div className="bg-[#2C2C2C] text-[#F6CF45] p-8 rounded-xl mb-4 w-16 h-16 flex items-center justify-center">
+                    <FaBuilding />
                 </div>
                 <h3 className="text-xl text-white font-semibold mb-2">Nenhum departamento encontrado</h3>
                 <p className="text-[#8C8888] max-w-md">

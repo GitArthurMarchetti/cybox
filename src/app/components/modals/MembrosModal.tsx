@@ -11,16 +11,22 @@ interface MembrosModalProps {
     isOpen: boolean;
     onClose: () => void;
     departamento: DepartamentoType | null;
+    membros?: MembroDepartamento[];
 }
 
-export default function MembrosModal({ isOpen, onClose, departamento }: MembrosModalProps) {
+export default function MembrosModal({ isOpen, onClose, departamento, membros: membrosProps }: MembrosModalProps) {
     const [membros, setMembros] = useState<MembroDepartamento[]>([]);
     const [isLoading, setIsLoading] = useState(false);
 
     useEffect(() => {
         const carregarMembros = async () => {
             if (!departamento?.id_departamentos || !isOpen) return;
-            
+
+            if (membrosProps) {
+                setMembros(membrosProps);
+                return;
+            }
+
             setIsLoading(true);
             try {
                 const membrosData = await getMembrosPerDepartamento(departamento.id_departamentos);
@@ -32,7 +38,7 @@ export default function MembrosModal({ isOpen, onClose, departamento }: MembrosM
         };
 
         carregarMembros();
-    }, [departamento?.id_departamentos, isOpen]);
+    }, [departamento?.id_departamentos, isOpen, membrosProps]);
 
     if (!departamento) return null;
 

@@ -157,11 +157,11 @@ async function createNewDatabaseStructure(connection) {
             id_remetente VARCHAR(36) NOT NULL,
             id_destinatario VARCHAR(36) NOT NULL,
             status ENUM('pendente', 'aceito', 'recusado') DEFAULT 'pendente',
-            codigo_convite VARCHAR(255) UNIQUE,
-            data_expiracao TIMESTAMP NULL,
+            codigo_convite VARCHAR(50),
+            data_expiracao DATETIME,
             criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-            
+
             FOREIGN KEY (id_departamentos) REFERENCES departamentos(id_departamentos) ON DELETE CASCADE,
             FOREIGN KEY (id_remetente) REFERENCES users(id) ON DELETE CASCADE,
             FOREIGN KEY (id_destinatario) REFERENCES users(id) ON DELETE CASCADE,

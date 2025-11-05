@@ -1,13 +1,12 @@
 'use client'
 
 import React, { useState, useEffect } from 'react';
-import Navbar from '../../components/Navigation/navbar';
 import { DepartamentoType } from '@/lib/types/types';
 import { Category, PatrimonioDetalhadoType, CategoriasProps } from '@/lib/types/categoria.types';
 import { motion, AnimatePresence } from 'framer-motion';
-import { MdFilterList, MdKeyboardArrowLeft, MdKeyboardArrowRight, MdModeEdit, MdSearch, MdAdd } from 'react-icons/md';
+import { MdFilterList, MdKeyboardArrowLeft, MdKeyboardArrowRight, MdModeEdit, MdSearch, MdAdd, MdSortByAlpha, MdClear } from 'react-icons/md';
 import { RiDeleteBinLine } from 'react-icons/ri';
-import { FaShare } from 'react-icons/fa';
+import { FaShare, FaSortAmountDown, FaSortAmountUp, FaBoxOpen, FaInbox, FaChartLine } from 'react-icons/fa';
 import { SidebarCategorias } from '@/app/components/Navigation/SidebarCategorias';
 import { getPatrimoniosByCategoria, removePatrimonio } from '@/app/services/patrimonios';
 import { removeCategoria, getCategoriasComTotalPatrimonios } from '@/app/services/categoria';
@@ -48,6 +47,8 @@ export default function CategoriaFront({
      const [isConfirmDeleteOpen, setIsConfirmDeleteOpen] = useState(false);
      const [itemToDelete, setItemToDelete] = useState<{ tipo: string, nome: string, onConfirm: () => void } | null>(null);
      const [isShareModalOpen, setIsShareModalOpen] = useState(false);
+     const [isFilterDropdownOpen, setIsFilterDropdownOpen] = useState(false);
+     const [filtroSelecionado, setFiltroSelecionado] = useState<string | null>(null);
      const handleOpenPatrimonioModal = (category: Category) => {
           setSelectedCategoryForPatrimonio(category);
           setIsAddPatrimonioOpen(true);
@@ -131,6 +132,18 @@ export default function CategoriaFront({
      useEffect(() => {
           setHasInitiallyLoaded(true);
      }, []);
+
+     useEffect(() => {
+          const handleClickOutside = (event: MouseEvent) => {
+               const target = event.target as HTMLElement;
+               if (isFilterDropdownOpen && !target.closest('.relative')) {
+                    setIsFilterDropdownOpen(false);
+               }
+          };
+
+          document.addEventListener('mousedown', handleClickOutside);
+          return () => document.removeEventListener('mousedown', handleClickOutside);
+     }, [isFilterDropdownOpen]);
      useEffect(() => {
           setDepartamentoLocal(departamento);
      }, [departamento]);
@@ -196,9 +209,52 @@ export default function CategoriaFront({
           if (!selectedCategory) return null;
           return categories.find(cat => cat.id === selectedCategory.id) || selectedCategory;
      };
-     const filteredCategories = categories.filter(cat =>
-          cat.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          cat.observation.toLowerCase().includes(searchTerm.toLowerCase())
+
+     const aplicarFiltros = (cats: Category[]) => {
+          let resultado = [...cats];
+
+          if (!filtroSelecionado) return resultado;
+
+          switch (filtroSelecionado) {
+               case 'a-z':
+                    resultado.sort((a, b) => a.name.localeCompare(b.name));
+                    break;
+               case 'z-a':
+                    resultado.sort((a, b) => b.name.localeCompare(a.name));
+                    break;
+               case 'mais-itens':
+                    resultado.sort((a, b) => b.total - a.total);
+                    break;
+               case 'menos-itens':
+                    resultado.sort((a, b) => a.total - b.total);
+                    break;
+               case 'com-itens':
+                    resultado = resultado.filter(cat => cat.total > 0);
+                    break;
+               case 'vazias':
+                    resultado = resultado.filter(cat => cat.total === 0);
+                    break;
+               case 'desvalorizados':
+                    resultado = resultado.filter(cat => {
+                         const notebooks = cat.notebooks || [];
+                         const desvalorizados = notebooks.filter(n => n.finalValue < 50);
+                         return desvalorizados.length > 0;
+                    }).sort((a, b) => {
+                         const desvalorizadosA = (a.notebooks || []).filter(n => n.finalValue < 50).length;
+                         const desvalorizadosB = (b.notebooks || []).filter(n => n.finalValue < 50).length;
+                         return desvalorizadosB - desvalorizadosA;
+                    });
+                    break;
+          }
+
+          return resultado;
+     };
+
+     const filteredCategories = aplicarFiltros(
+          categories.filter(cat =>
+               cat.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+               cat.observation.toLowerCase().includes(searchTerm.toLowerCase())
+          )
      );
      const handleOpenModal = (patrimonio: PatrimonioDetalhadoType) => {
           setSelectedPatrimonio(patrimonio);
@@ -234,12 +290,9 @@ export default function CategoriaFront({
 
      return (
           <div className="min-h-screen bg-[#0F0F0F] text-white">
-               {/* Navbar */}
-               <Navbar type='2' user={user} />
-
                {/* Container principal */}
                <motion.div
-                    className="flex border-t border-[#2c2c2c] h-[calc(100vh-5rem)]"
+                    className="flex h-screen"
                     initial={hasInitiallyLoaded ? "visible" : "hidden"}
                     animate="visible"
                     variants={containerVariants}
@@ -272,9 +325,127 @@ export default function CategoriaFront({
                                         />
                                         <MdSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-[#8c8888]" size={20} />
                                    </div>
-                                   <button className="p-2 bg-[#2c2c2c] text-[#8c8888] hover:text-white rounded-lg transition-colors duration-300">
-                                        <MdFilterList size={20} />
-                                   </button>
+                                   <div className="relative">
+                                        <button
+                                             className={`p-2 rounded-lg transition-colors duration-300 ${filtroSelecionado ? 'bg-[#F6CF45] text-black' : 'bg-[#2c2c2c] text-[#8c8888] hover:text-white'}`}
+                                             onClick={() => setIsFilterDropdownOpen(!isFilterDropdownOpen)}
+                                        >
+                                             <MdFilterList size={20} />
+                                        </button>
+
+                                        <AnimatePresence>
+                                             {isFilterDropdownOpen && (
+                                                  <motion.div
+                                                       className="absolute right-0 mt-2 w-64 bg-[#1a1a1a] border border-[#2c2c2c] rounded-xl shadow-xl z-50 overflow-hidden"
+                                                       initial={{ opacity: 0, y: -10 }}
+                                                       animate={{ opacity: 1, y: 0 }}
+                                                       exit={{ opacity: 0, y: -10 }}
+                                                       transition={{ duration: 0.2 }}
+                                                  >
+                                                       <div className="p-2">
+                                                            <div className="px-3 py-2 text-xs font-semibold text-[#8c8888] uppercase">Ordenar</div>
+
+                                                            <button
+                                                                 className="w-full flex items-center gap-3 px-3 py-2 text-sm text-white hover:bg-[#2c2c2c] rounded-lg transition-colors duration-200"
+                                                                 onClick={() => {
+                                                                      setFiltroSelecionado('a-z');
+                                                                      setIsFilterDropdownOpen(false);
+                                                                 }}
+                                                            >
+                                                                 <MdSortByAlpha size={18} className="text-[#F6CF45]" />
+                                                                 <span>A-Z</span>
+                                                            </button>
+
+                                                            <button
+                                                                 className="w-full flex items-center gap-3 px-3 py-2 text-sm text-white hover:bg-[#2c2c2c] rounded-lg transition-colors duration-200"
+                                                                 onClick={() => {
+                                                                      setFiltroSelecionado('z-a');
+                                                                      setIsFilterDropdownOpen(false);
+                                                                 }}
+                                                            >
+                                                                 <MdSortByAlpha size={18} className="text-[#F6CF45] transform rotate-180" />
+                                                                 <span>Z-A</span>
+                                                            </button>
+
+                                                            <button
+                                                                 className="w-full flex items-center gap-3 px-3 py-2 text-sm text-white hover:bg-[#2c2c2c] rounded-lg transition-colors duration-200"
+                                                                 onClick={() => {
+                                                                      setFiltroSelecionado('mais-itens');
+                                                                      setIsFilterDropdownOpen(false);
+                                                                 }}
+                                                            >
+                                                                 <FaSortAmountDown size={16} className="text-[#F6CF45]" />
+                                                                 <span>Mais itens</span>
+                                                            </button>
+
+                                                            <button
+                                                                 className="w-full flex items-center gap-3 px-3 py-2 text-sm text-white hover:bg-[#2c2c2c] rounded-lg transition-colors duration-200"
+                                                                 onClick={() => {
+                                                                      setFiltroSelecionado('menos-itens');
+                                                                      setIsFilterDropdownOpen(false);
+                                                                 }}
+                                                            >
+                                                                 <FaSortAmountUp size={16} className="text-[#F6CF45]" />
+                                                                 <span>Menos itens</span>
+                                                            </button>
+
+                                                            <div className="my-2 border-t border-[#2c2c2c]"></div>
+
+                                                            <div className="px-3 py-2 text-xs font-semibold text-[#8c8888] uppercase">Filtrar</div>
+
+                                                            <button
+                                                                 className="w-full flex items-center gap-3 px-3 py-2 text-sm text-white hover:bg-[#2c2c2c] rounded-lg transition-colors duration-200"
+                                                                 onClick={() => {
+                                                                      setFiltroSelecionado('com-itens');
+                                                                      setIsFilterDropdownOpen(false);
+                                                                 }}
+                                                            >
+                                                                 <FaBoxOpen size={16} className="text-[#F6CF45]" />
+                                                                 <span>Com itens</span>
+                                                            </button>
+
+                                                            <button
+                                                                 className="w-full flex items-center gap-3 px-3 py-2 text-sm text-white hover:bg-[#2c2c2c] rounded-lg transition-colors duration-200"
+                                                                 onClick={() => {
+                                                                      setFiltroSelecionado('vazias');
+                                                                      setIsFilterDropdownOpen(false);
+                                                                 }}
+                                                            >
+                                                                 <FaInbox size={16} className="text-[#F6CF45]" />
+                                                                 <span>Vazias</span>
+                                                            </button>
+
+                                                            <button
+                                                                 className="w-full flex items-center gap-3 px-3 py-2 text-sm text-white hover:bg-[#2c2c2c] rounded-lg transition-colors duration-200"
+                                                                 onClick={() => {
+                                                                      setFiltroSelecionado('desvalorizados');
+                                                                      setIsFilterDropdownOpen(false);
+                                                                 }}
+                                                            >
+                                                                 <FaChartLine size={16} className="text-red-500" />
+                                                                 <span>Mais desvalorizados</span>
+                                                            </button>
+
+                                                            {filtroSelecionado && (
+                                                                 <>
+                                                                      <div className="my-2 border-t border-[#2c2c2c]"></div>
+                                                                      <button
+                                                                           className="w-full flex items-center gap-3 px-3 py-2 text-sm text-red-400 hover:bg-[#2c2c2c] rounded-lg transition-colors duration-200"
+                                                                           onClick={() => {
+                                                                                setFiltroSelecionado(null);
+                                                                                setIsFilterDropdownOpen(false);
+                                                                           }}
+                                                                      >
+                                                                           <MdClear size={18} />
+                                                                           <span>Limpar filtros</span>
+                                                                      </button>
+                                                                 </>
+                                                            )}
+                                                       </div>
+                                                  </motion.div>
+                                             )}
+                                        </AnimatePresence>
+                                   </div>
                               </div>
                          </motion.div>
 

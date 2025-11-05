@@ -10,3 +10,5 @@ export { DetalhesPatrimonioModal } from './DetalhesPatrimonioModal';
 export { default as MembrosModal } from './MembrosModal';
 export { default as CriarSala } from './criarSala';
 export { default as EntrarSala } from './entrarSala';
+export { default as ConfiguracoesUsuarioModal } from './ConfiguracoesUsuarioModal';
+export { default as NotificacoesModal } from './NotificacoesModal';

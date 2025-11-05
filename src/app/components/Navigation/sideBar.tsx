@@ -8,20 +8,47 @@ import { TbLogout2 } from "react-icons/tb";
 import Logout from "../Button/buttonLogOut";
 import { motion } from "framer-motion";
 import { useState } from "react";
+import { UserType } from "@/lib/types/types";
+import { useRouter, usePathname } from "next/navigation";
+import ConfiguracoesUsuarioModal from "../modals/ConfiguracoesUsuarioModal";
+import NotificacoesModal from "../modals/NotificacoesModal";
 
 type Props = {
      userName: string | null | undefined;
      userEmail: string | null | undefined;
+     user?: UserType;
 };
 
-export function SideBar({ userName, userEmail }: Props) {
-     const [activeMenu, setActiveMenu] = useState("Departamentos");
+export function SideBar({ userName, userEmail, user }: Props) {
+     const router = useRouter();
+     const pathname = usePathname();
+     const [isConfigModalOpen, setIsConfigModalOpen] = useState(false);
+     const [isNotificacoesModalOpen, setIsNotificacoesModalOpen] = useState(false);
 
      const menuItems = [
-          { id: "Departamentos", icon: MdDashboard, label: "Departamentos" },
-          { id: "Notificacoes", icon: IoMdNotifications, label: "Notificações" },
-          { id: "Configuracoes", icon: FaGear, label: "Configurações" }
+          { id: "Departamentos", icon: MdDashboard, label: "Departamentos", path: "/departamentos", isModal: false },
+          { id: "Notificacoes", icon: IoMdNotifications, label: "Notificações", path: "/notificacoes", isModal: true },
+          { id: "Configuracoes", icon: FaGear, label: "Configurações", path: "/configuracoes", isModal: true }
      ];
+
+     const handleMenuClick = (itemId: string) => {
+          if (itemId === "Configuracoes") {
+               setIsConfigModalOpen(true);
+          } else if (itemId === "Notificacoes") {
+               setIsNotificacoesModalOpen(true);
+          } else if (itemId === "Departamentos") {
+               router.push("/departamentos");
+          }
+     };
+
+     const handleConfigSuccess = () => {
+          setIsConfigModalOpen(false);
+     };
+
+     const isActive = (path: string, isModal: boolean) => {
+          if (isModal) return false;
+          return pathname === path || pathname?.startsWith(path + '/');
+     };
 
      const sidebarVariants = {
           hidden: { x: -20, opacity: 0 },
@@ -70,17 +97,16 @@ export function SideBar({ userName, userEmail }: Props) {
                          <ul className="space-y-3">
                               {menuItems.map((item) => (
                                    <motion.li key={item.id} variants={itemVariants}>
-                                        <a
-                                             href="#"
-                                             className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300 ${activeMenu === item.id
+                                        <button
+                                             className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300 ${isActive(item.path, item.isModal)
                                                   ? "text-black bg-[#F6CF45] font-medium"
                                                   : "text-white hover:bg-[#2C2C2C]"
                                                   }`}
-                                             onClick={() => setActiveMenu(item.id)}
+                                             onClick={() => handleMenuClick(item.id)}
                                         >
                                              <item.icon className="text-xl" />
                                              {item.label}
-                                        </a>
+                                        </button>
                                    </motion.li>
                               ))}
                          </ul>
@@ -119,6 +145,21 @@ export function SideBar({ userName, userEmail }: Props) {
                          <p>Cybox v0.0.1</p>
                     </div>
                </motion.div>
+
+               {user && (
+                    <>
+                         <ConfiguracoesUsuarioModal
+                              isOpen={isConfigModalOpen}
+                              onClose={() => setIsConfigModalOpen(false)}
+                              user={user}
+                              onSuccess={handleConfigSuccess}
+                         />
+                         <NotificacoesModal
+                              isOpen={isNotificacoesModalOpen}
+                              onClose={() => setIsNotificacoesModalOpen(false)}
+                         />
+                    </>
+               )}
           </motion.aside>
      );
 }

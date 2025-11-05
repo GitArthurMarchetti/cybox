@@ -37,6 +37,7 @@ export default function DepartamentosFront({ departamentos, departamento, userId
     const [isSearchFocused, setIsSearchFocused] = useState(false);
     const [isLoaded, setIsLoaded] = useState(false);
     const [departamentosLocal, setDepartamentosLocal] = useState<DepartamentoType[]>(departamentos);
+    const [filtroSelecionado, setFiltroSelecionado] = useState<string | null>(null);
 
     useEffect(() => {
         setIsLoaded(true);
@@ -140,6 +141,60 @@ export default function DepartamentosFront({ departamentos, departamento, userId
         }
     };
 
+    const aplicarFiltros = (deps: DepartamentoType[]) => {
+        let resultado = [...deps];
+
+        if (!filtroSelecionado) return resultado;
+
+        switch (filtroSelecionado) {
+            case 'a-z':
+                resultado.sort((a, b) => a.titulo.localeCompare(b.titulo));
+                break;
+            case 'z-a':
+                resultado.sort((a, b) => b.titulo.localeCompare(a.titulo));
+                break;
+            case 'mais-recentes':
+                resultado.sort((a, b) => {
+                    const dateA = a.created_at ? new Date(a.created_at).getTime() : 0;
+                    const dateB = b.created_at ? new Date(b.created_at).getTime() : 0;
+                    return dateB - dateA;
+                });
+                break;
+            case 'mais-antigos':
+                resultado.sort((a, b) => {
+                    const dateA = a.created_at ? new Date(a.created_at).getTime() : 0;
+                    const dateB = b.created_at ? new Date(b.created_at).getTime() : 0;
+                    return dateA - dateB;
+                });
+                break;
+            case 'mais-membros':
+                resultado.sort((a, b) => (b.num_participantes || 0) - (a.num_participantes || 0));
+                break;
+            case 'menos-membros':
+                resultado.sort((a, b) => (a.num_participantes || 0) - (b.num_participantes || 0));
+                break;
+            case 'owner':
+                resultado = resultado.filter(dep => dep.role === 'owner');
+                break;
+            case 'admin':
+                resultado = resultado.filter(dep => dep.role === 'admin');
+                break;
+            case 'member':
+                resultado = resultado.filter(dep => dep.role === 'member');
+                break;
+            case 'ativo':
+                resultado = resultado.filter(dep => dep.status === 'ativo' || !dep.status);
+                break;
+            case 'inativo':
+                resultado = resultado.filter(dep => dep.status === 'inativo');
+                break;
+        }
+
+        return resultado;
+    };
+
+    const departamentosFiltrados = aplicarFiltros(departamentosLocal);
+
     return (
         <div className="bg-[#0F0F0F] h-screen flex overflow-hidden">
             <EnterDepartmentModal
@@ -192,7 +247,16 @@ export default function DepartamentosFront({ departamentos, departamento, userId
                 }}
             />
 
-            <SideBar userEmail={userEmail} userName={userName} />
+            <SideBar
+                userEmail={userEmail}
+                userName={userName}
+                user={{
+                    id: userId,
+                    nome: userName || '',
+                    email: userEmail || '',
+                    senha: ''
+                }}
+            />
 
             <motion.main
                 className="flex-grow bg-[#0F0F0F] p-6 overflow-hidden"
@@ -217,7 +281,7 @@ export default function DepartamentosFront({ departamentos, departamento, userId
                         >
                             <TbLogin2 className="text-xl" /> Entrar no departamento
                         </motion.button>
-                        <ButtonCriarSala userId={userId} departamento={departamento} />
+                        <ButtonCriarSala userId={userId} />
                     </div>
                 </motion.div>
 
@@ -228,11 +292,13 @@ export default function DepartamentosFront({ departamentos, departamento, userId
                     onFocus={() => setIsSearchFocused(true)}
                     onBlur={() => setIsSearchFocused(false)}
                     itemVariants={itemVariants}
+                    filtroSelecionado={filtroSelecionado}
+                    onFilterChange={setFiltroSelecionado}
                 />
 
                 <div className="overflow-y-auto h-[73vh] pr-4 hide-scrollbar">
                     <DepartmentGrid
-                        departamentos={departamentosLocal}
+                        departamentos={departamentosFiltrados}
                         searchTerm={buscaDepartamento}
                         onSetSearchTerm={setBuscaDepartamento}
                         onShare={handleShareDepartamento}

@@ -3,12 +3,15 @@
 import Image from "next/image";
 import { FaGear, FaPlus, FaShare, FaArrowLeft } from "react-icons/fa6";
 import { FaUsers, FaChartLine } from "react-icons/fa";
+import { IoMdNotifications } from "react-icons/io";
+import { MdLogout } from "react-icons/md";
 import { DepartamentoType, UserType } from "@/lib/types/types";
 import { MembroDepartamento } from "@/app/services/membros";
 import { motion } from "framer-motion";
 import Link from "next/link";
 import { useState } from "react";
-import { CompartilharModal } from "../modals";
+import { CompartilharModal, MembrosModal, ConfiguracoesUsuarioModal, NotificacoesModal } from "../modals";
+import Logout from "../Button/buttonLogOut";
 
 interface SidebarProps {
      departamento: DepartamentoType;
@@ -23,6 +26,10 @@ interface SidebarProps {
 
 export function SidebarCategorias({ departamento, user, host, membros = [], onAddCategoryClick, onConfigClick, onShareClick, hasInitiallyLoaded = false }: SidebarProps) {
      const [isShareModalOpen, setIsShareModalOpen] = useState(false);
+     const [isMembrosModalOpen, setIsMembrosModalOpen] = useState(false);
+     const [isConfigModalOpen, setIsConfigModalOpen] = useState(false);
+     const [isNotificacoesModalOpen, setIsNotificacoesModalOpen] = useState(false);
+     const [notificacoesCount] = useState(3);
 
      const sidebarVariants = hasInitiallyLoaded ? {
           hidden: { x: 0, opacity: 1 },
@@ -76,6 +83,20 @@ export function SidebarCategorias({ departamento, user, host, membros = [], onAd
                animate="visible"
                variants={sidebarVariants}
           >
+               {/* Logo */}
+               <motion.div
+                    className="mb-6"
+                    variants={itemVariants}
+               >
+                    <Image
+                         src="/logo-completa-branca.png"
+                         alt="Logo"
+                         width={140}
+                         height={46}
+                         className="mb-4"
+                    />
+               </motion.div>
+
                <motion.div
                     className="mb-6"
                     variants={itemVariants}
@@ -129,8 +150,11 @@ export function SidebarCategorias({ departamento, user, host, membros = [], onAd
                </motion.div>
 
                <motion.div
-                    className="mb-8 bg-[#1c1c1c] p-4 rounded-xl border border-[#2c2c2c]"
+                    className="mb-8 bg-[#1c1c1c] p-4 rounded-xl border border-[#2c2c2c] cursor-pointer hover:bg-[#252525] hover:border-[#F6CF45]/30 transition-all duration-300"
                     variants={itemVariants}
+                    onClick={() => setIsMembrosModalOpen(true)}
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
                >
                     <div className="flex items-center justify-between mb-3">
                          <div className="flex items-center gap-2">
@@ -218,20 +242,90 @@ export function SidebarCategorias({ departamento, user, host, membros = [], onAd
                     </motion.button>
                </div>
 
+               {/* Spacer para empurrar seção do usuário para o rodapé */}
+               <div className="flex-grow"></div>
+
+
+
+               {/* Seção do Usuário */}
                <motion.div
-                    className="mt-auto pt-6 border-t border-[#2c2c2c] text-xs text-[#8c8888]"
+                    className="bg-[#1c1c1c] rounded-xl border border-[#2c2c2c] overflow-hidden"
                     variants={itemVariants}
                >
-                    <p>
-                         Criado em: {departamento.created_at ? new Date(departamento.created_at).toLocaleDateString('pt-BR') : "Data desconhecida"}
-                    </p>
+                    {/* User Info - Clicável */}
+                    <motion.div
+                         className="p-4 cursor-pointer hover:bg-[#252525] transition-all duration-300"
+                         onClick={() => setIsConfigModalOpen(true)}
+                         whileHover={{ scale: 1.01 }}
+                         whileTap={{ scale: 0.99 }}
+                    >
+                         <div className="flex items-center gap-3">
+                              <div className="relative">
+                                   <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[#F6CF45] to-[#f7d665] flex items-center justify-center text-black font-bold text-lg">
+                                        {user.nome.charAt(0).toUpperCase()}
+                                   </div>
+                                   <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-green-500 border-2 border-[#1c1c1c] rounded-full"></div>
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                   <p className="text-sm font-medium text-white truncate">{user.nome}</p>
+                                   <p className="text-xs text-[#8c8888] truncate">{user.email}</p>
+                              </div>
+                         </div>
+                    </motion.div>
 
+                    {/* Divider */}
+                    <div className="border-t border-[#2c2c2c]"></div>
+
+                    {/* Actions */}
+                    <div className="p-2 flex items-center justify-end  gap-2">
+                         {/* Notificações */}
+                         <motion.button
+                              className="  relative flex items-center justify-center gap-2 px-6 py-2 rounded-lg hover:bg-[#252525] transition-colors duration-300 text-[#b4b4b4] hover:text-white"
+                              onClick={() => setIsNotificacoesModalOpen(true)}
+                              whileHover={{ scale: 1.02 }}
+                              whileTap={{ scale: 0.98 }}
+                         >
+                              <IoMdNotifications size={20} className="text-[#F6CF45]" />
+                              {notificacoesCount > 0 && (
+                                   <span className="absolute top-1 right-2 flex h-5 w-5 items-center justify-center">
+                                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#F6CF45] opacity-75"></span>
+                                        <span className="relative inline-flex rounded-full h-5 w-5 bg-[#F6CF45] text-black text-xs font-bold items-center justify-center">
+                                             {notificacoesCount > 9 ? '9+' : notificacoesCount}
+                                        </span>
+                                   </span>
+                              )}
+                         </motion.button>
+
+                         {/* Logout */}
+                         <div className="">
+                              <Logout variant="sidebar" />
+                         </div>
+                    </div>
                </motion.div>
 
                <CompartilharModal
                     isOpen={isShareModalOpen}
                     onClose={() => setIsShareModalOpen(false)}
                     departamento={departamento}
+               />
+
+               <MembrosModal
+                    isOpen={isMembrosModalOpen}
+                    onClose={() => setIsMembrosModalOpen(false)}
+                    departamento={departamento}
+                    membros={membros}
+               />
+
+               <ConfiguracoesUsuarioModal
+                    isOpen={isConfigModalOpen}
+                    onClose={() => setIsConfigModalOpen(false)}
+                    user={user}
+                    onSuccess={() => setIsConfigModalOpen(false)}
+               />
+
+               <NotificacoesModal
+                    isOpen={isNotificacoesModalOpen}
+                    onClose={() => setIsNotificacoesModalOpen(false)}
                />
           </motion.aside>
      );

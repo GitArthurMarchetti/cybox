@@ -12,7 +12,7 @@ export async function getEmptyUser(): Promise<UserType> {
 
 export async function getUsers(): Promise<UserType[]> {
     try {
-        const users = await query('SELECT * FROM users WHERE status != "deletado"');
+        const users = await query('SELECT * FROM users');
         return users as UserType[];
     } catch (error) {
         console.error('Erro ao buscar usuários do banco:', error);
@@ -22,7 +22,7 @@ export async function getUsers(): Promise<UserType[]> {
 
 export async function getUsersByEmail(email: string): Promise<UserType | null> {
     try {
-        const users = await query('SELECT * FROM users WHERE email = ? AND status != "deletado" LIMIT 1', [email]);
+        const users = await query('SELECT * FROM users WHERE email = ? LIMIT 1', [email]);
         const userArray = users as UserType[];
         return userArray.length > 0 ? userArray[0] : null;
     } catch (error) {
@@ -77,7 +77,9 @@ export async function removeUser(user: UserType) {
             throw new Error('ID do usuário é necessário para deletar.');
         }
 
-        await query('UPDATE users SET status = "deletado", updated_at = CURRENT_TIMESTAMP WHERE id = ?', [user.id]);
+        // TODO: Adicionar coluna status antes de usar esta query
+        // await query('UPDATE users SET status = "deletado", updated_at = CURRENT_TIMESTAMP WHERE id = ?', [user.id]);
+        await query('DELETE FROM users WHERE id = ?', [user.id]);
         redirect('/');
     } catch (error) {
         console.error('Erro ao remover usuário:', error);
@@ -95,12 +97,12 @@ export async function getUsersByDepartamento(departamentoId: number): Promise<Us
             SELECT u.*, ud.role
             FROM users AS u
             JOIN users_departamentos AS ud ON u.id = ud.id_users
-            WHERE ud.id_departamentos = ? AND u.status != "deletado" AND ud.status = "ativo"
-            ORDER BY 
-                CASE ud.role 
-                    WHEN 'owner' THEN 1 
-                    WHEN 'admin' THEN 2 
-                    WHEN 'member' THEN 3 
+            WHERE ud.id_departamentos = ?
+            ORDER BY
+                CASE ud.role
+                    WHEN 'owner' THEN 1
+                    WHEN 'admin' THEN 2
+                    WHEN 'member' THEN 3
                 END,
                 u.nome ASC
         `, [departamentoId]);
@@ -122,7 +124,7 @@ export async function getHostByDepartamento(departamentoId: number): Promise<Use
             SELECT u.*
             FROM users AS u
             JOIN users_departamentos AS ud ON u.id = ud.id_users
-            WHERE ud.id_departamentos = ? AND ud.role = "owner" AND u.status != "deletado" AND ud.status = "ativo"
+            WHERE ud.id_departamentos = ? AND ud.role = "owner"
             LIMIT 1
         `, [departamentoId]);
 
@@ -131,5 +133,86 @@ export async function getHostByDepartamento(departamentoId: number): Promise<Use
     } catch (error) {
         console.error("Erro ao buscar host do departamento:", error);
         return null;
+    }
+}
+
+export async function updateUser(userId: string, data: {
+    nome?: string;
+    email?: string;
+    senhaAtual?: string;
+    novaSenha?: string;
+    avatar_url?: string;
+}) {
+    try {
+        if (!userId) {
+            throw new Error('ID do usuário é necessário.');
+        }
+
+        const user = await query('SELECT * FROM users WHERE id = ?', [userId]) as UserType[];
+        if (!user || user.length === 0) {
+            throw new Error('Usuário não encontrado.');
+        }
+
+        const currentUser = user[0];
+        const updates: string[] = [];
+        const values: any[] = [];
+
+        if (data.nome && data.nome !== currentUser.nome) {
+            updates.push('nome = ?');
+            values.push(data.nome);
+        }
+
+        if (data.email && data.email !== currentUser.email) {
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(data.email)) {
+                throw new Error('Email inválido.');
+            }
+
+            const existingUser = await getUsersByEmail(data.email);
+            if (existingUser && existingUser.id !== userId) {
+                throw new Error('Este email já está em uso.');
+            }
+
+            updates.push('email = ?');
+            values.push(data.email);
+        }
+
+        if (data.novaSenha) {
+            if (!data.senhaAtual) {
+                throw new Error('Senha atual é necessária para alterar a senha.');
+            }
+
+            if (!currentUser.senha) {
+                throw new Error('Não é possível alterar senha para usuários de login social.');
+            }
+
+            const senhaValida = await bcrypt.compare(data.senhaAtual, currentUser.senha);
+            if (!senhaValida) {
+                throw new Error('Senha atual incorreta.');
+            }
+
+            const hashedNovaSenha = await bcrypt.hash(data.novaSenha, 10);
+            updates.push('senha = ?');
+            values.push(hashedNovaSenha);
+        }
+
+        if (data.avatar_url !== undefined) {
+            updates.push('avatar_url = ?');
+            values.push(data.avatar_url);
+        }
+
+        if (updates.length === 0) {
+            return { success: true, message: 'Nenhuma alteração detectada.' };
+        }
+
+        values.push(userId);
+        const sql = `UPDATE users SET ${updates.join(', ')}, updated_at = CURRENT_TIMESTAMP WHERE id = ?`;
+
+        await query(sql, values);
+
+        return { success: true, message: 'Dados atualizados com sucesso!' };
+    } catch (error: unknown) {
+        console.error('Erro ao atualizar usuário:', error);
+        throw new Error((error as Error).message || 'Erro ao atualizar dados.');
     }
 }
