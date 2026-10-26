@@ -8,7 +8,7 @@ export default function GoogleSignInButton() {
         <button
             onClick={() => signIn('google', { callbackUrl: '/departamentos' })}
             type="button"
-            className="flex w-full items-center justify-center gap-3 rounded-full border border-[#444] bg-[#2C2C2C] py-3 text-white transition-all hover:bg-[#3C3C3C]"
+            className="flex w-full items-center justify-center gap-3 rounded-full border border-[#444] bg-surface-2 py-3 text-white transition-all hover:bg-surface-3"
         >
             <FcGoogle className="text-xl" />
             <span>Continuar com Google</span>

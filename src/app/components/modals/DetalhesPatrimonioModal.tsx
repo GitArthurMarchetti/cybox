@@ -1,12 +1,11 @@
 'use client'
 
-import React, { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { FaArrowLeft, FaChartLine, FaFilter, FaPlus } from 'react-icons/fa';
-import { MdModeEdit } from 'react-icons/md';
+import { Modal, ModalTitle } from '@/components/ui/modal';
+import { Button } from '@/components/ui/button';
+import React from 'react';
+import { MdClose, MdModeEdit } from 'react-icons/md';
 import { RiDeleteBinLine } from 'react-icons/ri';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from 'recharts';
-import { toast } from 'sonner';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
 interface PatrimonioDetalhadoType {
     id?: number;
@@ -22,17 +21,7 @@ interface PatrimonioDetalhadoType {
     depreciacao_valor?: number;
     gastos_totais?: number;
     status?: number;
-    gastos?: GastoType[];
     depreciacao_historico?: { data: string; valor: number }[];
-    gastos_mensais?: { mes: string; valor: number }[];
-}
-
-interface GastoType {
-    id: number;
-    tipo: string;
-    descricao: string;
-    valor: number;
-    data: string;
 }
 
 interface DetalhesPatrimonioModalProps {
@@ -43,297 +32,135 @@ interface DetalhesPatrimonioModalProps {
     onDelete?: (patrimonio: PatrimonioDetalhadoType) => void;
 }
 
-export function DetalhesPatrimonioModal({ 
-    isOpen, 
-    onClose, 
+// 'YYYY-MM-DD' é lido como data local; new Date() direto interpretaria como UTC e mostraria o dia anterior.
+const formatarData = (dataString?: string) => {
+    if (!dataString) return "Não informada";
+    const [ano, mes, dia] = dataString.slice(0, 10).split('-').map(Number);
+    if (!ano || !mes || !dia) return "Não informada";
+    return new Date(ano, mes - 1, dia).toLocaleDateString('pt-BR');
+};
+
+const formatarPreco = (valor: number | null | undefined) => {
+    if (!valor || isNaN(Number(valor))) return "R$ 0,00";
+    return Number(valor).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+};
+
+const corPorValor = (percentual: number) =>
+    percentual >= 70 ? 'text-green-500' : percentual >= 50 ? 'text-yellow-500' : 'text-red-500';
+
+const fundoPorValor = (percentual: number) =>
+    percentual >= 70 ? 'bg-green-500' : percentual >= 50 ? 'bg-yellow-500' : 'bg-red-500';
+
+export function DetalhesPatrimonioModal({
+    isOpen,
+    onClose,
     patrimonio,
     onEdit,
-    onDelete 
+    onDelete
 }: DetalhesPatrimonioModalProps) {
-    const [activeTab, setActiveTab] = useState<string>("depreciacao");
-
     if (!patrimonio) return null;
 
-    
-    const formatarData = (dataString: string) => {
-        if (!dataString) return "";
-        const data = new Date(dataString);
-        return data.toLocaleDateString('pt-BR');
-    };
-
-    
-    const formatarPreco = (valor: number | null | undefined) => {
-        if (!valor || isNaN(Number(valor))) return "R$ 0,00";
-        return Number(valor).toLocaleString('pt-BR', {
-            style: 'currency',
-            currency: 'BRL'
-        });
-    };
+    const depreciacao = 100 - patrimonio.finalValue;
 
     return (
-        <AnimatePresence>
-            {isOpen && patrimonio && (
-                <motion.div
-                    className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4"
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    onClick={onClose}
-                >
-                    <motion.div
-                        className="bg-[#1F1F1F] rounded-xl w-full max-w-7xl h-[85vh] overflow-hidden"
-                        initial={{ scale: 0.9, opacity: 0 }}
-                        animate={{ scale: 1, opacity: 1 }}
-                        exit={{ scale: 0.9, opacity: 0 }}
-                        transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-                        onClick={(e) => e.stopPropagation()}
-                    >
-                        
-                        <div className="p-6 border-b border-[#2c2c2c] flex items-center justify-between">
-                            <div className="flex items-center gap-3">
-                                <button
-                                    className="flex items-center gap-2 text-[#b4b4b4] hover:text-[#F6CF45] transition-colors duration-300"
-                                    onClick={onClose}
-                                >
-                                    <FaArrowLeft size={14} />
-                                    <span className="text-sm">Voltar para categorias</span>
-                                </button>
-                            </div>
-                            <div className="flex gap-2">
-                                <button 
-                                    className="p-2 bg-[#F6CF45] rounded-md hover:bg-[#F6CF45]/90 transition-colors duration-300"
-                                    onClick={() => onEdit?.(patrimonio)}
-                                >
-                                    <MdModeEdit size={18} />
-                                </button>
-                                <button 
-                                    className="p-2 bg-red-500 rounded-md hover:bg-red-600 transition-colors duration-300"
-                                    onClick={() => onDelete?.(patrimonio)}
-                                >
-                                    <RiDeleteBinLine size={18} />
-                                </button>
-                            </div>
+        <Modal isOpen={isOpen} onClose={onClose} className="max-w-6xl">
+            <div className="flex shrink-0 items-center justify-between gap-3 border-b border-line px-4 py-3 sm:px-6 sm:py-4">
+                <div className="flex min-w-0 items-center gap-3 sm:gap-4">
+                    <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-lg text-xl font-bold text-white ${fundoPorValor(patrimonio.finalValue)}`}>
+                        {patrimonio.name.charAt(0)}
+                    </div>
+                    <div className="min-w-0">
+                        <ModalTitle className="truncate text-lg font-bold text-white sm:text-2xl">{patrimonio.name}</ModalTitle>
+                        <p className="truncate text-sm text-subtle">{patrimonio.codigo || 'Sem código'}</p>
+                    </div>
+                </div>
+                <div className="flex shrink-0 items-center gap-2">
+                    {onEdit && (
+                        <Button variant="secondary" size="sm" onClick={() => onEdit(patrimonio)} aria-label="Editar patrimônio">
+                            <MdModeEdit size={18} className="text-primary" />
+                            <span className="hidden sm:inline">Editar</span>
+                        </Button>
+                    )}
+                    {onDelete && (
+                        <Button variant="secondary" size="sm" onClick={() => onDelete(patrimonio)} aria-label="Excluir patrimônio">
+                            <RiDeleteBinLine size={18} className="text-red-400" />
+                            <span className="hidden sm:inline">Excluir</span>
+                        </Button>
+                    )}
+                    <Button variant="ghost" size="icon-sm" onClick={onClose} aria-label="Fechar">
+                        <MdClose size={22} />
+                    </Button>
+                </div>
+            </div>
+
+            <div className="min-h-0 flex-1 overflow-y-auto p-4 sm:p-6">
+                <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+                    <div className="space-y-4">
+                        <div className="rounded-lg bg-surface-2 p-4">
+                            <p className="mb-1 text-sm text-subtle">Status</p>
+                            <p className={`text-xl font-bold ${corPorValor(patrimonio.finalValue)}`}>
+                                {patrimonio.finalValue}% do valor inicial
+                            </p>
+                            <p className="mt-1 text-sm text-subtle">Depreciação: {depreciacao}%</p>
                         </div>
 
-                        
-                        <div className="h-[calc(85vh-140px)] overflow-auto p-6">
-                            <div className="grid grid-cols-3 gap-6">
-                                
-                                <div>
-                                    <div className="flex items-center gap-4 mb-6">
-                                        <div className={`w-16 h-16 flex items-center justify-center rounded-md text-2xl font-bold ${
-                                            patrimonio.finalValue >= 70 ? 'bg-green-500' : 
-                                            patrimonio.finalValue >= 50 ? 'bg-yellow-500' : 'bg-red-500'
-                                        }`}>
-                                            {patrimonio.name.charAt(0)}
-                                        </div>
-                                        <div>
-                                            <h1 className="text-2xl font-bold">{patrimonio.name}</h1>
-                                            <p className="text-[#8c8888] text-sm">{patrimonio.codigo}</p>
-                                        </div>
-                                    </div>
-
-                                    <div className="space-y-4">
-                                        <div className="bg-[#2c2c2c] p-4 rounded-md">
-                                            <p className="text-[#8c8888] text-sm mb-1">Especificações</p>
-                                            <p className="text-white">{patrimonio.especificacoes || "Não especificado"}</p>
-                                        </div>
-
-                                        <div className="bg-[#2c2c2c] p-4 rounded-md">
-                                            <p className="text-[#8c8888] text-sm mb-1">Data de aquisição</p>
-                                            <p className="text-white">{formatarData(patrimonio.data_aquisicao || "")}</p>
-                                        </div>
-
-                                        <div className="bg-[#2c2c2c] p-4 rounded-md">
-                                            <p className="text-[#8c8888] text-sm mb-1">Localização</p>
-                                            <p className="text-white">{patrimonio.local || "Não especificado"}</p>
-                                        </div>
-
-                                        <div className="bg-[#2c2c2c] p-4 rounded-md">
-                                            <div className="flex justify-between mb-2">
-                                                <p className="text-[#8c8888] text-sm">Preço inicial</p>
-                                                <p className="text-white">{formatarPreco(patrimonio.preco_inicial || 0)}</p>
-                                            </div>
-                                            <div className="flex justify-between mb-2">
-                                                <p className="text-[#8c8888] text-sm">Valor atual</p>
-                                                <p className="text-[#F6CF45]">{formatarPreco(patrimonio.valor_atual || 0)}</p>
-                                            </div>
-                                            <div className="flex justify-between">
-                                                <p className="text-[#8c8888] text-sm">Total de gastos</p>
-                                                <p className="text-red-500">{formatarPreco(patrimonio.gastos_totais || 0)}</p>
-                                            </div>
-                                        </div>
-
-                                        <div className="bg-[#2c2c2c] p-4 rounded-md">
-                                            <p className="text-[#8c8888] text-sm mb-1">Status</p>
-                                            <p className={`text-xl font-bold ${
-                                                patrimonio.finalValue >= 70 ? 'text-green-500' : 
-                                                patrimonio.finalValue >= 50 ? 'text-yellow-500' : 'text-red-500'
-                                            }`}>
-                                                {patrimonio.finalValue}% do valor final
-                                            </p>
-                                            <p className="text-[#8c8888] text-sm mt-1">
-                                                Depreciação: {patrimonio.depreciacao_percentual || (100 - patrimonio.finalValue)}%
-                                            </p>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                
-                                <div className="col-span-2 space-y-6">
-                                    
-                                    <div className="flex gap-4 mb-2">
-                                        <button
-                                            className={`py-2 px-4 rounded-md transition-colors duration-300 flex items-center gap-2 ${
-                                                activeTab === 'depreciacao' ? 'bg-[#F6CF45] text-black' : 'bg-[#2c2c2c] text-white hover:bg-[#3c3c3c]'
-                                            }`}
-                                            onClick={() => setActiveTab('depreciacao')}
-                                        >
-                                            <FaChartLine />
-                                            Depreciação <span className="text-sm opacity-80">{patrimonio.depreciacao_percentual || (100 - patrimonio.finalValue)}%</span>
-                                        </button>
-                                        <button
-                                            className={`py-2 px-4 rounded-md transition-colors duration-300 flex items-center gap-2 ${
-                                                activeTab === 'gastos' ? 'bg-[#F6CF45] text-black' : 'bg-[#2c2c2c] text-white hover:bg-[#3c3c3c]'
-                                            }`}
-                                            onClick={() => setActiveTab('gastos')}
-                                        >
-                                            <FaChartLine />
-                                            Gastos <span className="text-sm opacity-80">5%</span>
-                                        </button>
-                                    </div>
-
-                                    
-                                    <div className="grid grid-cols-2 gap-6">
-                                        
-                                        <div className="col-span-2 bg-[#2c2c2c] p-4 rounded-md">
-                                            <div className="flex justify-between items-center mb-4">
-                                                <h3 className="font-medium">
-                                                    {activeTab === 'depreciacao' ? 'Depreciação' : 'Gastos'}
-                                                    <span className="text-sm text-[#8c8888] ml-2">
-                                                        {activeTab === 'depreciacao' ? patrimonio.depreciacao_percentual : 5}%
-                                                    </span>
-                                                </h3>
-                                                <select className="bg-[#1F1F1F] text-[#8c8888] border border-[#3c3c3c] rounded-md px-2 py-1 text-sm">
-                                                    <option>Últimos 6 meses</option>
-                                                    <option>Último ano</option>
-                                                    <option>Todo período</option>
-                                                </select>
-                                            </div>
-                                            <div className="h-64">
-                                                <ResponsiveContainer width="100%" height="100%">
-                                                    {activeTab === 'depreciacao' ? (
-                                                        <LineChart data={patrimonio.depreciacao_historico || []}>
-                                                            <CartesianGrid strokeDasharray="3 3" stroke="#3c3c3c" />
-                                                            <XAxis dataKey="data" stroke="#8c8888" />
-                                                            <YAxis stroke="#8c8888" tickFormatter={(value) => `${(value / 1000).toFixed(0)}k`} />
-                                                            <Tooltip
-                                                                contentStyle={{ backgroundColor: '#1F1F1F', borderColor: '#3c3c3c' }}
-                                                                labelStyle={{ color: '#8c8888' }}
-                                                                formatter={(value: number) => [formatarPreco(value), 'Valor']}
-                                                            />
-                                                            <Line
-                                                                type="monotone"
-                                                                dataKey="valor"
-                                                                stroke="#F6CF45"
-                                                                strokeWidth={2}
-                                                                dot={{ stroke: '#F6CF45', strokeWidth: 2, r: 4 }}
-                                                                activeDot={{ stroke: '#F6CF45', strokeWidth: 2, r: 6 }}
-                                                            />
-                                                        </LineChart>
-                                                    ) : (
-                                                        <BarChart data={patrimonio.gastos_mensais || []}>
-                                                            <CartesianGrid strokeDasharray="3 3" stroke="#3c3c3c" />
-                                                            <XAxis dataKey="mes" stroke="#8c8888" />
-                                                            <YAxis stroke="#8c8888" tickFormatter={(value) => `R$ ${value}`} />
-                                                            <Tooltip
-                                                                contentStyle={{ backgroundColor: '#1F1F1F', borderColor: '#3c3c3c' }}
-                                                                labelStyle={{ color: '#8c8888' }}
-                                                                formatter={(value: number) => [formatarPreco(value), 'Gasto']}
-                                                            />
-                                                            <Bar
-                                                                dataKey="valor"
-                                                                fill="#FF4560"
-                                                                radius={[4, 4, 0, 0]}
-                                                            />
-                                                        </BarChart>
-                                                    )}
-                                                </ResponsiveContainer>
-                                            </div>
-                                        </div>
-
-                                        
-                                        <div className="col-span-2 bg-[#2c2c2c] p-4 rounded-md">
-                                            <div className="flex justify-between items-center mb-4">
-                                                <h3 className="font-medium">Histórico de gastos</h3>
-                                                <div className="flex gap-2 items-center">
-                                                    <button className="p-1.5 bg-[#1F1F1F] rounded-md text-[#8c8888] hover:text-white transition-colors duration-200">
-                                                        <FaFilter size={14} />
-                                                    </button>
-                                                    <button
-                                                        className="py-1 px-3 bg-[#1F1F1F] rounded-md text-[#8c8888] hover:text-white transition-colors duration-200 text-sm flex items-center gap-1"
-                                                    >
-                                                        <FaPlus size={12} />
-                                                        Adicionar gasto
-                                                    </button>
-                                                </div>
-                                            </div>
-
-                                            <div className="max-h-64 overflow-y-auto pr-2">
-                                                <table className="w-full">
-                                                    <thead className="text-left text-[#8c8888] text-sm">
-                                                        <tr>
-                                                            <th className="pb-2">Descrição</th>
-                                                            <th className="pb-2">Tipo</th>
-                                                            <th className="pb-2 text-right">Valor</th>
-                                                        </tr>
-                                                    </thead>
-                                                    <tbody>
-                                                        {(patrimonio.gastos || []).map((gasto) => (
-                                                            <tr key={gasto.id} className="border-t border-[#3c3c3c]">
-                                                                <td className="py-3">
-                                                                    <div>
-                                                                        <p className="text-white">{gasto.descricao}</p>
-                                                                        <p className="text-[#8c8888] text-xs">{formatarData(gasto.data)}</p>
-                                                                    </div>
-                                                                </td>
-                                                                <td className="py-3">
-                                                                    <span className="px-2 py-1 rounded-full text-xs bg-[#1F1F1F]">
-                                                                        {gasto.tipo}
-                                                                    </span>
-                                                                </td>
-                                                                <td className="py-3 text-right text-red-500">{formatarPreco(gasto.valor)}</td>
-                                                            </tr>
-                                                        ))}
-
-                                                        {(!patrimonio.gastos || patrimonio.gastos.length === 0) && (
-                                                            <tr>
-                                                                <td colSpan={3} className="py-6 text-center text-[#8c8888]">
-                                                                    Nenhum gasto registrado para este patrimônio.
-                                                                </td>
-                                                            </tr>
-                                                        )}
-                                                    </tbody>
-                                                </table>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
+                        <div className="space-y-2 rounded-lg bg-surface-2 p-4">
+                            <div className="flex justify-between gap-4">
+                                <p className="text-sm text-subtle">Preço inicial</p>
+                                <p className="text-white">{formatarPreco(patrimonio.preco_inicial)}</p>
+                            </div>
+                            <div className="flex justify-between gap-4">
+                                <p className="text-sm text-subtle">Valor atual</p>
+                                <p className="font-medium text-primary">{formatarPreco(patrimonio.valor_atual)}</p>
                             </div>
                         </div>
 
-                        
-                        <div className="px-6 py-2 border-t border-[#2c2c2c] flex justify-end">
-                            <button
-                                className="px-4 py-2 bg-[#2c2c2c] text-white rounded-md hover:bg-[#3c3c3c] transition-colors duration-300"
-                                onClick={onClose}
-                            >
-                                Fechar
-                            </button>
+                        <div className="rounded-lg bg-surface-2 p-4">
+                            <p className="mb-1 text-sm text-subtle">Especificações</p>
+                            <p className="text-white">{patrimonio.especificacoes || "Não especificado"}</p>
                         </div>
-                    </motion.div>
-                </motion.div>
-            )}
-        </AnimatePresence>
+
+                        <div className="grid grid-cols-2 gap-4 lg:grid-cols-1">
+                            <div className="rounded-lg bg-surface-2 p-4">
+                                <p className="mb-1 text-sm text-subtle">Data de aquisição</p>
+                                <p className="text-white">{formatarData(patrimonio.data_aquisicao)}</p>
+                            </div>
+                            <div className="rounded-lg bg-surface-2 p-4">
+                                <p className="mb-1 text-sm text-subtle">Localização</p>
+                                <p className="text-white">{patrimonio.local || "Não especificado"}</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="rounded-lg bg-surface-2 p-4 lg:col-span-2">
+                        <h3 className="mb-4 font-medium text-white">
+                            Depreciação <span className="ml-1 text-sm text-subtle">{depreciacao}%</span>
+                        </h3>
+                        <div className="h-64 sm:h-80">
+                            <ResponsiveContainer width="100%" height="100%">
+                                <LineChart data={patrimonio.depreciacao_historico || []}>
+                                    <CartesianGrid strokeDasharray="3 3" stroke="#3D3D3D" />
+                                    <XAxis dataKey="data" stroke="#9A9696" fontSize={12} />
+                                    <YAxis stroke="#9A9696" fontSize={12} width={40} tickFormatter={(value) => `${(value / 1000).toFixed(0)}k`} />
+                                    <Tooltip
+                                        contentStyle={{ backgroundColor: '#1F1F1F', borderColor: '#3D3D3D' }}
+                                        labelStyle={{ color: '#9A9696' }}
+                                        formatter={(value: number) => [formatarPreco(value), 'Valor']}
+                                    />
+                                    <Line
+                                        type="monotone"
+                                        dataKey="valor"
+                                        stroke="#F6CF45"
+                                        strokeWidth={2}
+                                        dot={{ stroke: '#F6CF45', strokeWidth: 2, r: 4 }}
+                                        activeDot={{ stroke: '#F6CF45', strokeWidth: 2, r: 6 }}
+                                    />
+                                </LineChart>
+                            </ResponsiveContainer>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </Modal>
     );
 }

@@ -7,8 +7,11 @@ import { Toaster } from 'sonner';
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Cybox",
-  description: "Pensando dentro e fora da caixa ",
+  title: {
+    default: "Cybox - Gestão patrimonial",
+    template: "%s | Cybox",
+  },
+  description: "Gestão de patrimônio por departamentos, com cálculo de depreciação. Pensando dentro e fora da caixa.",
 };
 
 export default function RootLayout({
@@ -26,7 +29,7 @@ export default function RootLayout({
         <link rel="manifest" href="/cyboxFavicon/site.webmanifest" />
       </head>
       <body className={`${inter.className} flex flex-col h-screen scrollbar-thin scrollbar-thumb-yellow-700`}>
-        <Toaster position="top-right" richColors />
+        <Toaster position="bottom-right" richColors closeButton />
         <main className="flex-1">{children}</main>
       </body>
     </html>

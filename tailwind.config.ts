@@ -18,6 +18,22 @@ const config = {
       },
     },
     extend: {
+      colors: {
+        primary: {
+          DEFAULT: "#F6CF45",
+          hover: "#E5BE34",
+          foreground: "#000000",
+        },
+        page: "#0F0F0F",
+        surface: {
+          DEFAULT: "#1F1F1F",
+          2: "#2C2C2C",
+          3: "#3D3D3D",
+        },
+        line: "#2C2C2C",
+        muted: "#B4B4B4",
+        subtle: "#9A9696",
+      },
       keyframes: {
         "accordion-down": {
           from: { height: "0" },

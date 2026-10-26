@@ -42,16 +42,16 @@ export default function DepartmentGrid({
                 className="flex flex-col items-center justify-center h-64 text-center"
                 variants={itemVariants}
             >
-                <div className="bg-[#2C2C2C] text-[#F6CF45] p-8 rounded-xl mb-4 w-16 h-16 flex items-center justify-center">
+                <div className="bg-surface-2 text-primary p-8 rounded-xl mb-4 w-16 h-16 flex items-center justify-center">
                     <FaBuilding />
                 </div>
                 <h3 className="text-xl text-white font-semibold mb-2">Nenhum departamento encontrado</h3>
-                <p className="text-[#8C8888] max-w-md">
+                <p className="text-subtle max-w-md">
                     Não encontramos departamentos com esse nome. Tente outro termo ou crie um novo departamento.
                 </p>
                 <motion.button
                     onClick={() => onSetSearchTerm("")}
-                    className="mt-4 text-[#F6CF45] border border-[#F6CF45] px-4 py-2 rounded-full hover:bg-[#F6CF45]/10 transition-colors duration-300"
+                    className="mt-4 text-primary border border-primary px-4 py-2 rounded-full hover:bg-primary/10 transition-colors duration-300"
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
                 >
@@ -63,7 +63,7 @@ export default function DepartmentGrid({
 
     return (
         <motion.div
-            className="grid grid-cols-1 md:grid-cols-2 gap-6"
+            className="grid grid-cols-1 gap-4 sm:gap-6 md:grid-cols-2 2xl:grid-cols-3"
             variants={containerVariants}
         >
             {filteredDepartamentos.map((d, index) => (
@@ -79,8 +79,7 @@ export default function DepartmentGrid({
                         titulo={d.titulo}
                         desc={d.descricao}
                         cargo={d.role || 'member'}
-                        NParticipantes={d.num_participantes || 0}
-                        maximoParticipante={50}
+                        NParticipantes={Number(d.num_participantes) || 0}
                         fotoDepartamento={d.fotoDepartamento || "/placeholderImage.jpg"}
                         onShare={onShare}
                         onViewMembers={onViewMembers}

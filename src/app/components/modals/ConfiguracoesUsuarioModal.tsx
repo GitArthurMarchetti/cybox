@@ -1,10 +1,11 @@
 'use client'
 
-import React, { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { MdClose, MdPerson, MdEmail, MdLock, MdSave } from 'react-icons/md';
+import { Modal, ModalHeader } from '@/components/ui/modal';
+import React, { useEffect, useState } from 'react';
+import { MdPerson, MdEmail, MdLock, MdSave } from 'react-icons/md';
 import { UserType } from '@/lib/types/types';
-import { updateUser } from '@/app/services/user';
+import { getMinhaConta, updateUser } from '@/app/services/user';
+import ReenviarVerificacao from '@/app/components/Invite/ReenviarVerificacao';
 import { toast } from 'sonner';
 
 interface ConfiguracoesUsuarioModalProps {
@@ -22,7 +23,22 @@ export default function ConfiguracoesUsuarioModal({ isOpen, onClose, user, onSuc
     const [confirmarSenha, setConfirmarSenha] = useState('');
     const [isLoading, setIsLoading] = useState(false);
 
-    const isGoogleUser = !!user.google_id;
+    const [conta, setConta] = useState<Awaited<ReturnType<typeof getMinhaConta>>>(null);
+
+    useEffect(() => {
+        if (!isOpen) return;
+        getMinhaConta().then(dados => {
+            setConta(dados);
+            if (dados) {
+                setNome(dados.nome);
+                setEmail(dados.email);
+            }
+        });
+    }, [isOpen]);
+
+    const nomeAtual = conta?.nome ?? user.nome;
+    const emailAtual = conta?.email ?? user.email;
+    const isGoogleUser = conta ? !conta.temSenha : false;
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -32,8 +48,8 @@ export default function ConfiguracoesUsuarioModal({ isOpen, onClose, user, onSuc
             return;
         }
 
-        if (novaSenha && novaSenha.length < 6) {
-            toast.error('A nova senha deve ter pelo menos 6 caracteres');
+        if (novaSenha && novaSenha.length < 8) {
+            toast.error('A nova senha deve ter pelo menos 8 caracteres');
             return;
         }
 
@@ -42,11 +58,11 @@ export default function ConfiguracoesUsuarioModal({ isOpen, onClose, user, onSuc
         try {
             const data: any = {};
 
-            if (nome !== user.nome) {
+            if (nome !== nomeAtual) {
                 data.nome = nome;
             }
 
-            if (email !== user.email) {
+            if (email !== emailAtual) {
                 data.email = email;
             }
 
@@ -55,9 +71,14 @@ export default function ConfiguracoesUsuarioModal({ isOpen, onClose, user, onSuc
                 data.novaSenha = novaSenha;
             }
 
-            await updateUser(user.id as string, data);
+            const resultado = await updateUser(data);
 
-            toast.success('Dados atualizados com sucesso!');
+            if (!resultado.success) {
+                toast.error(resultado.error || 'Erro ao atualizar dados');
+                return;
+            }
+
+            toast.success(resultado.message);
 
             setSenhaAtual('');
             setNovaSenha('');
@@ -87,54 +108,27 @@ export default function ConfiguracoesUsuarioModal({ isOpen, onClose, user, onSuc
     };
 
     return (
-        <AnimatePresence>
-            {isOpen && (
-                <motion.div
-                    className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 px-4"
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    onClick={handleClose}
-                >
-                    <motion.div
-                        className="bg-[#1F1F1F] rounded-2xl w-full max-w-2xl overflow-hidden shadow-2xl border border-[#2c2c2c]"
-                        initial={{ scale: 0.9, opacity: 0, y: 20 }}
-                        animate={{ scale: 1, opacity: 1, y: 0 }}
-                        exit={{ scale: 0.9, opacity: 0, y: 20 }}
-                        transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-                        onClick={(e) => e.stopPropagation()}
-                    >
-                        <div className="p-6 border-b border-[#2c2c2c] flex items-center justify-between">
-                            <div className="flex items-center gap-3">
-                                <div className="p-2 bg-[#F6CF45] rounded-lg">
-                                    <MdPerson className="text-black" size={20} />
-                                </div>
-                                <div>
-                                    <h2 className="text-xl font-bold text-white">Configurações da Conta</h2>
-                                    <p className="text-[#8c8888] text-sm">Gerencie suas informações pessoais</p>
-                                </div>
-                            </div>
-                            <button
-                                onClick={handleClose}
-                                className="p-2 hover:bg-[#2c2c2c] rounded-lg transition-colors duration-300 text-[#8c8888] hover:text-white"
-                            >
-                                <MdClose size={24} />
-                            </button>
-                        </div>
+        <Modal isOpen={isOpen} onClose={handleClose} className="max-w-2xl">
+                        <ModalHeader
+                            icone={<MdPerson size={20} />}
+                            titulo="Configurações da Conta"
+                            subtitulo="Gerencie suas informações pessoais"
+                            onClose={handleClose}
+                        />
 
                         <form onSubmit={handleSubmit} className="p-6">
                             <div className="space-y-4">
                                 <div>
-                                    <label className="block text-sm font-medium text-[#b4b4b4] mb-2">
+                                    <label className="block text-sm font-medium text-muted mb-2">
                                         Nome
                                     </label>
                                     <div className="relative">
-                                        <MdPerson className="absolute left-3 top-1/2 transform -translate-y-1/2 text-[#8c8888]" size={20} />
+                                        <MdPerson className="absolute left-3 top-1/2 transform -translate-y-1/2 text-subtle" size={20} />
                                         <input
                                             type="text"
                                             value={nome}
                                             onChange={(e) => setNome(e.target.value)}
-                                            className="w-full bg-[#2c2c2c] text-white pl-10 pr-4 py-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#F6CF45]/50"
+                                            className="w-full bg-surface-2 text-white pl-10 pr-4 py-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50"
                                             placeholder="Seu nome"
                                             required
                                         />
@@ -142,16 +136,16 @@ export default function ConfiguracoesUsuarioModal({ isOpen, onClose, user, onSuc
                                 </div>
 
                                 <div>
-                                    <label className="block text-sm font-medium text-[#b4b4b4] mb-2">
+                                    <label className="block text-sm font-medium text-muted mb-2">
                                         Email
                                     </label>
                                     <div className="relative">
-                                        <MdEmail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-[#8c8888]" size={20} />
+                                        <MdEmail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-subtle" size={20} />
                                         <input
                                             type="email"
                                             value={email}
                                             onChange={(e) => setEmail(e.target.value)}
-                                            className="w-full bg-[#2c2c2c] text-white pl-10 pr-4 py-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#F6CF45]/50"
+                                            className="w-full bg-surface-2 text-white pl-10 pr-4 py-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50"
                                             placeholder="seu@email.com"
                                             required
                                         />
@@ -160,54 +154,54 @@ export default function ConfiguracoesUsuarioModal({ isOpen, onClose, user, onSuc
 
                                 {!isGoogleUser && (
                                     <>
-                                        <div className="pt-4 border-t border-[#2c2c2c]">
+                                        <div className="pt-4 border-t border-line">
                                             <h3 className="text-sm font-semibold text-white mb-4">Alterar Senha</h3>
                                         </div>
 
                                         <div>
-                                            <label className="block text-sm font-medium text-[#b4b4b4] mb-2">
+                                            <label className="block text-sm font-medium text-muted mb-2">
                                                 Senha Atual
                                             </label>
                                             <div className="relative">
-                                                <MdLock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-[#8c8888]" size={20} />
+                                                <MdLock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-subtle" size={20} />
                                                 <input
                                                     type="password"
                                                     value={senhaAtual}
                                                     onChange={(e) => setSenhaAtual(e.target.value)}
-                                                    className="w-full bg-[#2c2c2c] text-white pl-10 pr-4 py-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#F6CF45]/50"
+                                                    className="w-full bg-surface-2 text-white pl-10 pr-4 py-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50"
                                                     placeholder="Digite sua senha atual"
                                                 />
                                             </div>
                                         </div>
 
                                         <div>
-                                            <label className="block text-sm font-medium text-[#b4b4b4] mb-2">
+                                            <label className="block text-sm font-medium text-muted mb-2">
                                                 Nova Senha
                                             </label>
                                             <div className="relative">
-                                                <MdLock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-[#8c8888]" size={20} />
+                                                <MdLock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-subtle" size={20} />
                                                 <input
                                                     type="password"
                                                     value={novaSenha}
                                                     onChange={(e) => setNovaSenha(e.target.value)}
-                                                    className="w-full bg-[#2c2c2c] text-white pl-10 pr-4 py-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#F6CF45]/50"
+                                                    className="w-full bg-surface-2 text-white pl-10 pr-4 py-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50"
                                                     placeholder="Digite a nova senha"
                                                 />
                                             </div>
-                                            <p className="text-xs text-[#8c8888] mt-1">Mínimo de 6 caracteres</p>
+                                            <p className="text-xs text-subtle mt-1">Mínimo de 8 caracteres</p>
                                         </div>
 
                                         <div>
-                                            <label className="block text-sm font-medium text-[#b4b4b4] mb-2">
+                                            <label className="block text-sm font-medium text-muted mb-2">
                                                 Confirmar Nova Senha
                                             </label>
                                             <div className="relative">
-                                                <MdLock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-[#8c8888]" size={20} />
+                                                <MdLock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-subtle" size={20} />
                                                 <input
                                                     type="password"
                                                     value={confirmarSenha}
                                                     onChange={(e) => setConfirmarSenha(e.target.value)}
-                                                    className="w-full bg-[#2c2c2c] text-white pl-10 pr-4 py-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#F6CF45]/50"
+                                                    className="w-full bg-surface-2 text-white pl-10 pr-4 py-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50"
                                                     placeholder="Confirme a nova senha"
                                                 />
                                             </div>
@@ -216,10 +210,20 @@ export default function ConfiguracoesUsuarioModal({ isOpen, onClose, user, onSuc
                                 )}
 
                                 {isGoogleUser && (
-                                    <div className="p-4 bg-blue-500/10 border border-blue-500/30 rounded-lg">
-                                        <p className="text-sm text-blue-400">
-                                            Você está logado com Google. A senha não pode ser alterada.
+                                    <div className="rounded-lg border border-line bg-surface-2 p-4">
+                                        <p className="text-sm text-muted">
+                                            Sua conta entra com o Google e não tem senha. Para criar uma, use
+                                            &quot;Esqueceu a senha?&quot; na tela de login.
                                         </p>
+                                    </div>
+                                )}
+
+                                {conta && !conta.emailVerificado && (
+                                    <div className="space-y-3 rounded-lg border border-primary/30 bg-primary/10 p-4">
+                                        <p className="text-sm text-primary">
+                                            Seu email ainda não foi confirmado. Confirme para poder aceitar convites.
+                                        </p>
+                                        <ReenviarVerificacao email={conta.email} />
                                     </div>
                                 )}
                             </div>
@@ -228,14 +232,14 @@ export default function ConfiguracoesUsuarioModal({ isOpen, onClose, user, onSuc
                                 <button
                                     type="button"
                                     onClick={handleClose}
-                                    className="flex-1 px-4 py-3 bg-[#2c2c2c] text-white rounded-lg hover:bg-[#353535] transition-colors duration-300"
+                                    className="flex-1 px-4 py-3 bg-surface-2 text-white rounded-lg hover:bg-[#353535] transition-colors duration-300"
                                     disabled={isLoading}
                                 >
                                     Cancelar
                                 </button>
                                 <button
                                     type="submit"
-                                    className="flex-1 px-4 py-3 bg-[#F6CF45] text-black rounded-lg hover:bg-[#f7d665] transition-colors duration-300 flex items-center justify-center gap-2 font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                                    className="flex-1 px-4 py-3 bg-primary text-black rounded-lg hover:bg-primary-hover transition-colors duration-300 flex items-center justify-center gap-2 font-medium disabled:opacity-50 disabled:cursor-not-allowed"
                                     disabled={isLoading}
                                 >
                                     {isLoading ? (
@@ -252,9 +256,6 @@ export default function ConfiguracoesUsuarioModal({ isOpen, onClose, user, onSuc
                                 </button>
                             </div>
                         </form>
-                    </motion.div>
-                </motion.div>
-            )}
-        </AnimatePresence>
+                    </Modal>
     );
 }

@@ -1,5 +1,6 @@
 "use client"
 
+import { Suspense } from "react";
 import { motion } from "framer-motion";
 import { UserType } from "@/lib/types/types";
 import RegisterBranding from "../components/auth/RegisterBranding";
@@ -11,10 +12,10 @@ type Props = {
 
 export default function Cadastro({ user }: Props) {
     return (
-        <div className="min-h-screen bg-gradient-to-br from-[#0F0F0F] via-[#1a1a1a] to-[#0F0F0F] flex items-center justify-center p-4">
+        <div className="min-h-screen bg-gradient-to-br from-page via-[#1a1a1a] to-page flex items-center justify-center p-4">
             <div className="absolute inset-0 overflow-hidden">
-                <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-[#F6CF45]/10 rounded-full blur-3xl"></div>
-                <div className="absolute bottom-1/4 right-1/4 w-64 h-64 bg-[#F6CF45]/5 rounded-full blur-2xl"></div>
+                <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-primary/10 rounded-full blur-3xl"></div>
+                <div className="absolute bottom-1/4 right-1/4 w-64 h-64 bg-primary/5 rounded-full blur-2xl"></div>
             </div>
 
             <motion.div 
@@ -24,7 +25,9 @@ export default function Cadastro({ user }: Props) {
                 transition={{ duration: 0.6 }}
             >
                 <RegisterBranding />
-                <RegisterForm user={user} />
+                <Suspense>
+                    <RegisterForm user={user} />
+                </Suspense>
             </motion.div>
         </div>
     );

@@ -18,135 +18,136 @@ import { IoExtensionPuzzle } from "react-icons/io5";
 import { PlansCard } from "./PlansCard";
 import { HomeFooter } from "./HomeFooter";
 
+const BENEFICIOS = [
+  { icon: FaCalculator, texto: "Calcule a depreciação dos ativos com precisão." },
+  { icon: BsFillClockFill, texto: "Acompanhe o valor patrimonial em tempo real." },
+  { icon: MdOutlineAttachMoney, texto: "Reduza custos com gestão eficiente de ativos." },
+  { icon: RiBarChartFill, texto: "Visualize o patrimônio de cada departamento em um só lugar." },
+  { icon: FaArrowTrendUp, texto: "Maximize o retorno sobre o investimento em ativos." },
+  { icon: IoExtensionPuzzle, texto: "Simplifique a gestão de bens patrimoniais complexos." },
+];
+
+const SERVICOS = [
+  {
+    titulo: "Análise detalhada",
+    texto: "Avaliamos todos os custos associados ao ciclo de vida dos seus ativos, desde a aquisição até a manutenção e descarte.",
+  },
+  {
+    titulo: "Identificação de Oportunidades",
+    texto: "Através do LCC (Life Cycle Cost), identificamos áreas onde é possível reduzir custos e aumentar a eficiência operacional.",
+  },
+  {
+    titulo: "Tomada de Decisão Informada",
+    texto: "Fornecemos dados claros para que você possa tomar decisões embasadas e estratégicas, otimizando seu retorno sobre investimento.",
+  },
+  {
+    titulo: "Sustentabilidade e Conformidade",
+    texto: "Ajudamos a garantir que suas decisões estejam alinhadas com padrões de sustentabilidade e regulamentações.",
+  },
+];
+
 export default function FrontHome() {
   return (
     <>
-      <main className="flex flex-col  w-full min-h-screen">
+      <main className="flex min-h-screen w-full flex-col overflow-x-hidden">
+        <Navbar />
 
-        <div className="feixeLuz"></div>
-        <Navbar type="1" />
-        <section className="fundoHome ">
-
-          <div className="flex w-10/12 mt-52 m-auto justify-center items-start">
-            <div className="w-1/2 flex  flex-col">
-              <h1 className="text-3xl xl:text-4xl 2xl:text-5xl font-semibold text-white w-full">
+        <section id="home" className="fundoHome scroll-mt-20">
+          <div className="mx-auto flex max-w-6xl flex-col items-center gap-10 px-4 pb-16 pt-28 sm:px-6 md:flex-row md:items-center md:gap-12 md:pt-40 lg:px-8 lg:pb-24 lg:pt-48">
+            <div className="flex w-full flex-col md:w-1/2">
+              <h1 className="text-3xl font-semibold leading-tight text-white sm:text-4xl 2xl:text-5xl">
                 Gerencie seu patrimônio da forma mais eficiente do mercado
               </h1>
-              <p className="text-white font-light border-solid border-l-2 pl-4 w-4/6 my-5 text-md 2xl:text-xl border-[#F6CF45]">
+              <p className="my-5 max-w-md border-l-2 border-solid border-primary pl-4 text-base font-light text-white 2xl:text-xl">
                 Gestão Estratégica de Ativos: Monitorando, Avaliando e Otimizando Seu Patrimônio Empresarial
               </p>
 
-              <button className="py-3 mt-5 text-md 2xl:text-xl 2xl:w-8/12 w-7/12 bg-[#F6CF45] hover:bg-[#ffdf6c] transition-all text-black rounded-full">
+              <a
+                href="#sobre"
+                className="mt-4 inline-flex h-12 w-full items-center justify-center rounded-full bg-primary px-8 text-base font-medium text-black transition-colors hover:bg-primary-hover sm:w-auto sm:self-start 2xl:text-lg"
+              >
                 Conheça nosso serviço
-              </button>
+              </a>
             </div>
-            <div className="w-1/2 m-auto flex justify-end">
-              <Image className="w-[400px]" src={"/chartsPng1.png"} alt="Gráfico de patrimônio" width={400} height={300} />
-            </div>
-          </div>
-
-        </section>
-
-        <section className=" pt-32 fundoSec2 text-white">
-          <div>
-            <h1 className="text-3xl font-semibold w-9/12 m-auto text-center">Por que nosso sistema é essencial para sua empresa?</h1>
-          </div>
-          <div className="flex flex-row  flex-wrap w-3/5 m-auto">
-            <div className="w-2/6 flex mt-10 flex-col gap-2 m-auto">
-              <FaCalculator color="#F6CF45" size={40} />
-              <p className="w-3/4">Calcule a depreciação dos ativos com precisão.</p>
-            </div>
-            <div className="w-2/6 flex mt-10 flex-col gap-2 m-auto">
-              <BsFillClockFill color="#F6CF45" size={40} />
-              <p className="w-3/4">Acompanhe o valor patrimonial em tempo real.</p>
-            </div>
-            <div className="w-2/6 flex mt-10 flex-col gap-2 m-auto">
-              <MdOutlineAttachMoney color="#F6CF45" size={50} />
-              <p className="w-3/4">Reduza custos com gestão eficiente de ativos.</p>
-            </div>
-            <div className="w-2/6 flex mt-10 flex-col gap-2 m-auto">
-              <RiBarChartFill color="#F6CF45" size={40} />
-              <p className="w-3/4">Reduza custos com gestão eficiente de ativos.</p>
-            </div>
-            <div className="w-2/6 flex mt-10 flex-col gap-2 m-auto">
-              <FaArrowTrendUp color="#F6CF45" size={40} />
-              <p className="w-3/4">Maximize o retorno sobre o investimento em ativos.</p>
-            </div>
-            <div className="w-2/6 flex mt-10 flex-col gap-2 m-auto">
-              <IoExtensionPuzzle color="#F6CF45" size={40} />
-              <p className="w-3/4">Simplifique a gestão de bens patrimoniais complexos.</p>
+            <div className="flex w-full justify-center md:w-1/2 md:justify-end">
+              <Image className="w-64 sm:w-80 lg:w-[400px]" src={"/chartsPng1.png"} alt="Gráfico de patrimônio" width={400} height={300} priority />
             </div>
           </div>
         </section>
 
-        <section className="pt-32  text-white">
-          <h2 className="text-3xl font-semibold w-9/12 m-auto text-center">Como podemos te ajudar?</h2>
-          <div className="flex w-4/5 mx-auto justify-center items-center">
-            <div className="w-1/2"><Image src={ajuda} alt="" width={800} /></div>
-            <div className="flex flex-col ju w-1/2 gap-6">
-              <div className="flex flex-col gap-2">
-                <h3 className="text-2xl font-semibold">Análise detalhada</h3>
-                <p className="text-sm w-4/5">Avaliamos todos os custos associados ao ciclo de vida dos seus ativos, desde a aquisição até a manutenção e descarte.</p>
-              </div>
-              <div className="flex flex-col gap-2">
-                <h3 className="text-2xl font-semibold">Identificação de Oportunidades</h3>
-                <p className="text-sm w-4/5">Através do LCC (Life Cycle Cost), identificamos áreas onde é possível reduzir custos e aumentar a eficiência operacional.</p>
-              </div>
-              <div className="flex flex-col gap-2">
-                <h3 className="text-2xl font-semibold">Tomada de Decisão Informada</h3>
-                <p className="text-sm w-4/5">Fornecemos dados claros para que você possa tomar decisões embasadas e estratégicas, otimizando seu retorno sobre investimento.</p>
-              </div>
-              <div className="flex flex-col gap-2">
-                <h3 className="text-2xl font-semibold">Sustentabilidade e Conformidade</h3>
-                <p className="text-sm w-4/5">Ajudamos a garantir que suas decisões estejam alinhadas com padrões de sustentabilidade e regulamentações.</p>
-              </div>
+        <section className="fundoSec2 py-20 text-white lg:py-32">
+          <h2 className="mx-auto max-w-3xl px-4 text-center text-2xl font-semibold sm:text-3xl">
+            Por que nosso sistema é essencial para sua empresa?
+          </h2>
+          <ul className="mx-auto mt-12 grid max-w-4xl grid-cols-1 gap-x-10 gap-y-10 px-6 sm:grid-cols-2 lg:grid-cols-3">
+            {BENEFICIOS.map(({ icon: Icone, texto }) => (
+              <li key={texto} className="flex flex-col gap-3">
+                <Icone color="#F6CF45" size={36} aria-hidden />
+                <p className="max-w-xs text-base text-gray-200">{texto}</p>
+              </li>
+            ))}
+          </ul>
+        </section>
+
+        <section id="sobre" className="scroll-mt-20 py-20 text-white lg:py-28">
+          <h2 className="mx-auto max-w-3xl px-4 text-center text-2xl font-semibold sm:text-3xl">Como podemos te ajudar?</h2>
+          <div className="mx-auto mt-12 flex max-w-6xl flex-col items-center gap-10 px-6 md:flex-row md:gap-16 lg:px-8">
+            <div className="w-full max-w-sm md:w-1/2 md:max-w-none">
+              <Image src={ajuda} alt="" width={800} className="h-auto w-full" />
+            </div>
+            <div className="flex w-full flex-col gap-8 md:w-1/2">
+              {SERVICOS.map(servico => (
+                <div key={servico.titulo} className="flex flex-col gap-2">
+                  <h3 className="text-xl font-semibold lg:text-2xl">{servico.titulo}</h3>
+                  <p className="max-w-lg text-sm leading-relaxed text-gray-300 lg:text-base">{servico.texto}</p>
+                </div>
+              ))}
             </div>
           </div>
         </section>
 
-        <section className="pt-24 text-white mb-10">
-          <h2 className="text-3xl font-semibold w-9/12 m-auto text-center mb-12">Nossos planos</h2>
-          <div className="flex w-4/5 mx-auto justify-center items-center gap-16">
+        <section id="planos" className="mb-16 scroll-mt-20 pt-12 text-white lg:pt-20">
+          <h2 className="mx-auto mb-12 max-w-3xl px-4 text-center text-2xl font-semibold sm:text-3xl">Nossos planos</h2>
+          <div className="mx-auto grid max-w-6xl grid-cols-1 items-stretch gap-6 px-6 md:grid-cols-3 lg:gap-10 lg:px-8">
             <PlansCard
               name={"Básico"}
               description={"Perfeito para pequenas empresas, que querem inovar com a Cybox"}
               price={350}
-              colorButton={"#B4B4B4"}
-              advantages={["Limites de 2 departamentos", "Quatro colaboradores por departamento"]} />
-            <PlansCard
-              name={"Empresarial"}
-              description={"Perfeito para grandes empresas, com um estoque grande"}
-              price={5000} colorButton={"#F6CF45"}
-              advantages={["Departamentos ilimitados", "Quinze colaboradores por departamento"]} />
+              advantages={["Limite de 2 departamentos", "Quatro colaboradores por departamento"]} />
             <PlansCard
               name={"Intermediário"}
               description={"Perfeito para médias empresas, com um estoque intermediário"}
               price={850}
-              colorButton={"#B4B4B4"}
               advantages={["Limite de 8 departamentos", "Oito colaboradores por departamento"]} />
+            <PlansCard
+              name={"Empresarial"}
+              description={"Perfeito para grandes empresas, com um estoque grande"}
+              price={5000}
+              destaque
+              advantages={["Departamentos ilimitados", "Quinze colaboradores por departamento"]} />
           </div>
         </section>
-
-
-
-      </main >
+      </main>
 
       <HomeFooter />
 
-      <div className="fixed bottom-5 right-5  p-2 text-[#F6CF45]">
-
+      <div className="fixed bottom-5 right-5 z-40">
         <TooltipProvider delayDuration={50}>
           <Tooltip>
-            <TooltipTrigger>
-              <a href="#" >
-                <FaChevronUp size={20} />
-              </a></TooltipTrigger>
-            <TooltipContent className="text-[#F6CF45] bg-black border-0 mr-4">
-              <p>Voltar ao inicio</p>
+            <TooltipTrigger asChild>
+              <a
+                href="#home"
+                aria-label="Voltar ao início"
+                className="flex h-11 w-11 items-center justify-center rounded-full border border-white/10 bg-black/70 text-primary backdrop-blur transition-colors hover:bg-primary hover:text-black"
+              >
+                <FaChevronUp size={18} aria-hidden />
+              </a>
+            </TooltipTrigger>
+            <TooltipContent className="mr-4 border-0 bg-black text-primary">
+              <p>Voltar ao início</p>
             </TooltipContent>
           </Tooltip>
         </TooltipProvider>
-
       </div>
     </>
   );

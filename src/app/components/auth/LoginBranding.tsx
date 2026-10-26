@@ -21,18 +21,18 @@ export default function LoginBranding() {
                     Bem-vindo de volta!
                 </h1>
                 
-                <p className="text-xl text-[#b4b4b4] leading-relaxed">
+                <p className="text-xl text-muted leading-relaxed">
                     Gerencie seus patrimônios de forma inteligente e eficiente. 
                     Controle total na palma da sua mão.
                 </p>
                 
                 <div className="flex space-x-4 pt-4">
-                    <div className="flex items-center space-x-2 text-[#F6CF45]">
-                        <div className="w-2 h-2 bg-[#F6CF45] rounded-full"></div>
+                    <div className="flex items-center space-x-2 text-primary">
+                        <div className="w-2 h-2 bg-primary rounded-full"></div>
                         <span className="text-sm">Gestão completa</span>
                     </div>
-                    <div className="flex items-center space-x-2 text-[#F6CF45]">
-                        <div className="w-2 h-2 bg-[#F6CF45] rounded-full"></div>
+                    <div className="flex items-center space-x-2 text-primary">
+                        <div className="w-2 h-2 bg-primary rounded-full"></div>
                         <span className="text-sm">Relatórios detalhados</span>
                     </div>
                 </div>

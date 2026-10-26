@@ -1,40 +1,25 @@
 // scripts/seed-improved.js
-const path = require('path');
-require('dotenv').config({ path: path.resolve(__dirname, '../../.env') });
-const mysql = require('mysql2/promise');
+const crypto = require('crypto');
+const { connect, dbTarget } = require('../../scripts/db');
 const bcrypt = require('bcryptjs');
 const { v4: uuidv4 } = require('uuid');
+
+const ALFABETO_CODIGO = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+
+function gerarCodigoDepartamento() {
+     let codigo = '';
+     for (let i = 0; i < 10; i++) codigo += ALFABETO_CODIGO[crypto.randomInt(ALFABETO_CODIGO.length)];
+     return `DEPT-${codigo}`;
+}
 
 async function seed() {
      let connection;
 
      try {
-          console.log('🔍 Tentando conectar ao banco de dados...');
-          console.log(`   Host: ${process.env.MYSQL_HOST}`);
-          console.log(`   User: ${process.env.MYSQL_USER}`);
-          console.log(`   Database: ${process.env.MYSQL_DATABASE || 'cybox'}`);
-          console.log(`   Port: ${process.env.MYSQL_PORT || '25060'}`);
+          const { host, port, database } = dbTarget();
+          console.log(`🔍 Conectando a ${database} em ${host}:${port}...`);
 
-          // Conectar ao banco de dados
-          const isRemote = process.env.MYSQL_HOST && process.env.MYSQL_HOST.includes('digitalocean');
-
-          connection = await mysql.createConnection({
-               host: process.env.MYSQL_HOST,
-               user: process.env.MYSQL_USER,
-               password: process.env.MYSQL_PASSWORD,
-               database: process.env.MYSQL_DATABASE || "cybox",
-               multipleStatements: true,
-               port: parseInt(process.env.MYSQL_PORT || '25060'),
-               connectTimeout: 60000,
-               waitForConnections: true,
-               connectionLimit: 10,
-               queueLimit: 0,
-               ...(isRemote && {
-                    ssl: {
-                         rejectUnauthorized: false
-                    }
-               })
-          });
+          connection = await connect({ multipleStatements: true });
 
           console.log('🔗 Conectado ao banco de dados');
           console.log('🔧 Criando/atualizando estrutura das tabelas...');
@@ -51,11 +36,21 @@ async function seed() {
                avatar_url VARCHAR(500),
                status ENUM('ativo', 'inativo', 'suspenso', 'deletado') DEFAULT 'ativo',
                ultimo_login TIMESTAMP NULL,
+               email_verificado_em TIMESTAMP NULL,
+               token_verificacao CHAR(64) NULL,
+               token_verificacao_expira DATETIME NULL,
+               tentativas_login INT NOT NULL DEFAULT 0,
+               bloqueado_ate DATETIME NULL,
+               sessao_minima_em DATETIME NULL,
+               token_redefinicao CHAR(64) NULL,
+               token_redefinicao_expira DATETIME NULL,
                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
 
                INDEX idx_email (email),
                INDEX idx_google_id (google_id),
+               INDEX idx_token_verificacao (token_verificacao),
+               INDEX idx_token_redefinicao (token_redefinicao),
                INDEX idx_status (status)
           ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
@@ -173,7 +168,7 @@ async function seed() {
                valor_inicial DECIMAL(10,2) NOT NULL,
                valor_atual DECIMAL(10,2) NOT NULL,
                data_aquisicao DATE NOT NULL,
-               tempo_depreciacao INT NOT NULL,
+               tempo_depreciacao DECIMAL(5,2) NOT NULL,
                status ENUM('ativo', 'inativo', 'manutencao', 'baixado', 'deletado') DEFAULT 'ativo',
                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -243,22 +238,26 @@ async function seed() {
                const user1Id = uuidv4();
                const user2Id = uuidv4();
 
-               const hashedPassword = await bcrypt.hash('senha123', 10);
+               const senhaSeed = process.env.SEED_PASSWORD || crypto.randomBytes(12).toString('base64url');
+               const hashedPassword = await bcrypt.hash(senhaSeed, 10);
 
                await connection.query(`
-                    INSERT INTO users (id, nome, email, senha, status) VALUES
-                    (?, 'Eduardo Borges', 'admin@cybox.com', ?, 'ativo'),
-                    (?, 'Gerente TI', 'ti@cybox.com', ?, 'ativo'),
-                    (?, 'Analista Financeiro', 'financeiro@cybox.com', ?, 'ativo')
+                    INSERT INTO users (id, nome, email, senha, status, email_verificado_em) VALUES
+                    (?, 'Eduardo Borges', 'admin@cybox.com', ?, 'ativo', NOW()),
+                    (?, 'Gerente TI', 'ti@cybox.com', ?, 'ativo', NOW()),
+                    (?, 'Analista Financeiro', 'financeiro@cybox.com', ?, 'ativo', NOW())
                `, [adminId, hashedPassword, user1Id, hashedPassword, user2Id, hashedPassword]);
 
                console.log('✅ Usuários criados com sucesso!');
+               if (!process.env.SEED_PASSWORD) {
+                    console.log(`🔑 Senha gerada para os usuários de teste (anote, não será exibida de novo): ${senhaSeed}`);
+               }
 
                // Criar padrões de depreciação
                console.log('📊 Criando padrões de depreciação...');
 
                await connection.query(`
-                    INSERT INTO padroes_depreciacao (categoria, descricao, taxa_anual_percent, vida_util_anos, observacoes) VALUES
+                    INSERT IGNORE INTO padroes_depreciacao (categoria, descricao, taxa_anual_percent, vida_util_anos, observacoes) VALUES
                     ('Computadores e Periféricos', 'Equipamentos de informática, notebooks, desktops, impressoras', 20.00, 5, 'Taxa baseada na legislação fiscal brasileira'),
                     ('Móveis e Utensílios', 'Mesas, cadeiras, armários e mobiliário em geral', 10.00, 10, 'Depreciação de acordo com uso normal'),
                     ('Equipamentos de Comunicação', 'Telefones, rádios, equipamentos de rede', 20.00, 5, 'Alta obsolescência tecnológica'),
@@ -275,11 +274,11 @@ async function seed() {
                console.log('🏢 Criando departamentos iniciais...');
 
                await connection.query(`
-                    INSERT INTO departamentos (titulo, descricao, localizacao, status) VALUES
-                    ('Tecnologia da Informação', 'Gerenciamento de equipamentos e infraestrutura de TI', 'Bloco A - 3º Andar', 'ativo'),
-                    ('Departamento Financeiro', 'Controle e gestão de ativos financeiros e patrimoniais', 'Bloco B - 2º Andar', 'ativo'),
-                    ('Marketing e Comunicação', 'Equipamentos de mídia e comunicação corporativa', 'Bloco C - 1º Andar', 'ativo')
-               `);
+                    INSERT INTO departamentos (titulo, descricao, localizacao, codigo_convite, status) VALUES
+                    ('Tecnologia da Informação', 'Gerenciamento de equipamentos e infraestrutura de TI', 'Bloco A - 3º Andar', ?, 'ativo'),
+                    ('Departamento Financeiro', 'Controle e gestão de ativos financeiros e patrimoniais', 'Bloco B - 2º Andar', ?, 'ativo'),
+                    ('Marketing e Comunicação', 'Equipamentos de mídia e comunicação corporativa', 'Bloco C - 1º Andar', ?, 'ativo')
+               `, [gerarCodigoDepartamento(), gerarCodigoDepartamento(), gerarCodigoDepartamento()]);
 
                // Obter IDs dos departamentos
                const [departamentos] = await connection.query('SELECT id_departamentos FROM departamentos ORDER BY id_departamentos');
@@ -413,13 +412,6 @@ async function seed() {
           }
 
           console.log('🎉 População do banco de dados concluída com sucesso!');
-          console.log('');
-          console.log('📋 Resumo:');
-          console.log('   • Usuários de teste criados com senha: senha123');
-          console.log('   • 3 Departamentos com diferentes categorias');
-          console.log('   • Patrimônios com códigos e valores');
-          console.log('   • Padrões de depreciação configurados');
-          console.log('   • Estrutura completa e otimizada');
 
      } catch (error) {
           console.error('❌ Erro ao configurar o banco de dados:', error);

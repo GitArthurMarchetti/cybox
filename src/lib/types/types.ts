@@ -2,11 +2,15 @@ export type UserType = {
     id: string | null;
     nome: string;
     email: string;
-    senha: string;
+    senha?: string | null;
     google_id?: string | null;
     avatar_url?: string | null;
     status?: 'ativo' | 'inativo' | 'suspenso' | 'deletado';
     ultimo_login?: string | null;
+    email_verificado_em?: string | null;
+    tentativas_login?: number;
+    bloqueado_ate?: string | null;
+    sessao_minima_em?: string | null;
     created_at?: string | null;
     updated_at?: string | null;
 };
@@ -130,6 +134,7 @@ export type CategoriaComPatrimoniosType = {
     created_at?: string | null;
     total_patrimonios: number;
     valor_total: number;
+    percentual_valor?: number | null;
 };
 
 export type ResumoPatrimoniosType = {

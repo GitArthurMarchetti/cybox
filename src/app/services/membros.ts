@@ -1,6 +1,7 @@
 "use server"
 
 import { query } from '@/lib/mysql';
+import { requireDepartamentoRole } from '@/lib/authz';
 
 export interface MembroDepartamento {
     id: string | null;
@@ -14,6 +15,8 @@ export interface MembroDepartamento {
 
 export async function getMembrosPerDepartamento(departamentoId: number | string): Promise<MembroDepartamento[]> {
     try {
+        await requireDepartamentoRole(Number(departamentoId));
+
         const membros = await query(`
             SELECT 
                 u.id,

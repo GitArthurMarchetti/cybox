@@ -1,6 +1,7 @@
 'use client'
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { serieDepreciacao } from '@/lib/depreciacao-calculo';
 import { DepartamentoType } from '@/lib/types/types';
 import { Category, PatrimonioDetalhadoType, CategoriasProps } from '@/lib/types/categoria.types';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -8,6 +9,7 @@ import { MdFilterList, MdKeyboardArrowLeft, MdKeyboardArrowRight, MdModeEdit, Md
 import { RiDeleteBinLine } from 'react-icons/ri';
 import { FaShare, FaSortAmountDown, FaSortAmountUp, FaBoxOpen, FaInbox, FaChartLine } from 'react-icons/fa';
 import { SidebarCategorias } from '@/app/components/Navigation/SidebarCategorias';
+import { BarraTopoMobile, GavetaLateral } from '@/app/components/Navigation/GavetaMobile';
 import { getPatrimoniosByCategoria, removePatrimonio } from '@/app/services/patrimonios';
 import { removeCategoria, getCategoriasComTotalPatrimonios } from '@/app/services/categoria';
 import { removeDepartamento } from '@/app/services/departamento';
@@ -34,6 +36,8 @@ export default function CategoriaFront({
      const currentUserMembro = membros.find(m => m.id === user.id);
      const userRole = currentUserMembro?.role || 'member';
      const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
+     const [isMenuMobileOpen, setIsMenuMobileOpen] = useState(false);
+     const fecharMenuMobile = useCallback(() => setIsMenuMobileOpen(false), []);
      const [searchTerm, setSearchTerm] = useState("");
      const [hasInitiallyLoaded, setHasInitiallyLoaded] = useState(false);
      const [isAddNewOpen, setIsAddNewOpen] = useState(false);
@@ -45,7 +49,7 @@ export default function CategoriaFront({
      const [selectedPatrimonioForEdit, setSelectedPatrimonioForEdit] = useState<PatrimonioDetalhadoType | null>(null);
      const [isConfigDepartamentoOpen, setIsConfigDepartamentoOpen] = useState(false);
      const [isConfirmDeleteOpen, setIsConfirmDeleteOpen] = useState(false);
-     const [itemToDelete, setItemToDelete] = useState<{ tipo: string, nome: string, onConfirm: () => void } | null>(null);
+     const [itemToDelete, setItemToDelete] = useState<{ tipo: string, nome: string, onConfirm: () => Promise<void> | void } | null>(null);
      const [isShareModalOpen, setIsShareModalOpen] = useState(false);
      const [isFilterDropdownOpen, setIsFilterDropdownOpen] = useState(false);
      const [filtroSelecionado, setFiltroSelecionado] = useState<string | null>(null);
@@ -57,36 +61,6 @@ export default function CategoriaFront({
      const [isModalOpen, setIsModalOpen] = useState(false);
      const [selectedPatrimonio, setSelectedPatrimonio] = useState<PatrimonioDetalhadoType | null>(null);
      
-     const gerarDadosDepreciacao = (dataAquisicao: string, valorInicial: number, valorAtual: number) => {
-          if (!dataAquisicao || !valorInicial) return [];
-
-          const dados = [];
-          const dataInicio = new Date(dataAquisicao);
-          const dataAtualDate = new Date();
-          const mesesTotal = Math.ceil((dataAtualDate.getTime() - dataInicio.getTime()) / (1000 * 60 * 60 * 24 * 30));
-
-          for (let i = 0; i <= Math.min(mesesTotal, 12); i++) {
-               const data = new Date(dataInicio);
-               data.setMonth(data.getMonth() + i);
-
-               const depreciacaoMensal = (valorInicial - (valorAtual || 0)) / mesesTotal;
-               const valorNaData = valorInicial - (depreciacaoMensal * i);
-
-               dados.push({
-                    data: data.toLocaleDateString('pt-BR', { month: 'short', year: '2-digit' }),
-                    valor: Math.max(0, valorNaData)
-               });
-          }
-
-          return dados;
-     };
-     const gerarDadosGastos = () => {
-          const meses = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun'];
-          return meses.map(mes => ({
-               mes,
-               valor: Math.random() * 500 + 100 
-          }));
-     };
      const carregarPatrimonios = async (categoriaId: number, forceReload = false) => {
           if (patrimoniosPorCategoria[categoriaId] && !forceReload) {
                return; 
@@ -99,7 +73,7 @@ export default function CategoriaFront({
                const patrimoniosFormatados = patrimonios.map(p => ({
                     id: p.id,
                     name: p.nome,
-                    codigo: p.codigo_patrimonio || `Sem código`,
+                    codigo: p.codigo_patrimonio || '',
                     finalValue: p.valor_atual && p.valor_inicial ? Math.round((p.valor_atual / p.valor_inicial) * 100) : 0,
                     especificacoes: p.descricao || null,
                     data_aquisicao: p.data_aquisicao,
@@ -108,11 +82,7 @@ export default function CategoriaFront({
                     valor_atual: p.valor_atual,
                     depreciacao_percentual: p.tempo_depreciacao,
                     depreciacao_valor: p.valor_inicial ? p.valor_inicial - (p.valor_atual || 0) : 0,
-                    gastos_totais: 0,
-                    status: 1,
-                    gastos: [],
-                    depreciacao_historico: gerarDadosDepreciacao(p.data_aquisicao, p.valor_inicial, p.valor_atual),
-                    gastos_mensais: gerarDadosGastos()
+                    depreciacao_historico: serieDepreciacao(p.valor_inicial, p.tempo_depreciacao, p.data_aquisicao)
                }));
 
                setPatrimoniosPorCategoria(prev => ({
@@ -128,6 +98,8 @@ export default function CategoriaFront({
      const [patrimoniosPorCategoria, setPatrimoniosPorCategoria] = useState<{ [key: number]: PatrimonioDetalhadoType[] }>({});
      const [loadingPatrimonios, setLoadingPatrimonios] = useState<{ [key: number]: boolean }>({});
      const [categories, setCategories] = useState<Category[]>([]);
+     const [categoriasBase, setCategoriasBase] = useState(categorias);
+     const filtroRef = useRef<HTMLDivElement>(null);
      const [departamentoLocal, setDepartamentoLocal] = useState(departamento);
      useEffect(() => {
           setHasInitiallyLoaded(true);
@@ -135,8 +107,7 @@ export default function CategoriaFront({
 
      useEffect(() => {
           const handleClickOutside = (event: MouseEvent) => {
-               const target = event.target as HTMLElement;
-               if (isFilterDropdownOpen && !target.closest('.relative')) {
+               if (isFilterDropdownOpen && filtroRef.current && !filtroRef.current.contains(event.target as Node)) {
                     setIsFilterDropdownOpen(false);
                }
           };
@@ -149,33 +120,31 @@ export default function CategoriaFront({
      }, [departamento]);
      
      useEffect(() => {
-          const updatedCategories: Category[] = categorias.map(cat => ({
+          setCategoriasBase(categorias);
+     }, [categorias]);
+
+     useEffect(() => {
+          setCategories(categoriasBase.map(cat => ({
                id: cat.id,
                name: cat.nome,
                observation: cat.descricao || (cat.padrao_categoria ? `Padrão: ${cat.padrao_categoria} (${cat.taxa_anual_percent}% a.a.)` : 'Sem descrição'),
-               total: cat.total_patrimonios || 0,
+               total: Number(cat.total_patrimonios) || 0,
+               percentualValor: cat.percentual_valor ?? null,
                notebooks: patrimoniosPorCategoria[cat.id] || [],
                padrao_depreciacao_id: cat.padrao_depreciacao_id || null
-          }));
-          setCategories(updatedCategories);
-     }, [categorias, patrimoniosPorCategoria]);
-     
+          })));
+     }, [categoriasBase, patrimoniosPorCategoria]);
+
      const recarregarCategorias = async () => {
           try {
-               const categoriasAtualizadas = await getCategoriasComTotalPatrimonios(Number(departamentoLocal.id_departamentos));
-               const updatedCategories: Category[] = categoriasAtualizadas.map(cat => ({
-                    id: cat.id,
-                    name: cat.nome,
-                    observation: cat.descricao || (cat.padrao_categoria ? `Padrão: ${cat.padrao_categoria} (${cat.taxa_anual_percent}% a.a.)` : 'Sem descrição'),
-                    total: cat.total_patrimonios || 0,
-                    notebooks: patrimoniosPorCategoria[cat.id] || [],
-                    padrao_depreciacao_id: cat.padrao_depreciacao_id || null
-               }));
-               
-               setCategories(updatedCategories);
+               setCategoriasBase(await getCategoriasComTotalPatrimonios(Number(departamentoLocal.id_departamentos)));
           } catch (error) {
                toast.error('Erro ao atualizar categorias');
           }
+     };
+
+     const recarregarPatrimoniosETotais = async (categoriaId: number) => {
+          await Promise.all([carregarPatrimonios(categoriaId, true), recarregarCategorias()]);
      };
      const handleDepartamentoSuccess = async (departamentoAtualizado: DepartamentoType) => {
           setIsConfigDepartamentoOpen(false);
@@ -190,10 +159,7 @@ export default function CategoriaFront({
           try {
                const result = await enviarConvitesPorEmail(
                     Number(departamentoLocal.id_departamentos),
-                    user.id as string,
-                    emails,
-                    departamentoLocal.titulo,
-                    user.nome
+                    emails
                );
 
                if (result.success) {
@@ -201,8 +167,10 @@ export default function CategoriaFront({
                } else {
                     toast.error(result.message);
                }
+               return result.success;
           } catch (error) {
                toast.error('Erro ao enviar convites');
+               return false;
           }
      };
      const getUpdatedSelectedCategory = () => {
@@ -235,15 +203,9 @@ export default function CategoriaFront({
                     resultado = resultado.filter(cat => cat.total === 0);
                     break;
                case 'desvalorizados':
-                    resultado = resultado.filter(cat => {
-                         const notebooks = cat.notebooks || [];
-                         const desvalorizados = notebooks.filter(n => n.finalValue < 50);
-                         return desvalorizados.length > 0;
-                    }).sort((a, b) => {
-                         const desvalorizadosA = (a.notebooks || []).filter(n => n.finalValue < 50).length;
-                         const desvalorizadosB = (b.notebooks || []).filter(n => n.finalValue < 50).length;
-                         return desvalorizadosB - desvalorizadosA;
-                    });
+                    resultado = resultado
+                         .filter(cat => cat.percentualValor != null && cat.percentualValor < 100)
+                         .sort((a, b) => (a.percentualValor ?? 100) - (b.percentualValor ?? 100));
                     break;
           }
 
@@ -289,7 +251,7 @@ export default function CategoriaFront({
      };
 
      return (
-          <div className="min-h-screen bg-[#0F0F0F] text-white">
+          <div className="min-h-screen bg-page text-white">
                {/* Container principal */}
                <motion.div
                     className="flex h-screen"
@@ -298,36 +260,43 @@ export default function CategoriaFront({
                     variants={containerVariants}
                >
                     {/* Sidebar esquerda - Informações do departamento */}
-                    <SidebarCategorias
-                         departamento={departamentoLocal}
-                         user={user}
-                         host={host}
-                         membros={membros}
-                         onAddCategoryClick={() => setIsAddNewOpen(true)}
-                         onConfigClick={() => setIsConfigDepartamentoOpen(true)}
-                         onShareClick={() => setIsShareModalOpen(true)}
-                         hasInitiallyLoaded={hasInitiallyLoaded}
-                    />
+                    <GavetaLateral aberta={isMenuMobileOpen} onFechar={fecharMenuMobile}>
+                         <SidebarCategorias
+                              departamento={departamentoLocal}
+                              user={user}
+                              host={host}
+                              membros={membros}
+                              onAddCategoryClick={() => setIsAddNewOpen(true)}
+                              onConfigClick={() => setIsConfigDepartamentoOpen(true)}
+                              onShareClick={() => setIsShareModalOpen(true)}
+                              hasInitiallyLoaded={hasInitiallyLoaded}
+                         />
+                    </GavetaLateral>
 
                     {/* Conteúdo principal - Lista de categorias */}
-                    <motion.main className="flex-1 flex flex-col overflow-hidden" variants={itemVariants}>
-                         <motion.div className="flex items-center justify-between p-6 border-b border-[#2c2c2c]" variants={itemVariants}>
+                    <motion.main className="flex min-w-0 flex-1 flex-col overflow-hidden" variants={itemVariants}>
+                         <BarraTopoMobile onAbrirMenu={() => setIsMenuMobileOpen(true)} titulo={departamentoLocal.titulo} />
+                         <motion.div className="flex flex-wrap items-center justify-between gap-3 border-b border-line p-4 sm:p-6" variants={itemVariants}>
                               <h1 className="text-xl font-bold">Categorias</h1>
-                              <div className="flex items-center gap-4">
-                                   <div className="relative">
+                              <div className="flex w-full items-center gap-3 sm:w-auto sm:gap-4">
+                                   <div className="relative flex-1 sm:flex-none">
                                         <input
                                              autoComplete='off'
                                              type="text"
                                              placeholder="Buscar categoria..."
-                                             className="bg-[#2c2c2c] text-white pl-10 pr-4 py-2 rounded-lg w-64 focus:outline-none focus:ring-2 focus:ring-[#F6CF45]/50"
+                                             aria-label="Buscar categoria"
+                                             className="bg-surface-2 text-white pl-10 pr-4 py-2 rounded-lg w-full sm:w-64 focus:outline-none focus:ring-2 focus:ring-primary/50"
                                              value={searchTerm}
                                              onChange={(e) => setSearchTerm(e.target.value)}
                                         />
-                                        <MdSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-[#8c8888]" size={20} />
+                                        <MdSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-subtle" size={20} />
                                    </div>
-                                   <div className="relative">
+                                   <div className="relative" ref={filtroRef}>
                                         <button
-                                             className={`p-2 rounded-lg transition-colors duration-300 ${filtroSelecionado ? 'bg-[#F6CF45] text-black' : 'bg-[#2c2c2c] text-[#8c8888] hover:text-white'}`}
+                                             type="button"
+                                             aria-label="Filtrar e ordenar categorias"
+                                             aria-expanded={isFilterDropdownOpen}
+                                             className={`flex h-10 w-10 items-center justify-center rounded-lg transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${filtroSelecionado ? 'bg-primary text-black' : 'bg-surface-2 text-subtle hover:text-white'}`}
                                              onClick={() => setIsFilterDropdownOpen(!isFilterDropdownOpen)}
                                         >
                                              <MdFilterList size={20} />
@@ -336,87 +305,87 @@ export default function CategoriaFront({
                                         <AnimatePresence>
                                              {isFilterDropdownOpen && (
                                                   <motion.div
-                                                       className="absolute right-0 mt-2 w-64 bg-[#1a1a1a] border border-[#2c2c2c] rounded-xl shadow-xl z-50 overflow-hidden"
+                                                       className="absolute right-0 mt-2 w-64 bg-[#1a1a1a] border border-line rounded-xl shadow-xl z-50 overflow-hidden"
                                                        initial={{ opacity: 0, y: -10 }}
                                                        animate={{ opacity: 1, y: 0 }}
                                                        exit={{ opacity: 0, y: -10 }}
                                                        transition={{ duration: 0.2 }}
                                                   >
                                                        <div className="p-2">
-                                                            <div className="px-3 py-2 text-xs font-semibold text-[#8c8888] uppercase">Ordenar</div>
+                                                            <div className="px-3 py-2 text-xs font-semibold text-subtle uppercase">Ordenar</div>
 
                                                             <button
-                                                                 className="w-full flex items-center gap-3 px-3 py-2 text-sm text-white hover:bg-[#2c2c2c] rounded-lg transition-colors duration-200"
+                                                                 className="w-full flex items-center gap-3 px-3 py-2 text-sm text-white hover:bg-surface-2 rounded-lg transition-colors duration-200"
                                                                  onClick={() => {
                                                                       setFiltroSelecionado('a-z');
                                                                       setIsFilterDropdownOpen(false);
                                                                  }}
                                                             >
-                                                                 <MdSortByAlpha size={18} className="text-[#F6CF45]" />
+                                                                 <MdSortByAlpha size={18} className="text-primary" />
                                                                  <span>A-Z</span>
                                                             </button>
 
                                                             <button
-                                                                 className="w-full flex items-center gap-3 px-3 py-2 text-sm text-white hover:bg-[#2c2c2c] rounded-lg transition-colors duration-200"
+                                                                 className="w-full flex items-center gap-3 px-3 py-2 text-sm text-white hover:bg-surface-2 rounded-lg transition-colors duration-200"
                                                                  onClick={() => {
                                                                       setFiltroSelecionado('z-a');
                                                                       setIsFilterDropdownOpen(false);
                                                                  }}
                                                             >
-                                                                 <MdSortByAlpha size={18} className="text-[#F6CF45] transform rotate-180" />
+                                                                 <MdSortByAlpha size={18} className="text-primary transform rotate-180" />
                                                                  <span>Z-A</span>
                                                             </button>
 
                                                             <button
-                                                                 className="w-full flex items-center gap-3 px-3 py-2 text-sm text-white hover:bg-[#2c2c2c] rounded-lg transition-colors duration-200"
+                                                                 className="w-full flex items-center gap-3 px-3 py-2 text-sm text-white hover:bg-surface-2 rounded-lg transition-colors duration-200"
                                                                  onClick={() => {
                                                                       setFiltroSelecionado('mais-itens');
                                                                       setIsFilterDropdownOpen(false);
                                                                  }}
                                                             >
-                                                                 <FaSortAmountDown size={16} className="text-[#F6CF45]" />
+                                                                 <FaSortAmountDown size={16} className="text-primary" />
                                                                  <span>Mais itens</span>
                                                             </button>
 
                                                             <button
-                                                                 className="w-full flex items-center gap-3 px-3 py-2 text-sm text-white hover:bg-[#2c2c2c] rounded-lg transition-colors duration-200"
+                                                                 className="w-full flex items-center gap-3 px-3 py-2 text-sm text-white hover:bg-surface-2 rounded-lg transition-colors duration-200"
                                                                  onClick={() => {
                                                                       setFiltroSelecionado('menos-itens');
                                                                       setIsFilterDropdownOpen(false);
                                                                  }}
                                                             >
-                                                                 <FaSortAmountUp size={16} className="text-[#F6CF45]" />
+                                                                 <FaSortAmountUp size={16} className="text-primary" />
                                                                  <span>Menos itens</span>
                                                             </button>
 
-                                                            <div className="my-2 border-t border-[#2c2c2c]"></div>
+                                                            <div className="my-2 border-t border-line"></div>
 
-                                                            <div className="px-3 py-2 text-xs font-semibold text-[#8c8888] uppercase">Filtrar</div>
+                                                            <div className="px-3 py-2 text-xs font-semibold text-subtle uppercase">Filtrar</div>
 
                                                             <button
-                                                                 className="w-full flex items-center gap-3 px-3 py-2 text-sm text-white hover:bg-[#2c2c2c] rounded-lg transition-colors duration-200"
+                                                                 className="w-full flex items-center gap-3 px-3 py-2 text-sm text-white hover:bg-surface-2 rounded-lg transition-colors duration-200"
                                                                  onClick={() => {
                                                                       setFiltroSelecionado('com-itens');
                                                                       setIsFilterDropdownOpen(false);
                                                                  }}
                                                             >
-                                                                 <FaBoxOpen size={16} className="text-[#F6CF45]" />
+                                                                 <FaBoxOpen size={16} className="text-primary" />
                                                                  <span>Com itens</span>
                                                             </button>
 
                                                             <button
-                                                                 className="w-full flex items-center gap-3 px-3 py-2 text-sm text-white hover:bg-[#2c2c2c] rounded-lg transition-colors duration-200"
+                                                                 className="w-full flex items-center gap-3 px-3 py-2 text-sm text-white hover:bg-surface-2 rounded-lg transition-colors duration-200"
                                                                  onClick={() => {
                                                                       setFiltroSelecionado('vazias');
                                                                       setIsFilterDropdownOpen(false);
                                                                  }}
                                                             >
-                                                                 <FaInbox size={16} className="text-[#F6CF45]" />
+                                                                 <FaInbox size={16} className="text-primary" />
                                                                  <span>Vazias</span>
                                                             </button>
 
                                                             <button
-                                                                 className="w-full flex items-center gap-3 px-3 py-2 text-sm text-white hover:bg-[#2c2c2c] rounded-lg transition-colors duration-200"
+                                                                 className="w-full flex items-center gap-3 px-3 py-2 text-sm text-white hover:bg-surface-2 rounded-lg transition-colors duration-200"
                                                                  onClick={() => {
                                                                       setFiltroSelecionado('desvalorizados');
                                                                       setIsFilterDropdownOpen(false);
@@ -428,9 +397,9 @@ export default function CategoriaFront({
 
                                                             {filtroSelecionado && (
                                                                  <>
-                                                                      <div className="my-2 border-t border-[#2c2c2c]"></div>
+                                                                      <div className="my-2 border-t border-line"></div>
                                                                       <button
-                                                                           className="w-full flex items-center gap-3 px-3 py-2 text-sm text-red-400 hover:bg-[#2c2c2c] rounded-lg transition-colors duration-200"
+                                                                           className="w-full flex items-center gap-3 px-3 py-2 text-sm text-red-400 hover:bg-surface-2 rounded-lg transition-colors duration-200"
                                                                            onClick={() => {
                                                                                 setFiltroSelecionado(null);
                                                                                 setIsFilterDropdownOpen(false);
@@ -451,7 +420,7 @@ export default function CategoriaFront({
 
                          <div className="flex flex-1 overflow-hidden">
                               {/* Painel esquerdo - Lista de categorias */}
-                              <div className="w-2/3 overflow-y-auto p-6">
+                              <div className={`${selectedCategory ? 'hidden lg:block' : 'block'} w-full overflow-y-auto p-4 sm:p-6 lg:w-3/5 2xl:w-2/3`}>
                                    {filteredCategories.length > 0 ? (
                                         <motion.div 
                                              className="space-y-4" 
@@ -460,15 +429,17 @@ export default function CategoriaFront({
                                              animate="visible"
                                         >
                                              {filteredCategories.map((category, index) => (
-                                                  <motion.div
+                                                  <motion.button
+                                                       type="button"
                                                        key={category.id}
-                                                       className={`p-4 rounded-xl cursor-pointer transition-all duration-300 ${selectedCategory?.id === category.id
-                                                            ? 'bg-[#2c2c2c] border-l-4 border-[#F6CF45]'
-                                                            : 'bg-[#1a1a1a] hover:bg-[#2c2c2c]'
+                                                       aria-pressed={selectedCategory?.id === category.id}
+                                                       className={`block w-full p-4 text-left rounded-xl cursor-pointer transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${selectedCategory?.id === category.id
+                                                            ? 'bg-surface-2 border-l-4 border-primary'
+                                                            : 'bg-[#1a1a1a] hover:bg-surface-2'
                                                             }`}
-                                                       onClick={async () => {
-                                                            await carregarPatrimonios(category.id);
+                                                       onClick={() => {
                                                             setSelectedCategory(category);
+                                                            carregarPatrimonios(category.id);
                                                        }}
                                                        variants={itemVariants}
                                                        initial={hasInitiallyLoaded ? "visible" : "hidden"}
@@ -476,40 +447,38 @@ export default function CategoriaFront({
                                                        whileHover={hasInitiallyLoaded ? {} : { x: 5 }}
                                                        custom={index}
                                                   >
-                                                       <div className="flex items-center justify-between">
-                                                            <div className="flex items-center gap-4">
-                                                                 <div className="w-12 h-12 bg-[#2c2c2c] rounded-lg flex items-center justify-center text-[#F6CF45]">
+                                                       <div className="flex items-center justify-between gap-3">
+                                                            <div className="flex min-w-0 items-center gap-3 sm:gap-4">
+                                                                 <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-surface-2 text-primary sm:h-12 sm:w-12">
                                                                       {category.name.charAt(0)}
                                                                  </div>
-                                                                 <div>
-                                                                      <h3 className="font-medium text-white">{category.name}</h3>
-                                                                      <p className="text-sm text-[#b4b4b4]">{category.observation}</p>
+                                                                 <div className="min-w-0">
+                                                                      <h3 className="truncate font-medium text-white">{category.name}</h3>
+                                                                      <p className="line-clamp-2 text-sm text-muted sm:line-clamp-1">{category.observation}</p>
                                                                  </div>
                                                             </div>
-                                                            <div className="flex items-center gap-6">
+                                                            <div className="flex shrink-0 items-center gap-2 sm:gap-6">
                                                                  <div className="text-right">
-                                                                      <span className="text-sm text-[#b4b4b4]">Total de itens</span>
+                                                                      <span className="hidden text-sm text-muted sm:inline">Total de itens</span>
                                                                       <p className="text-lg font-semibold text-white">{category.total}</p>
                                                                  </div>
-                                                                 <button className="text-[#F6CF45] hover:text-white transition-colors duration-300">
-                                                                      <MdKeyboardArrowRight size={24} />
-                                                                 </button>
+                                                                 <MdKeyboardArrowRight size={24} className="text-primary" aria-hidden />
                                                             </div>
                                                        </div>
-                                                  </motion.div>
+                                                  </motion.button>
                                              ))}
                                         </motion.div>
                                    ) : (
                                         <motion.div className="flex flex-col items-center justify-center h-full text-center" variants={itemVariants}>
-                                             <div className="bg-[#2c2c2c] p-6 rounded-xl mb-4">
-                                                  <MdSearch className="text-[#F6CF45]" size={48} />
+                                             <div className="bg-surface-2 p-6 rounded-xl mb-4">
+                                                  <MdSearch className="text-primary" size={48} />
                                              </div>
                                              <h3 className="text-xl font-medium mb-2">Nenhuma categoria encontrada</h3>
-                                             <p className="text-[#8c8888] max-w-md">
+                                             <p className="text-subtle max-w-md">
                                                   Não encontramos categorias com este termo. Tente outra busca ou crie uma nova categoria.
                                              </p>
                                              <button
-                                                  className="mt-4 flex items-center gap-2 bg-[#F6CF45] text-black px-4 py-2 rounded-lg hover:bg-[#F6CF45]/90 transition-colors duration-300"
+                                                  className="mt-4 flex items-center gap-2 bg-primary text-black px-4 py-2 rounded-lg hover:bg-primary/90 transition-colors duration-300"
                                                   onClick={() => {
                                                        setSearchTerm("");
                                                        setIsAddNewOpen(true);
@@ -522,27 +491,34 @@ export default function CategoriaFront({
                               </div>
 
                               {/* Painel direito - Detalhes da categoria selecionada */}
-                              <div className="w-1/3 border-l border-[#2c2c2c] overflow-y-auto">
+                              <div className={`${selectedCategory ? 'block' : 'hidden lg:block'} w-full overflow-y-auto lg:w-2/5 lg:border-l lg:border-line 2xl:w-1/3`}>
                                    <AnimatePresence>
                                         {(() => {
                                              const currentCategory = getUpdatedSelectedCategory();
                                              return currentCategory ? (
                                                   <motion.div
-                                                       className="p-6"
+                                                       className="p-4 sm:p-6"
                                                        initial={{ opacity: 0, x: 20 }}
                                                        animate={{ opacity: 1, x: 0 }}
                                                        exit={{ opacity: 0, x: 20 }}
                                                        transition={{ duration: 0.3 }}
                                                   >
-                                                       <div className="flex items-center gap-2 text-sm text-[#8c8888] cursor-pointer mb-4" onClick={() => setSelectedCategory(null)}>
-                                                            <MdKeyboardArrowLeft size={20} /> Voltar para lista
-                                                       </div>
+                                                       <button
+                                                            type="button"
+                                                            className="-ml-2 mb-2 flex h-10 items-center gap-1 rounded-lg px-2 text-sm text-muted transition-colors hover:bg-white/5 hover:text-white"
+                                                            onClick={() => setSelectedCategory(null)}
+                                                       >
+                                                            <MdKeyboardArrowLeft size={20} aria-hidden /> Voltar para lista
+                                                       </button>
 
-                                                       <div className="flex items-center justify-between mb-6">
-                                                            <h2 className="text-xl font-bold">{currentCategory.name}</h2>
-                                                            <div className="flex items-center gap-2">
+                                                       <div className="mb-6 flex items-start justify-between gap-3">
+                                                            <h2 className="min-w-0 break-words text-xl font-bold">{currentCategory.name}</h2>
+                                                            <div className="flex shrink-0 items-center gap-2">
                                                                  <button
-                                                                      className="p-2 bg-[#2c2c2c] text-[#F6CF45] hover:text-white rounded-lg transition-colors duration-300"
+                                                                      type="button"
+                                                                      aria-label="Editar categoria"
+                                                                      title="Editar categoria"
+                                                                      className="flex h-10 w-10 items-center justify-center bg-surface-2 text-primary hover:bg-surface-3 hover:text-white rounded-lg transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
                                                                       onClick={() => {
                                                                            setSelectedCategoryForEdit(currentCategory);
                                                                            setIsEditCategoriaOpen(true);
@@ -551,14 +527,17 @@ export default function CategoriaFront({
                                                                       <MdModeEdit size={18} />
                                                                  </button>
                                                                  <button
-                                                                      className="p-2 bg-[#2c2c2c] text-red-500 hover:text-white rounded-lg transition-colors duration-300"
+                                                                      type="button"
+                                                                      aria-label="Excluir categoria"
+                                                                      title="Excluir categoria"
+                                                                      className="flex h-10 w-10 items-center justify-center bg-surface-2 text-red-400 hover:bg-red-500/15 hover:text-red-300 rounded-lg transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
                                                                       onClick={() => {
                                                                            setItemToDelete({
                                                                                 tipo: 'categoria',
                                                                                 nome: currentCategory.name,
                                                                                 onConfirm: async () => {
                                                                                      try {
-                                                                                          await removeCategoria(currentCategory.id, Number(departamentoLocal.id_departamentos));
+                                                                                          await removeCategoria(currentCategory.id);
                                                                                           toast.success('Categoria excluída com sucesso!');
                                                                                           setSelectedCategory(null);
                                                                                           
@@ -577,14 +556,15 @@ export default function CategoriaFront({
                                                        </div>
 
                                                        <div className="bg-[#1a1a1a] p-4 rounded-xl mb-6">
-                                                            <p className="text-[#b4b4b4] text-sm mb-2">Observação</p>
+                                                            <p className="text-muted text-sm mb-2">Observação</p>
                                                             <p className="text-white">{currentCategory.observation}</p>
                                                        </div>
 
                                                        <div className="flex justify-between items-center mb-4">
                                                             <h3 className="font-medium">Patrimônios cadastrados</h3>
                                                             <button
-                                                                 className="flex items-center gap-1 text-sm border-0 text-[#F6CF45] hover:text-white transition-colors duration-300"
+                                                                 type="button"
+                                                                 className="flex h-9 items-center gap-1 rounded-lg px-2 -mr-2 text-sm text-primary hover:bg-primary/10 transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
                                                                  onClick={() => handleOpenPatrimonioModal(currentCategory)}
                                                             >
                                                                  <MdAdd size={16} /> Novo patrimônio
@@ -594,46 +574,45 @@ export default function CategoriaFront({
                                                        <div className="space-y-3">
                                                             {loadingPatrimonios[currentCategory.id] ? (
                                                                  <div className="flex items-center justify-center py-8">
-                                                                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#F6CF45]"></div>
-                                                                      <span className="ml-3 text-[#8c8888]">Carregando patrimônios...</span>
+                                                                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                                                                      <span className="ml-3 text-subtle">Carregando patrimônios...</span>
                                                                  </div>
                                                             ) : (currentCategory.notebooks?.length || 0) > 0 ? (
                                                                  currentCategory.notebooks?.map((item, index) => (
-                                                                      <motion.div
-                                                                           key={index}
-                                                                           className="bg-[#2c2c2c] p-3 rounded-lg flex items-center justify-between cursor-pointer hover:bg-[#353535] transition-colors"
+                                                                      <motion.button
+                                                                           type="button"
+                                                                           key={item.id ?? index}
+                                                                           className="w-full gap-3 bg-surface-2 p-3 text-left rounded-lg flex items-center justify-between cursor-pointer hover:bg-[#353535] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
                                                                            initial={hasInitiallyLoaded ? { opacity: 1, y: 0 } : { opacity: 0, y: 10 }}
                                                                            animate={{ opacity: 1, y: 0 }}
                                                                            transition={hasInitiallyLoaded ? {} : { delay: index * 0.05, duration: 0.2 }}
                                                                            whileHover={hasInitiallyLoaded ? {} : { scale: 1.02 }}
                                                                            onClick={() => handleOpenModal(item)}
                                                                       >
-                                                                           <div className="flex items-center gap-3">
-                                                                                <div className={`w-10 h-10 rounded-lg ${item.finalValue >= 70 ? 'bg-green-500' : item.finalValue >= 50 ? 'bg-yellow-500' : 'bg-red-500'} flex items-center justify-center text-white font-bold`}>
+                                                                           <div className="flex min-w-0 items-center gap-3">
+                                                                                <div className={`w-10 h-10 shrink-0 rounded-lg ${item.finalValue >= 70 ? 'bg-green-500' : item.finalValue >= 50 ? 'bg-yellow-500' : 'bg-red-500'} flex items-center justify-center text-white font-bold`}>
                                                                                      {item.name.charAt(0)}
                                                                                 </div>
-                                                                                <span className="font-medium">{item.name}</span>
+                                                                                <span className="truncate font-medium">{item.name}</span>
                                                                            </div>
-                                                                           <div className="flex items-center gap-4">
+                                                                           <div className="flex shrink-0 items-center gap-2 sm:gap-4">
                                                                                 <div className="flex flex-col items-end">
                                                                                      <span className={`text-sm ${item.finalValue >= 70 ? 'text-green-500' : item.finalValue >= 50 ? 'text-yellow-500' : 'text-red-500'}`}>
                                                                                           {item.finalValue}% valor
                                                                                      </span>
-                                                                                     <span className="text-xs text-[#8c8888]">
+                                                                                     <span className="text-xs text-subtle">
                                                                                           Depreciação: {100 - item.finalValue}%
                                                                                      </span>
                                                                                 </div>
-                                                                                <button className="text-[#b4b4b4] hover:text-white transition-colors duration-300">
-                                                                                     <MdKeyboardArrowRight size={20} />
-                                                                                </button>
+                                                                                <MdKeyboardArrowRight size={20} className="text-muted" aria-hidden />
                                                                            </div>
-                                                                      </motion.div>
+                                                                      </motion.button>
                                                                  ))
                                                             ) : (
-                                                                 <div className="text-center py-8 text-[#8c8888]">
+                                                                 <div className="text-center py-8 text-subtle">
                                                                       <p>Nenhum patrimônio cadastrado nesta categoria.</p>
                                                                       <button
-                                                                           className="mt-2 text-[#F6CF45] hover:text-white transition-colors"
+                                                                           className="mt-2 text-primary hover:text-white transition-colors"
                                                                            onClick={() => handleOpenPatrimonioModal(currentCategory)}
                                                                       >
                                                                            Adicionar primeiro patrimônio
@@ -649,11 +628,11 @@ export default function CategoriaFront({
                                                        animate={{ opacity: 1 }}
                                                        transition={{ duration: 0.3 }}
                                                   >
-                                                       <div className="bg-[#2c2c2c] p-6 rounded-full mb-4">
-                                                            <FaShare className="text-[#8c8888]" size={32} />
+                                                       <div className="bg-surface-2 p-6 rounded-full mb-4">
+                                                            <FaShare className="text-subtle" size={32} />
                                                        </div>
                                                        <h3 className="text-xl font-medium mb-2">Selecione uma categoria</h3>
-                                                       <p className="text-[#8c8888] max-w-md">
+                                                       <p className="text-subtle max-w-md">
                                                             Selecione uma categoria para visualizar seus detalhes e itens.
                                                        </p>
                                                   </motion.div>
@@ -682,10 +661,10 @@ export default function CategoriaFront({
                               onConfirm: async () => {
                                    try {
                                         if (patrimonio.id && selectedCategory) {
-                                             await removePatrimonio(patrimonio.id, selectedCategory.id);
+                                             await removePatrimonio(patrimonio.id);
                                              toast.success('Patrimônio excluído com sucesso!');
                                              setIsModalOpen(false);
-                                             carregarPatrimonios(selectedCategory.id, true);
+                                             await recarregarPatrimoniosETotais(selectedCategory.id);
                                         }
                                    } catch (error) {
                                         toast.error('Erro ao excluir patrimônio');
@@ -714,7 +693,7 @@ export default function CategoriaFront({
                     selectedCategory={selectedCategoryForPatrimonio}
                     onSuccess={() => {
                          if (selectedCategoryForPatrimonio) {
-                              carregarPatrimonios(selectedCategoryForPatrimonio.id, true);
+                              recarregarPatrimoniosETotais(selectedCategoryForPatrimonio.id);
                          }
                     }}
                />
@@ -734,7 +713,7 @@ export default function CategoriaFront({
                     categoryId={selectedCategory?.id}
                     onSuccess={() => {
                          if (selectedCategory) {
-                              carregarPatrimonios(selectedCategory.id, true);
+                              recarregarPatrimoniosETotais(selectedCategory.id);
                          }
                     }}
                />
@@ -772,15 +751,19 @@ export default function CategoriaFront({
                          setIsConfirmDeleteOpen(false);
                          setItemToDelete(null);
                     }}
-                    onConfirm={() => {
+                    onConfirm={async () => {
                          if (itemToDelete) {
-                              itemToDelete.onConfirm();
+                              await itemToDelete.onConfirm();
                          }
                          setIsConfirmDeleteOpen(false);
                          setItemToDelete(null);
                     }}
-                    titulo={`Excluir ${itemToDelete?.tipo || 'item'}`}
-                    descricao={`Tem certeza que deseja excluir este ${itemToDelete?.tipo || 'item'}? Esta ação não pode ser desfeita.`}
+                    titulo={`Excluir ${itemToDelete?.tipo === 'patrimonio' ? 'patrimônio' : itemToDelete?.tipo || 'item'}`}
+                    descricao={
+                         itemToDelete?.tipo === 'categoria' ? 'Os patrimônios desta categoria também serão excluídos.'
+                              : itemToDelete?.tipo === 'departamento' ? 'Todas as categorias e patrimônios do departamento também serão excluídos.'
+                                   : 'Tem certeza que deseja excluir este item?'
+                    }
                     itemNome={itemToDelete?.nome}
                     tipo={itemToDelete?.tipo as any}
                />
@@ -788,7 +771,7 @@ export default function CategoriaFront({
                <CompartilharModal
                     isOpen={isShareModalOpen}
                     onClose={() => setIsShareModalOpen(false)}
-                    departamento={departamento}
+                    departamento={departamentoLocal}
                     onInvite={handleInvite}
                />
           </div>

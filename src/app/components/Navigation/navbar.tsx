@@ -1,188 +1,115 @@
 'use client'
 
 import Image from 'next/image'
-import { MdDashboard } from "react-icons/md";
-import { IoMdSearch } from "react-icons/io";
-import { FaFilter, FaGear } from "react-icons/fa6";
-import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { IoNotificationsSharp } from 'react-icons/io5';
-import { UserType } from '@/lib/types/types';
-import { useState } from 'react';
-import { motion } from 'framer-motion';
+import { useEffect, useState } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
+import { HiMenuAlt3, HiX } from 'react-icons/hi';
 
-interface NavbarProps {
-    type: string
-    user?: UserType
-}
+const LINKS = [
+    { href: '#home', label: 'Home' },
+    { href: '#sobre', label: 'Sobre nós' },
+    { href: '#planos', label: 'Planos' },
+    { href: '#contato', label: 'Contato' },
+];
 
-export default function Navbar({ type, user }: NavbarProps) {
-    const [searchFocus, setSearchFocus] = useState(false);
-    const [notificationCount, setNotificationCount] = useState(3);
+export default function Navbar() {
+    const [menuAberto, setMenuAberto] = useState(false);
 
-    const navbarVariants = {
-        hidden: { y: -20, opacity: 0 },
-        visible: {
-            y: 0,
-            opacity: 1,
-            transition: { duration: 0.3 }
-        }
-    };
+    useEffect(() => {
+        if (!menuAberto) return;
+        const fecharComEsc = (e: KeyboardEvent) => e.key === 'Escape' && setMenuAberto(false);
+        window.addEventListener('keydown', fecharComEsc);
+        return () => window.removeEventListener('keydown', fecharComEsc);
+    }, [menuAberto]);
 
-    if (type === "1") {
-        return (
-            <motion.header
-                className='fixed top-0 left-0 w-full z-50 backdrop-blur-md bg-black/30'
-                initial="hidden"
-                animate="visible"
-                variants={navbarVariants}
-            >
-                <nav className='flex items-center w-full gap-10 px-8 py-4'>
-                    <div className='w-[25%]'>
-                        <Image
-                            src="/logo-branca.png"
-                            alt="Logo"
-                            width={100}
-                            height={100}
-                            className="object-contain"
-                        />
-                    </div>
-                    <div className='w-2/4 flex justify-evenly text-xl text-gray-300 py-2 rounded-full'>
-                        <motion.a
-                            className='transition-colors duration-300 hover:text-white relative group'
-                            href="#home"
-                            whileHover={{ scale: 1.05 }}
-                        >
-                            Home
-                            <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-[#F6CF45] transition-all duration-300 group-hover:w-full"></span>
-                        </motion.a>
-                        <motion.a
-                            className='transition-colors duration-300 hover:text-white relative group'
-                            href="#plans"
-                            whileHover={{ scale: 1.05 }}
-                        >
-                            Planos
-                            <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-[#F6CF45] transition-all duration-300 group-hover:w-full"></span>
-                        </motion.a>
-                        <motion.a
-                            className='transition-colors duration-300 hover:text-white relative group'
-                            href="#about"
-                            whileHover={{ scale: 1.05 }}
-                        >
-                            Sobre nós
-                            <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-[#F6CF45] transition-all duration-300 group-hover:w-full"></span>
-                        </motion.a>
-                        <motion.a
-                            className='transition-colors duration-300 hover:text-white relative group'
-                            href="#contact"
-                            whileHover={{ scale: 1.05 }}
-                        >
-                            Contato
-                            <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-[#F6CF45] transition-all duration-300 group-hover:w-full"></span>
-                        </motion.a>
-                    </div>
-                    <div className='w-[25%] flex justify-end gap-3'>
-                        <motion.div
-                            whileHover={{ scale: 1.05 }}
-                            whileTap={{ scale: 0.95 }}
-                        >
-                            <Link href={'/cadastro'}
-                                className='bg-[#2E2E2E] text-white hover:bg-[#F6CF45] hover:text-black transition-all duration-300 h-11 px-9 text-lg rounded-full flex items-center'>
+    return (
+        <motion.header
+            className='fixed top-0 left-0 w-full z-50 backdrop-blur-md bg-black/40 border-b border-white/5'
+            initial={{ y: -20, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ duration: 0.3 }}
+        >
+            <nav className='mx-auto flex h-16 max-w-7xl items-center justify-between gap-6 px-4 sm:px-6 lg:h-20 lg:px-8'>
+                <Link href="/" aria-label="Cybox - início" className="shrink-0">
+                    <Image src="/logo-branca.png" alt="Cybox" width={80} height={40} className="h-8 w-auto object-contain lg:h-10" priority />
+                </Link>
+
+                <ul className='hidden items-center gap-10 text-base text-gray-300 md:flex lg:text-lg'>
+                    {LINKS.map(link => (
+                        <li key={link.href}>
+                            <a className='group relative transition-colors duration-200 hover:text-white' href={link.href}>
+                                {link.label}
+                                <span className="absolute -bottom-1 left-0 h-0.5 w-0 bg-primary transition-all duration-300 group-hover:w-full"></span>
+                            </a>
+                        </li>
+                    ))}
+                </ul>
+
+                <div className='hidden items-center gap-3 md:flex'>
+                    <Link href='/cadastro'
+                        className='flex h-11 items-center rounded-full bg-surface-2 px-6 text-base text-white transition-colors duration-200 hover:bg-primary hover:text-black lg:px-8'>
+                        Cadastrar
+                    </Link>
+                    <Link href='/login'
+                        className='flex h-11 items-center rounded-full border-2 border-line px-6 text-base text-white transition-colors duration-200 hover:border-primary hover:bg-primary hover:text-black lg:px-8'>
+                        Entrar
+                    </Link>
+                </div>
+
+                <button
+                    type="button"
+                    className='flex h-11 w-11 items-center justify-center rounded-full text-white transition-colors hover:bg-white/10 md:hidden'
+                    onClick={() => setMenuAberto(aberto => !aberto)}
+                    aria-label={menuAberto ? 'Fechar menu' : 'Abrir menu'}
+                    aria-expanded={menuAberto}
+                    aria-controls="menu-mobile"
+                >
+                    {menuAberto ? <HiX size={26} /> : <HiMenuAlt3 size={26} />}
+                </button>
+            </nav>
+
+            <AnimatePresence>
+                {menuAberto && (
+                    <motion.div
+                        id="menu-mobile"
+                        className='border-t border-white/5 bg-black/95 px-4 pb-6 pt-2 md:hidden'
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: 'auto', opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        transition={{ duration: 0.2 }}
+                    >
+                        <ul className='flex flex-col'>
+                            {LINKS.map(link => (
+                                <li key={link.href}>
+                                    <a
+                                        href={link.href}
+                                        onClick={(e) => {
+                                            e.preventDefault();
+                                            setMenuAberto(false);
+                                            history.replaceState(null, '', link.href);
+                                            requestAnimationFrame(() => {
+                                                document.querySelector(link.href)?.scrollIntoView({ behavior: 'smooth' });
+                                            });
+                                        }}
+                                        className='block rounded-lg px-3 py-3 text-lg text-gray-200 transition-colors hover:bg-white/5 hover:text-white'
+                                    >
+                                        {link.label}
+                                    </a>
+                                </li>
+                            ))}
+                        </ul>
+                        <div className='mt-4 grid grid-cols-2 gap-3'>
+                            <Link href='/cadastro' className='flex h-12 items-center justify-center rounded-full bg-primary font-medium text-black'>
                                 Cadastrar
                             </Link>
-                        </motion.div>
-
-                        <motion.div
-                            whileHover={{ scale: 1.05 }}
-                            whileTap={{ scale: 0.95 }}
-                        >
-                            <Link href={'/login'}
-                                className='border-[#2E2E2E] hover:border-[#F6CF45] border-2 border-solid text-white transition-all duration-300 hover:bg-[#F6CF45] hover:text-black h-11 px-9 flex items-center text-lg rounded-full'>
+                            <Link href='/login' className='flex h-12 items-center justify-center rounded-full border-2 border-line text-white'>
                                 Entrar
                             </Link>
-                        </motion.div>
-                    </div>
-                </nav>
-            </motion.header>
-        );
-    }
-    else if (type === '2') {
-        return (
-            <motion.header
-                className='bg-[#0F0F0F] border-b border-[#2c2c2c] h-20'
-                initial="hidden"
-                animate="visible"
-                variants={navbarVariants}
-            >
-                <nav className='flex items-center w-full justify-between px-10 h-full'>
-                    <div className='flex items-center'>
-                        <Link href="/departamentos">
-                            <Image
-                                src="/logo-completa-branca.png"
-                                alt="Logo"
-                                width={120}
-                                height={40}
-                                className="object-contain"
-                            />
-                        </Link>
-                    </div>
-
-                    <div className="flex items-center w-2/5 gap-5">
-                        <div
-                            className={`flex items-center bg-[#2C2C2C] w-full px-4 rounded-full transition-all duration-300 ${searchFocus ? 'ring-2 ring-[#F6CF45]/50' : ''
-                                }`}
-                        >
-                            <input
-                                type="text"
-                                placeholder="Pesquise por sua categoria"
-                                className="flex-grow py-3 bg-[#2C2C2C] text-white rounded-lg outline-none placeholder:text-[#8C8888]"
-                                onFocus={() => setSearchFocus(true)}
-                                onBlur={() => setSearchFocus(false)}
-                            />
-                            <IoMdSearch className="text-[#8C8888] text-xl" />
                         </div>
-                        <motion.button
-                            className="flex items-center text-[#8C8888] gap-1 group"
-                            whileHover={{ scale: 1.05 }}
-                        >
-                            <FaFilter className="text-xl group-hover:text-[#F6CF45] transition-colors duration-300" />
-                            <span className='underline underline-offset-2 italic group-hover:text-[#F6CF45] transition-colors duration-300'>Filtrar</span>
-                        </motion.button>
-                    </div>
-
-                    <div className='flex justify-end items-center gap-6'>
-                        <motion.div
-                            className="relative cursor-pointer"
-                            whileHover={{ scale: 1.1 }}
-                            whileTap={{ scale: 0.9 }}
-                        >
-                            <IoNotificationsSharp className='text-[#8C8888] hover:text-[#F6CF45] transition-colors duration-300' size={24} />
-                            {notificationCount > 0 && (
-                                <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full text-white text-xs flex items-center justify-center">
-                                    {notificationCount}
-                                </span>
-                            )}
-                        </motion.div>
-
-                        <div className="flex items-center gap-4">
-                            <div className="text-right">
-                                <p className='text-white font-medium'>{user?.nome || 'Usuário'}</p>
-                                <p className='text-[#B4B4B4] text-sm'>{user?.email || 'email@exemplo.com'}</p>
-                            </div>
-
-                            <motion.div
-                                className='w-12 h-12 rounded-full bg-[#3D3D3D] flex items-center justify-center text-white text-lg font-medium cursor-pointer'
-                                whileHover={{ scale: 1.05 }}
-                                whileTap={{ scale: 0.95 }}
-                            >
-                                {user?.nome?.charAt(0) || 'U'}
-                            </motion.div>
-                        </div>
-                    </div>
-                </nav>
-            </motion.header>
-        );
-    }
-
-    return null;
+                    </motion.div>
+                )}
+            </AnimatePresence>
+        </motion.header>
+    );
 }

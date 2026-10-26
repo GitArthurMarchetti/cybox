@@ -85,7 +85,7 @@ Cybox é um sistema moderno de gestão patrimonial desenvolvido em Next.js 14, p
    - `valor_inicial` (DECIMAL)
    - `valor_atual` (DECIMAL)
    - `data_aquisicao` (DATE)
-   - `tempo_depreciacao` (INT - meses)
+   - `tempo_depreciacao` (DECIMAL(5,2) - taxa anual de depreciação em %, linear; o valor atual é calculado a partir dela)
    - `status` (ENUM: 'ativo', 'inativo', 'vendido', 'descartado')
 
 5. **users_departamentos**
@@ -222,7 +222,9 @@ npm run lint
 npm run seed:improved     # ⭐ CRIA TABELAS PELA PRIMEIRA VEZ + dados
 npm run db:show-tables    # Mostrar tabelas
 npm run db:table          # Visualizar estrutura de tabela
+npm run db:migrate        # Aplica as migrações pendentes (seguro rodar várias vezes)
 npm run db:reset          # Resetar banco de dados (dropa tudo)
+npm run db:fix-google-passwords  # Lista contas Google com a senha fixa antiga (--apply para corrigir)
 ```
 
 ### 🗃️ Criação do Banco de Dados
@@ -234,6 +236,7 @@ npm run seed:improved
 
 **Scripts de banco explicados:**
 - **`seed:improved`** - Cria TODAS as 10 tabelas do zero + popula com dados
+- **`db:migrate`** - Atualiza um banco existente para o schema atual (verificação de email, bloqueio de login, redefinição de senha e taxa de depreciação decimal)
 - **`db:reset`** - Remove tudo e recria estrutura completa
 - **`db:show-tables`** - Lista todas as tabelas do banco  
 - **`db:table <nome>`** - Mostra estrutura detalhada de uma tabela
@@ -241,22 +244,29 @@ npm run seed:improved
 ## 🔧 Configuração do Ambiente
 
 ### Variáveis de Ambiente
+Copie `.env.exemple` para `.env` e preencha os valores:
 ```env
-# Database
+# MySQL
 MYSQL_HOST=localhost
+MYSQL_PORT=3306
 MYSQL_USER=root
 MYSQL_PASSWORD=sua_senha
 MYSQL_DATABASE=cybox
 
 # NextAuth
-NEXTAUTH_SECRET=sua_chave_secreta
+AUTH_SECRET=gere_com_npx_auth_secret
 NEXTAUTH_URL=http://localhost:3000
 
-# Email (Nodemailer)
-EMAIL_HOST=smtp.gmail.com
-EMAIL_PORT=587
-EMAIL_USER=seu_email@gmail.com
-EMAIL_PASS=sua_senha_app
+# Google OAuth
+GOOGLE_CLIENT_ID=seu_client_id.apps.googleusercontent.com
+GOOGLE_CLIENT_SECRET=seu_client_secret
+
+# Email (SMTP)
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_USER=seu_email@gmail.com
+SMTP_PASS=sua_senha_de_app
+SMTP_FROM="Cybox <noreply@cybox.com>"
 ```
 
 ## 🚀 Funcionalidades
