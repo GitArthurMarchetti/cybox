@@ -3,6 +3,7 @@ export interface Category {
     name: string;
     observation: string;
     total: number;
+    percentualValor?: number | null;
     notebooks?: PatrimonioDetalhadoType[];
     padrao_depreciacao_id?: number | null;
 }

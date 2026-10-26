@@ -14,7 +14,7 @@ export default function Logout({ variant = 'default' }: LogoutProps) {
             <form action={DoLogout} className="w-full">
                 <motion.button
                     type="submit"
-                    className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-lg hover:bg-red-500/10 transition-colors duration-300 text-[#b4b4b4] hover:text-red-500"
+                    className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-lg hover:bg-red-500/10 transition-colors duration-300 text-muted hover:text-red-500"
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
                     title="Sair"
@@ -29,12 +29,12 @@ export default function Logout({ variant = 'default' }: LogoutProps) {
         <form action={DoLogout}>
             <motion.button
                 type="submit"
-                className="p-2 text-[#B4B4B4] hover:text-[#F6CF45] transition-colors duration-300 rounded-full hover:bg-[#1F1F1F]"
-                whileHover={{ scale: 1.1, rotate: 10 }}
-                whileTap={{ scale: 0.9 }}
+                className="w-10 h-10 flex items-center justify-center text-muted hover:text-red-400 hover:bg-red-500/10 transition-colors duration-200 rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                whileTap={{ scale: 0.92 }}
                 title="Sair"
+                aria-label="Sair da conta"
             >
-                <TbLogout2 className="text-xl cursor-pointer" />
+                <TbLogout2 className="text-xl" aria-hidden />
             </motion.button>
         </form>
     );

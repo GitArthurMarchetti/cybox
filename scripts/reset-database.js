@@ -1,17 +1,19 @@
-const mysql = require('mysql2/promise');
+const { connect, dbTarget, confirmar } = require('./db');
 
 async function resetDatabase() {
     let connection;
     
     try {
-        // Criar conexão com o banco
-        connection = await mysql.createConnection({
-            host: process.env.MYSQL_HOST || 'localhost',
-            user: process.env.MYSQL_USER || 'root',
-            password: process.env.MYSQL_PASSWORD || 'duduborges22',
-            database: process.env.MYSQL_DATABASE || 'cybox',
-            multipleStatements: true
-        });
+        const { host, port, database } = dbTarget();
+        console.log(`⚠️  Isto vai APAGAR todas as tabelas de ${database} em ${host}:${port}.`);
+
+        const confirmado = await confirmar(`Digite o nome do banco (${database}) para confirmar: `, database);
+        if (!confirmado) {
+            console.log('❎ Cancelado. Nada foi alterado.');
+            return;
+        }
+
+        connection = await connect();
 
         console.log('🔗 Conectado ao banco de dados');
         console.log('🗑️ Removendo todas as tabelas existentes...\n');
@@ -23,13 +25,13 @@ async function resetDatabase() {
         const [tables] = await connection.query(`
             SELECT TABLE_NAME as table_name
             FROM information_schema.tables 
-            WHERE table_schema = 'cybox'
+            WHERE table_schema = DATABASE()
         `);
 
         // Dropar todas as tabelas
         for (const table of tables) {
             console.log(`  🗑️ Dropando tabela: ${table.table_name}`);
-            await connection.query(`DROP TABLE IF EXISTS ${table.table_name}`);
+            await connection.query(`DROP TABLE IF EXISTS \`${table.table_name}\``);
         }
 
         // Reabilitar verificações de foreign key
@@ -67,11 +69,21 @@ async function createNewDatabaseStructure(connection) {
             avatar_url VARCHAR(500),
             status ENUM('ativo', 'inativo', 'suspenso', 'deletado') DEFAULT 'ativo',
             ultimo_login TIMESTAMP NULL,
+            email_verificado_em TIMESTAMP NULL,
+            token_verificacao CHAR(64) NULL,
+            token_verificacao_expira DATETIME NULL,
+            tentativas_login INT NOT NULL DEFAULT 0,
+            bloqueado_ate DATETIME NULL,
+            sessao_minima_em DATETIME NULL,
+            token_redefinicao CHAR(64) NULL,
+            token_redefinicao_expira DATETIME NULL,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
             
             INDEX idx_email (email),
             INDEX idx_google_id (google_id),
+            INDEX idx_token_verificacao (token_verificacao),
+            INDEX idx_token_redefinicao (token_redefinicao),
             INDEX idx_status (status)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
     `);
@@ -202,7 +214,7 @@ async function createNewDatabaseStructure(connection) {
             valor_inicial DECIMAL(10,2) NOT NULL,
             valor_atual DECIMAL(10,2) NOT NULL,
             data_aquisicao DATE NOT NULL,
-            tempo_depreciacao INT NOT NULL,
+            tempo_depreciacao DECIMAL(5,2) NOT NULL,
             status ENUM('ativo', 'inativo', 'manutencao', 'baixado', 'deletado') DEFAULT 'ativo',
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,

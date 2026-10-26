@@ -1,7 +1,7 @@
 "use client"
 
+import { Modal, ModalTitle } from '@/components/ui/modal';
 import { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import { RiDeleteBinLine } from 'react-icons/ri';
 import { MdWarning, MdCategory, MdComputer } from 'react-icons/md';
 import { FaBuilding } from 'react-icons/fa';
@@ -57,23 +57,7 @@ export default function ConfirmarExclusaoModal({
     };
 
     return (
-        <AnimatePresence>
-            {isOpen && (
-                <motion.div
-                    className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 px-4"
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    onClick={onClose}
-                >
-                    <motion.div
-                        className="bg-[#1F1F1F] rounded-2xl w-full max-w-md overflow-hidden shadow-2xl border border-[#2c2c2c]"
-                        initial={{ scale: 0.9, opacity: 0, y: 20 }}
-                        animate={{ scale: 1, opacity: 1, y: 0 }}
-                        exit={{ scale: 0.9, opacity: 0, y: 20 }}
-                        transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-                        onClick={(e) => e.stopPropagation()}
-                    >
+        <Modal isOpen={isOpen} onClose={onClose} className="max-w-md" bloquearFechamento={isProcessing}>
                         <div className="p-8 text-center">
 
                             <div className="mx-auto mb-6 w-16 h-16 bg-red-500/10 rounded-full flex items-center justify-center">
@@ -81,18 +65,18 @@ export default function ConfirmarExclusaoModal({
                             </div>
 
 
-                            <h2 className="text-2xl font-bold text-white mb-3">
+                            <ModalTitle className="text-2xl font-bold text-white mb-3">
                                 {titulo}
-                            </h2>
+                            </ModalTitle>
 
 
-                            <p className="text-[#b4b4b4] mb-2 leading-relaxed">
+                            <p className="text-muted mb-2 leading-relaxed">
                                 {descricao}
                             </p>
 
 
                             {itemNome && (
-                                <div className="bg-[#2c2c2c] rounded-lg p-4 mb-6 border border-red-500/20">
+                                <div className="bg-surface-2 rounded-lg p-4 mb-6 border border-red-500/20">
                                     <div className="flex items-center justify-center gap-3">
                                         <div className="flex items-center justify-center">
                                             {getIcon()}
@@ -116,7 +100,7 @@ export default function ConfirmarExclusaoModal({
                                 <button
                                     onClick={onClose}
                                     disabled={isProcessing || isLoading}
-                                    className="flex-1 px-6 py-3 bg-[#2c2c2c] text-white rounded-lg hover:bg-[#3c3c3c] transition-colors duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                                    className="flex-1 px-6 py-3 bg-surface-2 text-white rounded-lg hover:bg-surface-3 transition-colors duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
                                 >
                                     Cancelar
                                 </button>
@@ -140,9 +124,6 @@ export default function ConfirmarExclusaoModal({
                                 </button>
                             </div>
                         </div>
-                    </motion.div>
-                </motion.div>
-            )}
-        </AnimatePresence>
+                    </Modal>
     );
 }

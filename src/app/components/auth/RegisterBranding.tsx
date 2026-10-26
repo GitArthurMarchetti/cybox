@@ -21,26 +21,26 @@ export default function RegisterBranding() {
                     Junte-se ao Cybox!
                 </h1>
                 
-                <p className="text-xl text-[#b4b4b4] leading-relaxed">
+                <p className="text-xl text-muted leading-relaxed">
                     Crie sua conta e comece a gerenciar seus patrimônios de forma 
                     profissional e organizada.
                 </p>
                 
                 <div className="space-y-4 pt-4">
-                    <div className="flex items-center space-x-3 text-[#F6CF45]">
-                        <div className="w-2 h-2 bg-[#F6CF45] rounded-full"></div>
+                    <div className="flex items-center space-x-3 text-primary">
+                        <div className="w-2 h-2 bg-primary rounded-full"></div>
                         <span className="text-sm">Controle total de patrimônios</span>
                     </div>
-                    <div className="flex items-center space-x-3 text-[#F6CF45]">
-                        <div className="w-2 h-2 bg-[#F6CF45] rounded-full"></div>
+                    <div className="flex items-center space-x-3 text-primary">
+                        <div className="w-2 h-2 bg-primary rounded-full"></div>
                         <span className="text-sm">Relatórios de depreciação</span>
                     </div>
-                    <div className="flex items-center space-x-3 text-[#F6CF45]">
-                        <div className="w-2 h-2 bg-[#F6CF45] rounded-full"></div>
+                    <div className="flex items-center space-x-3 text-primary">
+                        <div className="w-2 h-2 bg-primary rounded-full"></div>
                         <span className="text-sm">Gestão colaborativa</span>
                     </div>
-                    <div className="flex items-center space-x-3 text-[#F6CF45]">
-                        <div className="w-2 h-2 bg-[#F6CF45] rounded-full"></div>
+                    <div className="flex items-center space-x-3 text-primary">
+                        <div className="w-2 h-2 bg-primary rounded-full"></div>
                         <span className="text-sm">Interface intuitiva</span>
                     </div>
                 </div>

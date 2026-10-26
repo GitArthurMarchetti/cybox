@@ -1,42 +1,14 @@
 // scripts/add-status-column.js
-const path = require('path');
-const fs = require('fs');
-
-// Carregar .env.local se existir, senão carregar .env
-const envLocalPath = path.resolve(__dirname, '../.env.local');
-const envPath = path.resolve(__dirname, '../.env');
-const envFile = fs.existsSync(envLocalPath) ? envLocalPath : envPath;
-
-console.log(`📄 Carregando arquivo: ${envFile}`);
-require('dotenv').config({ path: envFile, override: true });
-const mysql = require('mysql2/promise');
+const { connect, dbTarget } = require('./db');
 
 async function addStatusColumn() {
      let connection;
 
      try {
-          console.log('🔍 Conectando ao banco de dados...');
-          console.log(`   Host: ${process.env.MYSQL_HOST}`);
-          console.log(`   User: ${process.env.MYSQL_USER}`);
-          console.log(`   Database: ${process.env.MYSQL_DATABASE}`);
-          console.log(`   Port: ${process.env.MYSQL_PORT}`);
+          const { host, port, database } = dbTarget();
+          console.log(`🔍 Conectando a ${database} em ${host}:${port}...`);
 
-          const isRemote = process.env.MYSQL_HOST && process.env.MYSQL_HOST.includes('digitalocean');
-          console.log(`   Is Remote: ${isRemote}`);
-
-          connection = await mysql.createConnection({
-               host: process.env.MYSQL_HOST,
-               user: process.env.MYSQL_USER,
-               password: process.env.MYSQL_PASSWORD,
-               database: process.env.MYSQL_DATABASE || "cybox",
-               port: parseInt(process.env.MYSQL_PORT || '25060'),
-               connectTimeout: 60000,
-               ...(isRemote && {
-                    ssl: {
-                         rejectUnauthorized: false
-                    }
-               })
-          });
+          connection = await connect();
 
           console.log('🔗 Conectado ao banco de dados');
 

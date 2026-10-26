@@ -1,16 +1,23 @@
 import bcrypt from 'bcryptjs';
 import CredentialsProvider from 'next-auth/providers/credentials';
 import GoogleProvider from 'next-auth/providers/google';
-import NextAuth from 'next-auth';
-import { getUsersByEmail } from './app/services/user';
-import { query } from './lib/mysql';
-import { v4 as uuidv4 } from 'uuid';
+import NextAuth, { CredentialsSignin } from 'next-auth';
+import { authConfig } from './auth.config';
+import {
+    estaBloqueado,
+    findUserByEmail,
+    findUserByGoogleId,
+    registrarFalhaLogin,
+    registrarLoginComSucesso,
+    resolverUsuarioGoogle
+} from './lib/users';
 
-declare module 'next-auth' {
-    interface Session {
-        userId: string;
-        provider: string;
-    }
+class ContaBloqueada extends CredentialsSignin {
+    code = 'conta_bloqueada';
+}
+
+class ContaInativa extends CredentialsSignin {
+    code = 'conta_inativa';
 }
 
 export const {
@@ -19,45 +26,44 @@ export const {
     signIn,
     signOut
 } = NextAuth({
-    session: {
-        strategy: 'jwt',
-        maxAge: 30 * 24 * 60 * 60
-    },
-
-    pages: {
-        signIn: '/login',
-        error: '/login',
-    },
+    ...authConfig,
 
     providers: [
         CredentialsProvider({
             name: "Credentials",
             credentials: {},
             async authorize(credentials: Record<string, string> | undefined) {
-                if (!credentials) return null;
+                const email = credentials?.email;
+                const password = credentials?.password;
 
-                try {
-                    const user = await getUsersByEmail(credentials?.email as string);
+                if (!email || !password) return null;
 
-                    if (!user) {
-                        throw new Error("Usuário não encontrado.");
-                    }
+                const user = await findUserByEmail(email);
 
-                    const isMatch = await bcrypt.compare(credentials?.password as string, user.senha as string);
+                if (!user?.id || !user.senha) return null;
 
-                    if (!isMatch) {
-                        throw new Error("Credenciais incorretas.");
-                    }
-
-                    return {
-                        id: String(user.id),
-                        name: user.nome,
-                        email: user.email,
-                    };
-                } catch (error) {
-                    console.error("Erro na autenticação:", error);
-                    throw new Error(error as string);
+                if (await estaBloqueado(user.id)) {
+                    throw new ContaBloqueada();
                 }
+
+                const isMatch = await bcrypt.compare(password, user.senha);
+
+                if (!isMatch) {
+                    await registrarFalhaLogin(user.id);
+                    return null;
+                }
+
+                if (user.status !== 'ativo') {
+                    throw new ContaInativa();
+                }
+
+                await registrarLoginComSucesso(user.id);
+
+                return {
+                    id: String(user.id),
+                    name: user.nome,
+                    email: user.email,
+                };
             }
         }),
 
@@ -75,59 +81,46 @@ export const {
     ],
 
     callbacks: {
+        ...authConfig.callbacks,
+
+        async signIn({ account, profile }) {
+            if (account?.provider !== 'google') return true;
+
+            if (!profile?.sub || !profile.email || profile.email_verified !== true) {
+                return false;
+            }
+
+            const user = await resolverUsuarioGoogle({
+                sub: profile.sub,
+                email: profile.email,
+                nome: profile.name || profile.email,
+            });
+
+            if (!user?.id) return false;
+
+            await registrarLoginComSucesso(user.id);
+            return true;
+        },
+
         async jwt({ token, user, account, profile }) {
             if (account) {
-                if (account.provider === 'google') {
-                    const googleId = profile?.sub;
-                    token.id = googleId;
-                    token.provider = 'google';
-                    token.id_token = account.id_token;
+                token.emitidoEm = Math.floor(Date.now() / 1000);
+            }
 
-                    if (!profile?.email) {
-                        throw new Error('O e-mail do perfil do Google não está disponível.');
-                    }
+            if (account?.provider === 'google' && profile?.sub) {
+                const googleUser = await findUserByGoogleId(profile.sub);
+                token.id = googleUser?.id;
+                token.provider = 'google';
+            }
 
-                    let existingUser = await getUsersByEmail(profile.email);
-                    const placeholderPassword = await bcrypt.hash('GoogleOAuthPassword', 10);
-
-                    if (!existingUser) {
-                        const userId = uuidv4();
-                        await query(
-                            `INSERT INTO users (id, nome, email, senha, google_id, status)
-                             VALUES (?, ?, ?, ?, ?, 'ativo')`,
-                            [userId, profile.name || '', profile.email || '', placeholderPassword, googleId || '']
-                        );
-                        token.id = userId;
-                    } else {
-                        token.id = existingUser.id;
-
-                        if (!existingUser.google_id) {
-                            await query(
-                                `UPDATE users SET google_id = ? WHERE id = ?`,
-                                [googleId || '', existingUser.id]
-                            );
-                        }
-                    }
-                }
-
-                if (account.provider === 'credentials') {
-                    token.id = user?.id;
-                    token.provider = 'credentials';
-                }
+            if (account?.provider === 'credentials') {
+                token.id = user?.id;
+                token.provider = 'credentials';
             }
 
             return token;
         },
-
-        async session({ session, token }) {
-            session.user.id = token.id as string;
-            session.provider = token.provider as string;
-
-            return session;
-        },
     },
 
-    secret: process.env.AUTH_SECRET,
     debug: process.env.NODE_ENV === 'development',
-    trustHost: true,
 });

@@ -1,9 +1,7 @@
-'use server';
-
 import { auth } from "@/auth";
 import DepartamentosFront from "./departamentosFront";
 import { redirect } from "next/navigation";
-import { getDepartamentosByUser, getEmptyDepartamento } from "../services/departamento";
+import { getDepartamentosByUser } from "../services/departamento";
 
 export default async function Departamento() {
     const session = await auth();
@@ -13,13 +11,11 @@ export default async function Departamento() {
     }
 
     const userId = session.user.id as string;
-    const departamento = await getEmptyDepartamento();
-    const departamentosUserData = await getDepartamentosByUser(userId);
+    const departamentosUserData = await getDepartamentosByUser();
 
     return (
         <DepartamentosFront
             departamentos={departamentosUserData}
-            departamento={departamento}
             userId={userId}
             userName={session.user.name}
             userEmail={session.user.email}

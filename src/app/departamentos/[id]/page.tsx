@@ -1,6 +1,4 @@
-'use server';
-
-import { redirect } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { getDepartamentosById, verificarAcessoDepartamento } from "@/app/services/departamento";
 import CategoriaFront from "./front";
 import { auth } from "@/auth";
@@ -26,13 +24,17 @@ export default async function DepartamentoDetalhes({ params }: { params: { id: s
         email: session.user.email || '',
         senha: ''
     } as UserType;
-    const departamentoId = parseInt(params.id);
+    const departamentoId = Number(params.id);
 
-    const temAcesso = await verificarAcessoDepartamento(user.id, departamentoId);
+    if (!Number.isInteger(departamentoId) || departamentoId <= 0) {
+        notFound();
+    }
+
+    const temAcesso = await verificarAcessoDepartamento(departamentoId);
 
     if (!temAcesso) {
         return (
-            <div className="min-h-screen bg-gradient-to-br from-[#0F0F0F] via-[#1a1a1a] to-[#0F0F0F] flex items-center justify-center p-4">
+            <div className="min-h-screen bg-gradient-to-br from-page via-[#1a1a1a] to-page flex items-center justify-center p-4">
                 <div className="max-w-2xl w-full">
                     <div className="text-center mb-8">
                         <div className="relative inline-block">
@@ -44,22 +46,22 @@ export default async function DepartamentoDetalhes({ params }: { params: { id: s
                         </div>
                     </div>
 
-                    <div className="bg-[#1F1F1F] rounded-2xl  p-8 shadow-2xl border border-[#2c2c2c] ">
+                    <div className="bg-surface rounded-2xl  p-8 shadow-2xl border border-line ">
                         <div className="text-center">
                             <h1 className="text-2xl font-bold text-white mb-4">
                                 Acesso Negado
                             </h1>
-                            <p className="text-[#b4b4b4] text-lg mb-6 leading-relaxed">
+                            <p className="text-muted text-lg mb-6 leading-relaxed">
                                 Você não tem permissão para acessar este departamento.
                             </p>
-                            <p className="text-[#8c8888] text-sm mb-8">
+                            <p className="text-subtle text-sm mb-8">
                                 Entre em contato com o administrador do departamento para solicitar acesso.
                             </p>
 
                             <div className="flex flex-col w-full justify-center sm:flex-row gap-3">
                                 <a
                                     href="/departamentos"
-                                    className="flex items-center justify-center gap-2 bg-[#F6CF45] text-black font-medium px-6 py-3 rounded-lg hover:bg-[#F6CF45]/90 transition-all duration-300 transform hover:scale-105"
+                                    className="flex items-center justify-center gap-2 bg-primary text-black font-medium px-6 py-3 rounded-lg hover:bg-primary/90 transition-all duration-300 transform hover:scale-105"
                                 >
                                     <IoArrowBack className="w-4 h-4" />
                                     Voltar aos Departamentos
@@ -78,7 +80,7 @@ export default async function DepartamentoDetalhes({ params }: { params: { id: s
     const departamentoEscolhido = await getDepartamentosById(departamentoId);
 
     if (!departamentoEscolhido) {
-        return <div>Departamento não encontrado. ID: {departamentoId}</div>;
+        notFound();
     }
 
     const host = await getHostByDepartamento(departamentoId);

@@ -1,4 +1,4 @@
-const mysql = require('mysql2/promise');
+const { connect } = require('./db');
 
 async function showTableStructure() {
     let connection;
@@ -14,12 +14,7 @@ async function showTableStructure() {
     
     try {
         // Criar conexão com o banco
-        connection = await mysql.createConnection({
-            host: process.env.MYSQL_HOST || 'localhost',
-            user: process.env.MYSQL_USER || 'root',
-            password: process.env.MYSQL_PASSWORD || 'duduborges22',
-            database: process.env.MYSQL_DATABASE || 'cybox'
-        });
+        connection = await connect();
 
         console.log('🔗 Conectado ao banco de dados');
         console.log(`📋 Estrutura da tabela: ${tableName}\n`);

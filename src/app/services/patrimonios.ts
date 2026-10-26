@@ -2,6 +2,10 @@
 
 import { query } from '@/lib/mysql';
 import { PatrimonioType } from "@/lib/types/types";
+import { requireCategoriaRole, requireDepartamentoRole, requirePatrimonioRole } from "@/lib/authz";
+import { calcularValorDepreciado, sqlValorAtual } from "@/lib/depreciacao";
+
+const VALOR_MAXIMO = 99999999.99;
 
 export async function getPatrimoniosByCategoria(categoriaId: number): Promise<PatrimonioType[]> {
      try {
@@ -9,9 +13,12 @@ export async function getPatrimoniosByCategoria(categoriaId: number): Promise<Pa
                throw new Error("ID da categoria é necessário.");
           }
 
+          await requireCategoriaRole(categoriaId);
+
           const patrimonios = await query(`
-            SELECT 
+            SELECT
                 p.*,
+                ${sqlValorAtual('p')} as valor_atual,
                 DATE_FORMAT(p.data_aquisicao, '%Y-%m-%d') as data_aquisicao,
                 DATE_FORMAT(p.created_at, '%Y-%m-%d') as created_at
             FROM patrimonios AS p
@@ -32,9 +39,12 @@ export async function getPatrimonioById(patrimonioId: number): Promise<Patrimoni
                throw new Error("ID do patrimônio é necessário.");
           }
 
+          await requirePatrimonioRole(patrimonioId);
+
           const patrimonios = await query(`
-            SELECT 
+            SELECT
                 p.*,
+                ${sqlValorAtual('p')} as valor_atual,
                 DATE_FORMAT(p.data_aquisicao, '%Y-%m-%d') as data_aquisicao,
                 DATE_FORMAT(p.created_at, '%Y-%m-%d') as created_at
             FROM patrimonios AS p
@@ -49,58 +59,74 @@ export async function getPatrimonioById(patrimonioId: number): Promise<Patrimoni
      }
 }
 
-export async function savePatrimonio(formData: FormData) {
+function hojeISO(): string {
+     const hoje = new Date();
+     return `${hoje.getFullYear()}-${String(hoje.getMonth() + 1).padStart(2, '0')}-${String(hoje.getDate()).padStart(2, '0')}`;
+}
+
+export async function savePatrimonio(formData: FormData): Promise<{ success: boolean; error?: string }> {
      try {
           const id = +(formData.get('id') as string) || null;
-          const id_categoria_str = formData.get('id_categoria') as string;
-          const id_categoria = id_categoria_str ? +id_categoria_str : null;
+          const id_categoria = +(formData.get('id_categoria') as string) || null;
 
-          const nome = formData.get('nome') as string;
-          const descricao = formData.get('descricao') as string || null;
-          const codigo_patrimonio = formData.get('codigo') as string || null;
-          const localizacao = formData.get('localizacao') as string || null;
-          const valor_inicial = +(formData.get('valor_inicial') as string);
-          const valor_atual = +(formData.get('valor_atual') as string);
-          const data_aquisicao = formData.get('data_aquisicao') as string;
-          const tempo_depreciacao = +(formData.get('tempo_depreciacao') as string);
+          const nome = (formData.get('nome') as string || '').trim();
+          const descricao = (formData.get('descricao') as string || '').trim() || null;
+          const codigo_patrimonio = (formData.get('codigo') as string || '').trim() || null;
+          const localizacao = (formData.get('localizacao') as string || '').trim() || null;
+          const valor_inicial = Number(formData.get('valor_inicial'));
+          const data_aquisicao = (formData.get('data_aquisicao') as string || '').trim();
+          const taxa_anual = Number(formData.get('tempo_depreciacao'));
 
-          if (!id_categoria) {
-               throw new Error("ID da categoria é necessário.");
+          if (!id && !id_categoria) {
+               return { success: false, error: "Categoria não informada." };
           }
 
           if (!nome) {
-               throw new Error("Nome do patrimônio é necessário.");
+               return { success: false, error: "Informe o nome do patrimônio." };
           }
 
-          if (valor_inicial <= 0) {
-               throw new Error("Valor inicial deve ser maior que zero.");
+          if (!Number.isFinite(valor_inicial) || valor_inicial <= 0) {
+               return { success: false, error: "O valor inicial deve ser maior que zero." };
           }
 
-          if (!data_aquisicao) {
-               throw new Error("Data de aquisição é necessária.");
+          if (valor_inicial > VALOR_MAXIMO) {
+               return { success: false, error: "O valor inicial é maior que o permitido." };
           }
 
-          if (tempo_depreciacao <= 0) {
-               throw new Error("Tempo de depreciação deve ser maior que zero.");
+          if (!/^\d{4}-\d{2}-\d{2}$/.test(data_aquisicao)) {
+               return { success: false, error: "Informe a data de aquisição." };
           }
+
+          if (data_aquisicao > hojeISO()) {
+               return { success: false, error: "A data de aquisição não pode estar no futuro." };
+          }
+
+          if (!Number.isFinite(taxa_anual) || taxa_anual <= 0 || taxa_anual > 100) {
+               return { success: false, error: "A taxa de depreciação deve estar entre 0,01% e 100% ao ano." };
+          }
+
+          const valor_atual = calcularValorDepreciado(valor_inicial, taxa_anual, data_aquisicao);
 
           if (!id) {
+               await requireCategoriaRole(id_categoria as number);
+
                await query(`
                 INSERT INTO patrimonios (
-                    id_categoria, 
-                    nome, 
+                    id_categoria,
+                    nome,
                     descricao,
                     codigo_patrimonio,
                     localizacao,
-                    valor_inicial, 
-                    valor_atual, 
-                    data_aquisicao, 
+                    valor_inicial,
+                    valor_atual,
+                    data_aquisicao,
                     tempo_depreciacao,
                     status
                 )
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'ativo')
-            `, [id_categoria, nome, descricao, codigo_patrimonio, localizacao, valor_inicial, valor_atual, data_aquisicao, tempo_depreciacao]);
+            `, [id_categoria, nome, descricao, codigo_patrimonio, localizacao, valor_inicial, valor_atual, data_aquisicao, taxa_anual]);
           } else {
+               await requirePatrimonioRole(id);
 
                await query(`
                 UPDATE patrimonios SET
@@ -114,149 +140,31 @@ export async function savePatrimonio(formData: FormData) {
                     tempo_depreciacao = ?,
                     updated_at = CURRENT_TIMESTAMP
                 WHERE id = ? AND status != 'deletado'
-            `, [nome, descricao, codigo_patrimonio, localizacao, valor_inicial, valor_atual, data_aquisicao, tempo_depreciacao, id]);
+            `, [nome, descricao, codigo_patrimonio, localizacao, valor_inicial, valor_atual, data_aquisicao, taxa_anual, id]);
           }
 
-
-          const categorias = await query(`
-            SELECT id_departamento FROM categorias WHERE id = ? AND status != 'deletado'
-        `, [id_categoria]);
-
-          const categoriaArray = categorias as { id_departamento: number }[];
+          return { success: true };
      } catch (error) {
           console.error("Erro ao salvar patrimônio:", error);
-          throw error;
+          return { success: false, error: "Não foi possível salvar o patrimônio." };
      }
 }
 
-export async function removePatrimonio(patrimonioId: number, categoriaId: number) {
+export async function removePatrimonio(patrimonioId: number) {
      try {
           if (!patrimonioId) {
                throw new Error("ID do patrimônio é necessário para deletar.");
           }
 
-
-          const categorias = await query(`
-            SELECT id_departamento FROM categorias WHERE id = ? AND status != 'deletado'
-        `, [categoriaId]);
-
-
-          await query(`
-            UPDATE patrimonios 
-            SET status = 'deletado', updated_at = CURRENT_TIMESTAMP 
-            WHERE id = ?
-          `, [patrimonioId]);
-
-          const categoriaArray = categorias as { id_departamento: number }[];
-     } catch (error) {
-          console.error("Erro ao remover patrimônio:", error);
-          throw error;
-     }
-}
-
-export async function calcularDepreciacao(patrimonioId: number) {
-     try {
-          if (!patrimonioId) {
-               throw new Error("ID do patrimônio é necessário.");
-          }
-
-          const patrimonios = await query(`
-            SELECT 
-                id,
-                valor_inicial,
-                data_aquisicao,
-                tempo_depreciacao
-            FROM patrimonios
-            WHERE id = ?
-        `, [patrimonioId]);
-
-          const patrimonioArray = patrimonios as PatrimonioType[];
-          if (patrimonioArray.length === 0) {
-               throw new Error("Patrimônio não encontrado.");
-          }
-
-          const patrimonio = patrimonioArray[0];
-
-
-          const dataAquisicao = new Date(patrimonio.data_aquisicao);
-          const dataAtual = new Date();
-
-
-          const diferenca = dataAtual.getTime() - dataAquisicao.getTime();
-
-
-          const mesesDecorridos = Math.floor(diferenca / (1000 * 60 * 60 * 24 * 30.44));
-
-
-          const depreciacaoMensal = patrimonio.valor_inicial / patrimonio.tempo_depreciacao;
-
-
-          let valorAtual = patrimonio.valor_inicial - (depreciacaoMensal * mesesDecorridos);
-
-
-          valorAtual = Math.max(0, valorAtual);
-
+          await requirePatrimonioRole(patrimonioId);
 
           await query(`
             UPDATE patrimonios
-            SET valor_atual = ?, updated_at = CURRENT_TIMESTAMP
-            WHERE id = ? AND status != 'deletado'
-        `, [valorAtual, patrimonioId]);
-
-          return valorAtual;
+            SET status = 'deletado', updated_at = CURRENT_TIMESTAMP
+            WHERE id = ?
+          `, [patrimonioId]);
      } catch (error) {
-          console.error("Erro ao calcular depreciação:", error);
-          throw error;
-     }
-}
-
-export async function calcularDepreciacaoTodos() {
-     try {
-
-          const patrimonios = await query(`
-            SELECT 
-                id,
-                valor_inicial,
-                data_aquisicao,
-                tempo_depreciacao
-            FROM patrimonios
-            WHERE status != 'deletado'
-        `);
-
-          const patrimonioArray = patrimonios as PatrimonioType[];
-          const atualizacoes = [];
-
-          for (const patrimonio of patrimonioArray) {
-
-               const dataAquisicao = new Date(patrimonio.data_aquisicao);
-               const dataAtual = new Date();
-
-
-               const diferenca = dataAtual.getTime() - dataAquisicao.getTime();
-
-
-               const mesesDecorridos = Math.floor(diferenca / (1000 * 60 * 60 * 24 * 30.44));
-
-
-               const depreciacaoMensal = patrimonio.valor_inicial / patrimonio.tempo_depreciacao;
-
-
-               let valorAtual = patrimonio.valor_inicial - (depreciacaoMensal * mesesDecorridos);
-
-
-               valorAtual = Math.max(0, valorAtual);
-
-               atualizacoes.push(query(`
-                UPDATE patrimonios
-                SET valor_atual = ?, updated_at = CURRENT_TIMESTAMP
-                WHERE id = ? AND status != 'deletado'
-            `, [valorAtual, patrimonio.id]));
-          }
-
-          await Promise.all(atualizacoes);
-          return true;
-     } catch (error) {
-          console.error("Erro ao calcular depreciação de todos patrimônios:", error);
+          console.error("Erro ao remover patrimônio:", error);
           throw error;
      }
 }
@@ -267,11 +175,13 @@ export async function getResumoPatrimonios(departamentoId: number) {
                throw new Error("ID do departamento é necessário.");
           }
 
+          await requireDepartamentoRole(departamentoId);
+
           const resumo = await query(`
-            SELECT 
+            SELECT
                 COUNT(p.id) as total_patrimonios,
-                SUM(p.valor_inicial) as valor_total_inicial,
-                SUM(p.valor_atual) as valor_total_atual
+                COALESCE(SUM(p.valor_inicial), 0) as valor_total_inicial,
+                COALESCE(SUM(${sqlValorAtual('p')}), 0) as valor_total_atual
             FROM patrimonios AS p
             JOIN categorias AS c ON p.id_categoria = c.id
             WHERE c.id_departamento = ? AND p.status != 'deletado' AND c.status != 'deletado'

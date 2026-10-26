@@ -2,12 +2,16 @@
 
 import { query } from '@/lib/mysql';
 import { CategoriaType, CategoriaComPatrimoniosType, PadraoDepreciacaoType } from "@/lib/types/types";
+import { requireCategoriaRole, requireDepartamentoRole, requireUserId } from "@/lib/authz";
+import { sqlValorAtual } from "@/lib/depreciacao";
 
 export async function getCategoriasByDepartamento(departamentoId: number): Promise<CategoriaType[]> {
      try {
           if (!departamentoId) {
                throw new Error("ID do departamento é necessário.");
           }
+
+          await requireDepartamentoRole(departamentoId);
 
           const categorias = await query(`
             SELECT c.*, DATE_FORMAT(c.created_at, '%Y-%m-%d') as created_at,
@@ -31,6 +35,8 @@ export async function getCategoriaById(categoriaId: number): Promise<CategoriaTy
                throw new Error("ID da categoria é necessário.");
           }
 
+          await requireCategoriaRole(categoriaId);
+
           const categorias = await query(`
             SELECT c.*, DATE_FORMAT(c.created_at, '%Y-%m-%d') as created_at,
                    pd.categoria as padrao_categoria, pd.taxa_anual_percent
@@ -47,29 +53,33 @@ export async function getCategoriaById(categoriaId: number): Promise<CategoriaTy
      }
 }
 
-export async function saveCategoria(formData: FormData) {
+export async function saveCategoria(formData: FormData): Promise<{ success: boolean; error?: string }> {
      try {
           const id = +(formData.get('id') as string) || null;
           const id_departamento = +(formData.get('id_departamento') as string);
-          const nome = formData.get('nome') as string;
-          const descricao = formData.get('descricao') as string || null;
+          const nome = (formData.get('nome') as string || '').trim();
+          const descricao = (formData.get('descricao') as string || '').trim() || null;
           const padrao_depreciacao_str = formData.get('padrao_depreciacao_id') as string;
           const padrao_depreciacao_id = padrao_depreciacao_str && padrao_depreciacao_str !== '' ? +padrao_depreciacao_str : null;
 
-          if (!id_departamento) {
-               throw new Error("ID do departamento é necessário.");
+          if (!id && !id_departamento) {
+               return { success: false, error: "Departamento não informado." };
           }
 
           if (!nome) {
-               throw new Error("Nome da categoria é necessário.");
+               return { success: false, error: "Informe o nome da categoria." };
           }
 
           if (!id) {
+               await requireDepartamentoRole(id_departamento);
+
                await query(`
                 INSERT INTO categorias (id_departamento, nome, descricao, padrao_depreciacao_id, status)
                 VALUES (?, ?, ?, ?, 'ativo')
             `, [id_departamento, nome, descricao, padrao_depreciacao_id]);
           } else {
+               await requireCategoriaRole(id);
+
                await query(`
                 UPDATE categorias SET
                     nome = ?,
@@ -80,17 +90,20 @@ export async function saveCategoria(formData: FormData) {
             `, [nome, descricao, padrao_depreciacao_id, id]);
           }
 
+          return { success: true };
      } catch (error) {
           console.error("Erro ao salvar categoria:", error);
-          throw error;
+          return { success: false, error: "Não foi possível salvar a categoria." };
      }
 }
 
-export async function removeCategoria(categoriaId: number, departamentoId: number) {
+export async function removeCategoria(categoriaId: number) {
      try {
           if (!categoriaId) {
                throw new Error("ID da categoria é necessário para deletar.");
           }
+
+          await requireCategoriaRole(categoriaId);
 
           await query(`
             UPDATE categorias 
@@ -116,6 +129,8 @@ export async function getCategoriasComTotalPatrimonios(departamentoId: number): 
                throw new Error("ID do departamento é necessário.");
           }
 
+          await requireDepartamentoRole(departamentoId);
+
           const categorias = await query(`
             SELECT 
                 c.id,
@@ -126,7 +141,9 @@ export async function getCategoriasComTotalPatrimonios(departamentoId: number): 
                 pd.taxa_anual_percent,
                 DATE_FORMAT(c.created_at, '%Y-%m-%d') as created_at,
                 COUNT(CASE WHEN p.status != 'deletado' THEN p.id END) as total_patrimonios,
-                SUM(CASE WHEN p.status != 'deletado' THEN p.valor_atual ELSE 0 END) as valor_total
+                COALESCE(SUM(CASE WHEN p.status != 'deletado' THEN ${sqlValorAtual('p')} ELSE 0 END), 0) as valor_total,
+                ROUND(100 * SUM(CASE WHEN p.status != 'deletado' THEN ${sqlValorAtual('p')} ELSE 0 END)
+                    / NULLIF(SUM(CASE WHEN p.status != 'deletado' THEN p.valor_inicial ELSE 0 END), 0)) as percentual_valor
             FROM categorias AS c
             LEFT JOIN patrimonios AS p ON c.id = p.id_categoria
             LEFT JOIN padroes_depreciacao AS pd ON c.padrao_depreciacao_id = pd.id
@@ -144,6 +161,8 @@ export async function getCategoriasComTotalPatrimonios(departamentoId: number): 
 
 export async function getPadroesDepreciacao(): Promise<PadraoDepreciacaoType[]> {
      try {
+          await requireUserId();
+
           const padroes = await query(`
             SELECT * FROM padroes_depreciacao 
             WHERE ativo = TRUE 

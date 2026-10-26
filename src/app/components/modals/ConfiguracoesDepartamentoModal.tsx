@@ -1,12 +1,13 @@
 "use client"
 
+import { Modal, ModalHeader } from '@/components/ui/modal';
 import { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { FaCog, FaUsers, FaTrash, FaEdit, FaLink } from 'react-icons/fa';
-import { MdClose, MdSave } from 'react-icons/md';
+import { MdSave } from 'react-icons/md';
 import { AiOutlineLoading3Quarters } from 'react-icons/ai';
-import { DepartamentoType, UserType } from '@/lib/types/types';
-import { saveDepartamento } from '@/app/services/departamento';
+import { DepartamentoType } from '@/lib/types/types';
+import { regenerarCodigoConvite, saveDepartamento } from '@/app/services/departamento';
 import { MembroDepartamento } from '@/app/services/membros';
 import { toast } from 'sonner';
 
@@ -76,7 +77,11 @@ function ConfiguracoesDepartamentoModal({
             formDataToSend.append('descricao', formData.descricao);
             formDataToSend.append('localizacao', formData.localizacao);
 
-            await saveDepartamento(formDataToSend, '');
+            const resultado = await saveDepartamento(formDataToSend);
+            if (!resultado.success) {
+                toast.error(resultado.error || 'Erro ao atualizar departamento');
+                return;
+            }
 
             const departamentoAtualizado: DepartamentoType = {
                 ...departamento!,
@@ -95,15 +100,26 @@ function ConfiguracoesDepartamentoModal({
         }
     };
 
-    const gerarNovoCodigoConvite = () => {
-        const novocodigo = `DEPT-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
-        setFormData(prev => ({ ...prev, codigo_convite: novocodigo }));
-        toast.info('Novo código de convite gerado!');
+    const gerarNovoCodigoConvite = async () => {
+        if (!isAdmin) return;
+
+        try {
+            const novoCodigo = await regenerarCodigoConvite(Number(departamento.id_departamentos));
+            setFormData(prev => ({ ...prev, codigo_convite: novoCodigo }));
+            toast.success('Novo código gerado! O código anterior deixou de funcionar.');
+            if (onSuccess) onSuccess({ ...departamento, codigo_convite: novoCodigo });
+        } catch (error) {
+            toast.error('Erro ao gerar novo código');
+        }
     };
 
-    const copiarCodigoConvite = () => {
-        navigator.clipboard.writeText(formData.codigo_convite);
-        toast.success('Código de convite copiado!');
+    const copiarCodigoConvite = async () => {
+        try {
+            await navigator.clipboard.writeText(formData.codigo_convite);
+            toast.success('Código de convite copiado!');
+        } catch (error) {
+            toast.error('Não foi possível copiar. Selecione o código e copie manualmente.');
+        }
     };
 
     const tabs = [
@@ -113,53 +129,29 @@ function ConfiguracoesDepartamentoModal({
     ];
 
     return (
-        <AnimatePresence>
-            {isOpen && (
-                <motion.div
-                    className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center  justify-center z-50 px-4"
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    onClick={onClose}
-                >
-                    <motion.div
-                        className="bg-[#1F1F1F] rounded-2xl w-full  max-w-4xl h-[80vh] overflow-hidden shadow-2xl border border-[#2c2c2c]"
-                        initial={{ scale: 0.9, opacity: 0, y: 20 }}
-                        animate={{ scale: 1, opacity: 1, y: 0 }}
-                        exit={{ scale: 0.9, opacity: 0, y: 20 }}
-                        transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-                        onClick={(e) => e.stopPropagation()}
-                    >
+        <Modal isOpen={isOpen} onClose={onClose} className="max-w-4xl sm:h-[80vh]">
                         
-                        <div className="p-6 border-b border-[#2c2c2c] flex items-center justify-between h-28">
-                            <div className="flex items-center gap-3">
-                                <div className="p-2 bg-[#F6CF45] rounded-lg">
-                                    <FaCog className="text-black" size={20} />
-                                </div>
-                                <div>
-                                    <h2 className="text-xl font-bold text-white">Configurações do Departamento</h2>
-                                    <p className="text-[#8c8888] text-sm">{departamento.titulo}</p>
-                                </div>
-                            </div>
-                            <button
-                                onClick={onClose}
-                                className="p-2 hover:bg-[#2c2c2c] rounded-lg transition-colors duration-300 text-[#8c8888] hover:text-white"
-                            >
-                                <MdClose size={24} />
-                            </button>
-                        </div>
+                        <ModalHeader
+                            icone={<FaCog size={20} />}
+                            titulo="Configurações do Departamento"
+                            subtitulo={<>{departamento.titulo}</>}
+                            onClose={onClose}
+                        />
 
-                        <div className="flex h-[calc(80vh-112px)]">
+                        <div className="flex min-h-0 flex-1 flex-col sm:flex-row">
                             
-                            <div className="w-64 bg-[#1a1a1a] border-r border-[#2c2c2c] p-4">
-                                <div className="space-y-2">
+                            <div className="shrink-0 border-b border-line bg-[#1a1a1a] p-2 sm:w-56 sm:border-b-0 sm:border-r sm:p-4">
+                                <div role="tablist" aria-label="Seções" className="flex gap-2 overflow-x-auto sm:flex-col">
                                     {tabs.map((tab) => (
                                         <button
                                             key={tab.id}
+                                            type="button"
+                                            role="tab"
+                                            aria-selected={activeTab === tab.id}
                                             onClick={() => setActiveTab(tab.id as 'geral' | 'avancado')}
-                                            className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-300 ${activeTab === tab.id
-                                                ? 'bg-[#F6CF45] text-black'
-                                                : 'text-[#8c8888] hover:text-white hover:bg-[#2c2c2c]'
+                                            className={`flex shrink-0 items-center gap-3 px-4 py-3 rounded-lg transition-colors duration-200 sm:w-full ${activeTab === tab.id
+                                                ? 'bg-primary text-black'
+                                                : 'text-subtle hover:text-white hover:bg-surface-2'
                                                 }`}
                                         >
                                             <tab.icon size={16} />
@@ -170,7 +162,7 @@ function ConfiguracoesDepartamentoModal({
                             </div>
 
                             
-                            <div className="flex-1 p-6 overflow-y-auto">
+                            <div className="min-h-0 flex-1 overflow-y-auto p-4 sm:p-6">
                                 {activeTab === 'geral' && (
                                     <motion.div
                                         initial={{ opacity: 0, x: 20 }}
@@ -181,37 +173,39 @@ function ConfiguracoesDepartamentoModal({
 
                                         <form onSubmit={handleSubmit} className="space-y-6">
                                             <div>
-                                                <label className="block text-sm text-[#b4b4b4] mb-2">Nome do Departamento</label>
+                                                <label className="block text-sm text-muted mb-2">Nome do Departamento</label>
                                                 <input
                                                     type="text"
                                                     value={formData.titulo}
+                                                    required
+                                                    maxLength={255}
                                                     onChange={(e) => setFormData(prev => ({ ...prev, titulo: e.target.value }))}
                                                     disabled={!isAdmin}
-                                                    className="w-full bg-[#2c2c2c] text-white px-4 py-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#F6CF45]/50 disabled:opacity-50"
+                                                    className="w-full bg-surface-2 text-white px-4 py-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 disabled:opacity-50"
                                                     placeholder="Nome do departamento"
                                                 />
                                             </div>
 
                                             <div>
-                                                <label className="block text-sm text-[#b4b4b4] mb-2">Descrição</label>
+                                                <label className="block text-sm text-muted mb-2">Descrição</label>
                                                 <textarea
                                                     value={formData.descricao}
                                                     onChange={(e) => setFormData(prev => ({ ...prev, descricao: e.target.value }))}
                                                     disabled={!isAdmin}
                                                     rows={4}
-                                                    className="w-full bg-[#2c2c2c] text-white px-4 py-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#F6CF45]/50 resize-none disabled:opacity-50"
+                                                    className="w-full bg-surface-2 text-white px-4 py-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 resize-none disabled:opacity-50"
                                                     placeholder="Descrição do departamento"
                                                 />
                                             </div>
 
                                             <div>
-                                                <label className="block text-sm text-[#b4b4b4] mb-2">Localização</label>
+                                                <label className="block text-sm text-muted mb-2">Localização</label>
                                                 <input
                                                     type="text"
                                                     value={formData.localizacao}
                                                     onChange={(e) => setFormData(prev => ({ ...prev, localizacao: e.target.value }))}
                                                     disabled={!isAdmin}
-                                                    className="w-full bg-[#2c2c2c] text-white px-4 py-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#F6CF45]/50 disabled:opacity-50"
+                                                    className="w-full bg-surface-2 text-white px-4 py-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 disabled:opacity-50"
                                                     placeholder="Localização física"
                                                 />
                                             </div>
@@ -221,7 +215,7 @@ function ConfiguracoesDepartamentoModal({
                                                     <button
                                                         type="submit"
                                                         disabled={isLoading}
-                                                        className="flex items-center gap-2 bg-[#F6CF45] text-black px-6 py-3 rounded-lg hover:bg-[#F6CF45]/90 transition-colors duration-300 disabled:opacity-50"
+                                                        className="flex items-center gap-2 bg-primary text-black px-6 py-3 rounded-lg hover:bg-primary/90 transition-colors duration-300 disabled:opacity-50"
                                                     >
                                                         {isLoading ? (
                                                             <>
@@ -249,21 +243,21 @@ function ConfiguracoesDepartamentoModal({
                                     >
                                         <div className="flex items-center justify-between mb-6">
                                             <h3 className="text-lg font-bold text-white">Membros do Departamento</h3>
-                                            <span className="bg-[#2c2c2c] text-white px-3 py-1 rounded-full text-sm">
+                                            <span className="bg-surface-2 text-white px-3 py-1 rounded-full text-sm">
                                                 {membros.length} membros
                                             </span>
                                         </div>
 
                                         <div className="space-y-3">
                                             {membros.length > 0 ? membros.map((membro) => (
-                                                <div key={membro.id} className="flex items-center justify-between bg-[#2c2c2c] rounded-lg p-4">
+                                                <div key={membro.id} className="flex items-center justify-between bg-surface-2 rounded-lg p-4">
                                                     <div className="flex items-center gap-3">
-                                                        <div className="w-10 h-10 bg-[#F6CF45] rounded-full flex items-center justify-center text-black font-bold">
+                                                        <div className="w-10 h-10 bg-primary rounded-full flex items-center justify-center text-black font-bold">
                                                             {membro.nome.charAt(0).toUpperCase()}
                                                         </div>
                                                         <div>
                                                             <p className="text-white font-medium">{membro.nome}</p>
-                                                            <p className="text-[#8c8888] text-sm">{membro.email}</p>
+                                                            <p className="text-subtle text-sm">{membro.email}</p>
                                                         </div>
                                                     </div>
                                                     <div className="flex items-center gap-2">
@@ -278,8 +272,8 @@ function ConfiguracoesDepartamentoModal({
                                                 </div>
                                             )) : (
                                                 <div className="text-center py-8">
-                                                    <FaUsers className="mx-auto text-[#8c8888] mb-2" size={32} />
-                                                    <p className="text-[#8c8888]">Carregando membros...</p>
+                                                    <FaUsers className="mx-auto text-subtle mb-2" size={32} />
+                                                    <p className="text-subtle">Nenhum membro para mostrar.</p>
                                                 </div>
                                             )}
                                         </div>
@@ -297,18 +291,18 @@ function ConfiguracoesDepartamentoModal({
                                         <div className="space-y-6">
                                             
                                             <div>
-                                                <label className="block text-sm text-[#b4b4b4] mb-2">Código de Convite</label>
+                                                <label className="block text-sm text-muted mb-2">Código de Convite</label>
                                                 <div className="flex gap-3">
                                                     <input
                                                         type="text"
                                                         value={formData.codigo_convite}
                                                         readOnly
-                                                        className="flex-1 bg-[#2c2c2c] text-white px-4 py-3 rounded-lg focus:outline-none"
+                                                        className="flex-1 bg-surface-2 text-white px-4 py-3 rounded-lg focus:outline-none"
                                                     />
                                                     <button
                                                         type="button"
                                                         onClick={copiarCodigoConvite}
-                                                        className="px-4 py-3 bg-[#2c2c2c] text-[#F6CF45] rounded-lg hover:bg-[#3c3c3c] transition-colors duration-300"
+                                                        className="px-4 py-3 bg-surface-2 text-primary rounded-lg hover:bg-surface-3 transition-colors duration-300"
                                                     >
                                                         <FaLink size={16} />
                                                     </button>
@@ -316,13 +310,13 @@ function ConfiguracoesDepartamentoModal({
                                                         <button
                                                             type="button"
                                                             onClick={gerarNovoCodigoConvite}
-                                                            className="px-4 py-3 bg-[#F6CF45] text-black rounded-lg hover:bg-[#F6CF45]/90 transition-colors duration-300"
+                                                            className="px-4 py-3 bg-primary text-black rounded-lg hover:bg-primary/90 transition-colors duration-300"
                                                         >
                                                             Gerar Novo
                                                         </button>
                                                     )}
                                                 </div>
-                                                <p className="text-xs text-[#8c8888] mt-1">
+                                                <p className="text-xs text-subtle mt-1">
                                                     Use este código para convidar novos membros ao departamento
                                                 </p>
                                             </div>
@@ -334,7 +328,7 @@ function ConfiguracoesDepartamentoModal({
                                                         <FaTrash size={16} />
                                                         Zona de Perigo
                                                     </h4>
-                                                    <p className="text-[#8c8888] text-sm mb-4">
+                                                    <p className="text-subtle text-sm mb-4">
                                                         Apenas proprietários podem excluir departamentos. Esta ação é irreversível.
                                                     </p>
                                                     <button
@@ -351,10 +345,7 @@ function ConfiguracoesDepartamentoModal({
                                 )}
                             </div>
                         </div>
-                    </motion.div>
-                </motion.div>
-            )}
-        </AnimatePresence>
+                    </Modal>
     );
 }
 

@@ -13,7 +13,7 @@ export function ButtonCriarCategoria() {
     <>
       <ButtonComponent.Root
         onClick={handleClick}
-        className="bg-[#f6cf45] flex rounded-[61px] text-black w-44 h-9 text-center justify-evenly items-center">
+        className="bg-primary flex rounded-[61px] text-black w-44 h-9 text-center justify-evenly items-center">
         <ButtonComponent.Icon icon={FaPlus} />
         <ButtonComponent.Content text="Criar Categoria" className="text-xs" />
       </ButtonComponent.Root>
@@ -25,7 +25,7 @@ export function ButtonEditarSala() {
   return (
     <ButtonComponent.Root
       onClick={() => alert("editado")}
-      className="border-[#f6cf45]  border-solid border-2 flex rounded-[61px] text-[#f6cf45] w-44 h-9 text-center justify-evenly items-center">
+      className="border-primary  border-solid border-2 flex rounded-[61px] text-primary w-44 h-9 text-center justify-evenly items-center">
       <ButtonComponent.Icon icon={RiPencilFill} />
       <ButtonComponent.Content text="Editar departamento" className="text-xs" />
     </ButtonComponent.Root>

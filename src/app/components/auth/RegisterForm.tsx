@@ -1,7 +1,8 @@
 "use client"
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
+import { destinoSeguro } from "@/lib/destino";
 import { signIn } from "next-auth/react";
 import { IoMdEye, IoMdEyeOff } from "react-icons/io";
 import { FcGoogle } from "react-icons/fc";
@@ -27,6 +28,8 @@ export default function RegisterForm({ user: novoUser }: RegisterFormProps) {
         confirmarSenha: ''
     });
     const router = useRouter();
+    const callbackUrl = useSearchParams().get('callbackUrl');
+    const destino = destinoSeguro(callbackUrl);
 
     const handleInputChange = (field: string, value: string) => {
         setFormData(prev => ({
@@ -46,8 +49,8 @@ export default function RegisterForm({ user: novoUser }: RegisterFormProps) {
             return false;
         }
 
-        if (formData.senha.length < 6) {
-            toast.error("A senha deve ter pelo menos 6 caracteres");
+        if (formData.senha.length < 8) {
+            toast.error("A senha deve ter pelo menos 8 caracteres");
             return false;
         }
 
@@ -75,10 +78,10 @@ export default function RegisterForm({ user: novoUser }: RegisterFormProps) {
 
             const result = await saveUser(formDataToSend);
 
-            if (result?.success) {
-                toast.success("Cadastro realizado com sucesso!", {
-                    description: "Redirecionando para departamentos...",
-                    duration: 3000,
+            if (result.success) {
+                toast.success("Cadastro realizado!", {
+                    description: `Enviamos um link para confirmar ${formData.email}. Ele é necessário para aceitar convites.`,
+                    duration: 8000,
                 });
 
                 const loginResult = await signIn('credentials', {
@@ -87,23 +90,16 @@ export default function RegisterForm({ user: novoUser }: RegisterFormProps) {
                     redirect: false,
                 });
 
-                if (loginResult?.error) {
-                    toast.error("Erro no login automático", {
-                        description: "Cadastro realizado! Redirecionando para o login...",
-                        duration: 3000,
-                    });
-                    setTimeout(() => {
-                        router.push('/login');
-                    }, 1000);
-                } else {
-                    setTimeout(() => {
-                        router.push('/departamentos');
-                    }, 1000);
-                }
+                router.push(loginResult?.error ? '/login' : destino);
+            } else {
+                toast.error("Erro no cadastro", {
+                    description: result.error || "Verifique os dados e tente novamente.",
+                    duration: 5000,
+                });
             }
         } catch (err: unknown) {
             toast.error("Erro no cadastro", {
-                description: (err as Error).message || "Verifique os dados e tente novamente.",
+                description: "Verifique os dados e tente novamente.",
                 duration: 5000,
             });
         } finally {
@@ -129,14 +125,14 @@ export default function RegisterForm({ user: novoUser }: RegisterFormProps) {
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.8, delay: 0.4 }}
         >
-            <div className="bg-[#1F1F1F] rounded-3xl p-8 shadow-2xl border border-[#2c2c2c]">
+            <div className="bg-surface rounded-3xl p-8 shadow-2xl border border-line">
                 <div className="text-center mb-8">
                     <h2 className="text-2xl font-bold text-white mb-2">Criar sua conta</h2>
-                    <p className="text-[#8c8888]">Preencha os dados para começar</p>
+                    <p className="text-subtle">Preencha os dados para começar</p>
                 </div>
 
                 <button
-                    onClick={() => signIn('google', { callbackUrl: '/departamentos' })}
+                    onClick={() => signIn('google', { callbackUrl: destino })}
                     type="button"
                     className="w-full flex items-center justify-center gap-3 bg-white text-gray-700 border border-gray-300 rounded-xl py-3 px-4 hover:bg-gray-50 transition-all duration-300 mb-6"
                 >
@@ -145,58 +141,58 @@ export default function RegisterForm({ user: novoUser }: RegisterFormProps) {
                 </button>
 
                 <div className="flex items-center my-6">
-                    <div className="flex-1 h-px bg-[#2c2c2c]"></div>
-                    <span className="px-4 text-sm text-[#8c8888]">ou</span>
-                    <div className="flex-1 h-px bg-[#2c2c2c]"></div>
+                    <div className="flex-1 h-px bg-surface-2"></div>
+                    <span className="px-4 text-sm text-subtle">ou</span>
+                    <div className="flex-1 h-px bg-surface-2"></div>
                 </div>
 
                 <form onSubmit={handleSubmit} className="space-y-6">
                     <div className="space-y-2">
-                        <label className="text-sm font-medium text-[#b4b4b4]">Nome completo</label>
+                        <label className="text-sm font-medium text-muted">Nome completo</label>
                         <div className="relative">
-                            <MdPerson className="absolute left-3 top-1/2 transform -translate-y-1/2 text-[#8c8888]" size={20} />
+                            <MdPerson className="absolute left-3 top-1/2 transform -translate-y-1/2 text-subtle" size={20} />
                             <input
                                 type="text"
                                 required
                                 value={formData.nome}
                                 onChange={(e) => handleInputChange('nome', e.target.value)}
-                                className="w-full bg-[#2c2c2c] text-white pl-10 pr-4 py-3 rounded-xl border border-transparent focus:outline-none focus:ring-2 focus:ring-[#F6CF45] focus:border-transparent transition-all duration-300"
+                                className="w-full bg-surface-2 text-white pl-10 pr-4 py-3 rounded-xl border border-transparent focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all duration-300"
                                 placeholder="Seu nome completo"
                             />
                         </div>
                     </div>
 
                     <div className="space-y-2">
-                        <label className="text-sm font-medium text-[#b4b4b4]">Email</label>
+                        <label className="text-sm font-medium text-muted">Email</label>
                         <div className="relative">
-                            <MdEmail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-[#8c8888]" size={20} />
+                            <MdEmail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-subtle" size={20} />
                             <input
                                 type="email"
                                 required
                                 value={formData.email}
                                 onChange={(e) => handleInputChange('email', e.target.value)}
-                                className="w-full bg-[#2c2c2c] text-white pl-10 pr-4 py-3 rounded-xl border border-transparent focus:outline-none focus:ring-2 focus:ring-[#F6CF45] focus:border-transparent transition-all duration-300"
+                                className="w-full bg-surface-2 text-white pl-10 pr-4 py-3 rounded-xl border border-transparent focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all duration-300"
                                 placeholder="seu@email.com"
                             />
                         </div>
                     </div>
 
                     <div className="space-y-2">
-                        <label className="text-sm font-medium text-[#b4b4b4]">Senha</label>
+                        <label className="text-sm font-medium text-muted">Senha</label>
                         <div className="relative">
-                            <MdLock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-[#8c8888]" size={20} />
+                            <MdLock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-subtle" size={20} />
                             <input
                                 type={isVisible ? "text" : "password"}
                                 required
                                 value={formData.senha}
                                 onChange={(e) => handleInputChange('senha', e.target.value)}
-                                className="w-full bg-[#2c2c2c] text-white pl-10 pr-12 py-3 rounded-xl border border-transparent focus:outline-none focus:ring-2 focus:ring-[#F6CF45] focus:border-transparent transition-all duration-300"
+                                className="w-full bg-surface-2 text-white pl-10 pr-12 py-3 rounded-xl border border-transparent focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all duration-300"
                                 placeholder="••••••••"
                             />
                             <button
                                 type="button"
                                 onClick={() => setIsVisible(!isVisible)}
-                                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-[#8c8888] hover:text-white transition-colors"
+                                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-subtle hover:text-white transition-colors"
                             >
                                 {isVisible ? <IoMdEye size={20} /> : <IoMdEyeOff size={20} />}
                             </button>
@@ -205,12 +201,12 @@ export default function RegisterForm({ user: novoUser }: RegisterFormProps) {
                         {formData.senha && (
                             <div className="mt-2">
                                 <div className="flex justify-between items-center mb-1">
-                                    <span className="text-xs text-[#8c8888]">Força da senha</span>
+                                    <span className="text-xs text-subtle">Força da senha</span>
                                     <span className={`text-xs ${passwordStrength.color.replace('bg-', 'text-')}`}>
                                         {passwordStrength.text}
                                     </span>
                                 </div>
-                                <div className="w-full bg-[#2c2c2c] rounded-full h-2">
+                                <div className="w-full bg-surface-2 rounded-full h-2">
                                     <div 
                                         className={`h-2 rounded-full transition-all duration-300 ${passwordStrength.color}`}
                                         style={{ width: `${passwordStrength.strength}%` }}
@@ -221,21 +217,21 @@ export default function RegisterForm({ user: novoUser }: RegisterFormProps) {
                     </div>
 
                     <div className="space-y-2">
-                        <label className="text-sm font-medium text-[#b4b4b4]">Confirmar senha</label>
+                        <label className="text-sm font-medium text-muted">Confirmar senha</label>
                         <div className="relative">
-                            <MdLock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-[#8c8888]" size={20} />
+                            <MdLock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-subtle" size={20} />
                             <input
                                 type={isVisible2 ? "text" : "password"}
                                 required
                                 value={formData.confirmarSenha}
                                 onChange={(e) => handleInputChange('confirmarSenha', e.target.value)}
-                                className="w-full bg-[#2c2c2c] text-white pl-10 pr-12 py-3 rounded-xl border border-transparent focus:outline-none focus:ring-2 focus:ring-[#F6CF45] focus:border-transparent transition-all duration-300"
+                                className="w-full bg-surface-2 text-white pl-10 pr-12 py-3 rounded-xl border border-transparent focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all duration-300"
                                 placeholder="••••••••"
                             />
                             <button
                                 type="button"
                                 onClick={() => setIsVisible2(!isVisible2)}
-                                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-[#8c8888] hover:text-white transition-colors"
+                                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-subtle hover:text-white transition-colors"
                             >
                                 {isVisible2 ? <IoMdEye size={20} /> : <IoMdEyeOff size={20} />}
                             </button>
@@ -258,7 +254,7 @@ export default function RegisterForm({ user: novoUser }: RegisterFormProps) {
                     <button
                         type="submit"
                         disabled={isLoading}
-                        className="w-full bg-[#F6CF45] text-black font-semibold py-3 px-4 rounded-xl hover:bg-[#F6CF45]/90 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                        className="w-full bg-primary text-black font-semibold py-3 px-4 rounded-xl hover:bg-primary/90 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                     >
                         {isLoading ? (
                             <>
@@ -271,10 +267,10 @@ export default function RegisterForm({ user: novoUser }: RegisterFormProps) {
                     </button>
                 </form>
 
-                <div className="text-center mt-8 pt-6 border-t border-[#2c2c2c]">
-                    <p className="text-sm text-[#8c8888]">
+                <div className="text-center mt-8 pt-6 border-t border-line">
+                    <p className="text-sm text-subtle">
                         Já tem uma conta?{' '}
-                        <a href="/login" className="text-[#F6CF45] font-medium hover:underline">
+                        <a href={callbackUrl ? `/login?callbackUrl=${encodeURIComponent(destino)}` : "/login"} className="text-primary font-medium hover:underline">
                             Fazer login
                         </a>
                     </p>
@@ -283,7 +279,7 @@ export default function RegisterForm({ user: novoUser }: RegisterFormProps) {
                 <div className="text-center mt-4">
                     <a 
                         href="/" 
-                        className="inline-flex items-center gap-2 text-sm text-[#8c8888] hover:text-white transition-colors"
+                        className="inline-flex items-center gap-2 text-sm text-subtle hover:text-white transition-colors"
                     >
                         <MdArrowBack size={16} />
                         Voltar ao início

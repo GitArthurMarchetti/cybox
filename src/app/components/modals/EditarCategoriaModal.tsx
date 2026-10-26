@@ -1,8 +1,9 @@
 "use client"
 
+import { Modal, ModalHeader } from '@/components/ui/modal';
 import { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { MdClose, MdCategory } from 'react-icons/md';
+import { motion } from 'framer-motion';
+import { MdCategory } from 'react-icons/md';
 import { FaSave } from 'react-icons/fa';
 import { saveCategoria, getPadroesDepreciacao } from '@/app/services/categoria';
 import { PadraoDepreciacaoType } from '@/lib/types/types';
@@ -72,7 +73,11 @@ export default function EditarCategoriaModal({
             formDataToSend.append('id', categoria.id.toString());
             formDataToSend.append('id_departamento', departamentoId?.toString() || '');
 
-            await saveCategoria(formDataToSend);
+            const resultado = await saveCategoria(formDataToSend);
+            if (!resultado.success) {
+                toast.error(resultado.error || 'Erro ao atualizar categoria');
+                return;
+            }
 
             toast.success("Categoria atualizada com sucesso!");
             onClose();
@@ -87,40 +92,13 @@ export default function EditarCategoriaModal({
     if (!categoria) return null;
 
     return (
-        <AnimatePresence>
-            {isOpen && (
-                <motion.div
-                    className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 px-4"
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    onClick={onClose}
-                >
-                    <motion.div
-                        className="bg-[#1F1F1F] rounded-2xl w-full max-w-2xl overflow-hidden shadow-2xl border border-[#2c2c2c]"
-                        initial={{ scale: 0.9, opacity: 0, y: 20 }}
-                        animate={{ scale: 1, opacity: 1, y: 0 }}
-                        exit={{ scale: 0.9, opacity: 0, y: 20 }}
-                        transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-                        onClick={(e) => e.stopPropagation()}
-                    >
-                        <div className="p-6 border-b border-[#2c2c2c] flex items-center justify-between h-28">
-                            <div className="flex items-center gap-3">
-                                <div className="p-2 bg-[#F6CF45] rounded-lg">
-                                    <MdCategory className="text-black" size={20} />
-                                </div>
-                                <div>
-                                    <h2 className="text-xl font-bold text-white">Editar Categoria</h2>
-                                    <p className="text-[#8c8888] text-sm">Atualize as informações da categoria &quot;{categoria.name}&quot;</p>
-                                </div>
-                            </div>
-                            <button
-                                onClick={onClose}
-                                className="p-2 hover:bg-[#2c2c2c] rounded-lg transition-colors duration-300 text-[#8c8888] hover:text-white"
-                            >
-                                <MdClose size={24} />
-                            </button>
-                        </div>
+        <Modal isOpen={isOpen} onClose={onClose} className="max-w-2xl">
+                        <ModalHeader
+                            icone={<MdCategory size={20} />}
+                            titulo="Editar Categoria"
+                            subtitulo={<>Atualize as informações da categoria &quot;{categoria.name}&quot;</>}
+                            onClose={onClose}
+                        />
 
                         <div className="p-8">
                             <form className="space-y-6" onSubmit={handleSubmit}>
@@ -129,7 +107,7 @@ export default function EditarCategoriaModal({
                                     animate={{ opacity: 1, y: 0 }}
                                     transition={{ duration: 0.3, delay: 0.1 }}
                                 >
-                                    <label className="block text-sm font-medium text-[#b4b4b4] mb-2">Nome da categoria</label>
+                                    <label className="block text-sm font-medium text-muted mb-2">Nome da categoria</label>
                                     <input
                                         autoComplete='off'
                                         type="text"
@@ -137,7 +115,7 @@ export default function EditarCategoriaModal({
                                         required
                                         value={formData.nome}
                                         onChange={(e) => setFormData(prev => ({ ...prev, nome: e.target.value }))}
-                                        className="w-full bg-[#2c2c2c] text-white px-4 py-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#F6CF45]/50 placeholder-[#6c6c6c]"
+                                        className="w-full bg-surface-2 text-white px-4 py-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 placeholder-subtle"
                                         placeholder="Ex: Notebooks, Mobiliário, Veículos..."
                                     />
                                 </motion.div>
@@ -147,13 +125,13 @@ export default function EditarCategoriaModal({
                                     animate={{ opacity: 1, y: 0 }}
                                     transition={{ duration: 0.3, delay: 0.2 }}
                                 >
-                                    <label className="block text-sm font-medium text-[#b4b4b4] mb-2">Descrição</label>
+                                    <label className="block text-sm font-medium text-muted mb-2">Descrição</label>
                                     <textarea
                                         name="descricao"
                                         value={formData.descricao}
                                         onChange={(e) => setFormData(prev => ({ ...prev, descricao: e.target.value }))}
                                         rows={4}
-                                        className="w-full bg-[#2c2c2c] text-white px-4 py-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#F6CF45]/50 resize-none placeholder-[#6c6c6c]"
+                                        className="w-full bg-surface-2 text-white px-4 py-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 resize-none placeholder-subtle"
                                         placeholder="Adicione uma descrição ou observação sobre esta categoria..."
                                     ></textarea>
                                 </motion.div>
@@ -163,12 +141,12 @@ export default function EditarCategoriaModal({
                                     animate={{ opacity: 1, y: 0 }}
                                     transition={{ duration: 0.3, delay: 0.3 }}
                                 >
-                                    <label className="block text-sm font-medium text-[#b4b4b4] mb-2">Padrão de Depreciação</label>
+                                    <label className="block text-sm font-medium text-muted mb-2">Padrão de Depreciação</label>
                                     <select
                                         name="padrao_depreciacao_id"
                                         value={formData.padrao_depreciacao_id}
                                         onChange={(e) => setFormData(prev => ({ ...prev, padrao_depreciacao_id: e.target.value }))}
-                                        className="w-full bg-[#2c2c2c] text-white px-4 py-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#F6CF45]/50"
+                                        className="w-full bg-surface-2 text-white px-4 py-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50"
                                     >
                                         <option value="">Selecione um padrão (opcional)</option>
                                         {padroesDepreciacao.map(padrao => (
@@ -177,24 +155,24 @@ export default function EditarCategoriaModal({
                                             </option>
                                         ))}
                                     </select>
-                                    <p className="text-xs text-[#8c8888] mt-2">
+                                    <p className="text-xs text-subtle mt-2">
                                         Baseado nos padrões da Receita Federal para depreciação de ativos
                                     </p>
                                 </motion.div>
 
                                 <motion.div 
-                                    className="flex items-center justify-between pt-6 border-t border-[#2c2c2c]"
+                                    className="flex items-center justify-between pt-6 border-t border-line"
                                     initial={{ opacity: 0 }}
                                     animate={{ opacity: 1 }}
                                     transition={{ duration: 0.3, delay: 0.4 }}
                                 >
-                                    <div className="text-sm text-[#8c8888]">
+                                    <div className="text-sm text-subtle">
                                         Atualize as informações desta categoria
                                     </div>
                                     <div className="flex items-center gap-3">
                                         <button
                                             type="button"
-                                            className="px-6 py-3 text-[#b4b4b4] hover:text-white hover:bg-[#2c2c2c] rounded-lg transition-all duration-300"
+                                            className="px-6 py-3 text-muted hover:text-white hover:bg-surface-2 rounded-lg transition-all duration-300"
                                             onClick={onClose}
                                         >
                                             Cancelar
@@ -202,7 +180,7 @@ export default function EditarCategoriaModal({
                                         <button
                                             type="submit"
                                             disabled={isLoading}
-                                            className="px-6 py-3 bg-[#F6CF45] text-black font-medium rounded-lg hover:bg-[#F6CF45]/90 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                                            className="px-6 py-3 bg-primary text-black font-medium rounded-lg hover:bg-primary/90 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                                         >
                                             {isLoading ? (
                                                 <>
@@ -220,9 +198,6 @@ export default function EditarCategoriaModal({
                                 </motion.div>
                             </form>
                         </div>
-                    </motion.div>
-                </motion.div>
-            )}
-        </AnimatePresence>
+                    </Modal>
     );
 }

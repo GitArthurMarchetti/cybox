@@ -1,33 +1,34 @@
 "use client"
 
-import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { TbLogin2 } from "react-icons/tb";
 import { motion } from "framer-motion";
 import { SideBar } from "../components/Navigation/sideBar";
+import { BarraTopoMobile, GavetaLateral } from "../components/Navigation/GavetaMobile";
 import SearchBar from "../components/SearchBar";
 import DepartmentGrid from "../components/DepartmentGrid";
-import DepartmentSidebar from "../components/DepartmentSidebar";
 import { DepartamentoType } from "@/lib/types/types";
 import { removeDepartamento } from "../services/departamento";
 import ButtonCriarSala from "../components/Button/buttonCriarSala";
 import EnterDepartmentModal from "../components/modals/entrarSala";
-import { CompartilharModal, MembrosModal, ConfiguracoesDepartamentoModal } from "../components/modals";
+import { CompartilharModal, MembrosModal, ConfiguracoesDepartamentoModal, ConfirmarExclusaoModal } from "../components/modals";
 import { getMembrosPerDepartamento, MembroDepartamento } from "../services/membros";
 import { enviarConvitesPorEmail } from "../services/convites";
 import { toast } from "sonner";
 
 type Props = {
     departamentos: DepartamentoType[];
-    departamento: DepartamentoType;
     userId: string;
     userName: string | null | undefined;
     userEmail: string | null | undefined;
 };
 
-export default function DepartamentosFront({ departamentos, departamento, userId, userName, userEmail }: Props) {
-    const router = useRouter();
+export default function DepartamentosFront({ departamentos, userId, userName, userEmail }: Props) {
     const [isEnterModalOpen, setIsEnterModalOpen] = useState(false);
+    const [isMenuMobileOpen, setIsMenuMobileOpen] = useState(false);
+    const [isConfirmDeleteOpen, setIsConfirmDeleteOpen] = useState(false);
+    const departamentoEmConfiguracao = useRef<DepartamentoType['id_departamentos']>(null);
+    const fecharMenuMobile = useCallback(() => setIsMenuMobileOpen(false), []);
     const [isShareModalOpen, setIsShareModalOpen] = useState(false);
     const [isMembersModalOpen, setIsMembersModalOpen] = useState(false);
     const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
@@ -85,15 +86,18 @@ export default function DepartamentosFront({ departamentos, departamento, userId
         }
 
         setSelectedDepartamento(dept);
+        setDepartamentoMembros([]);
         setIsSettingsModalOpen(true);
+        departamentoEmConfiguracao.current = dept.id_departamentos;
 
         if (dept.id_departamentos) {
             try {
                 const membros = await getMembrosPerDepartamento(dept.id_departamentos);
-                setDepartamentoMembros(membros);
+                if (departamentoEmConfiguracao.current === dept.id_departamentos) {
+                    setDepartamentoMembros(membros);
+                }
             } catch (error) {
                 console.error('Erro ao carregar membros:', error);
-                setDepartamentoMembros([]);
             }
         }
     };
@@ -119,15 +123,12 @@ export default function DepartamentosFront({ departamentos, departamento, userId
     };
 
     const handleInviteEmails = async (emails: string[]) => {
-        if (!selectedDepartamento) return;
+        if (!selectedDepartamento) return false;
 
         try {
             const resultado = await enviarConvitesPorEmail(
                 Number(selectedDepartamento.id_departamentos),
-                userId,
-                emails,
-                selectedDepartamento.titulo,
-                userName || 'Usuário'
+                emails
             );
 
             if (resultado.success) {
@@ -135,9 +136,11 @@ export default function DepartamentosFront({ departamentos, departamento, userId
             } else {
                 toast.error(resultado.message);
             }
+            return resultado.success;
         } catch (error) {
             console.error('Erro ao enviar convites:', error);
             toast.error('Erro ao enviar convites');
+            return false;
         }
     };
 
@@ -196,7 +199,7 @@ export default function DepartamentosFront({ departamentos, departamento, userId
     const departamentosFiltrados = aplicarFiltros(departamentosLocal);
 
     return (
-        <div className="bg-[#0F0F0F] h-screen flex overflow-hidden">
+        <div className="bg-page h-screen flex overflow-hidden">
             <EnterDepartmentModal
                 isOpen={isEnterModalOpen}
                 onClose={() => setIsEnterModalOpen(false)}
@@ -232,7 +235,10 @@ export default function DepartamentosFront({ departamentos, departamento, userId
                 membros={departamentoMembros}
                 isAdmin={selectedDepartamento?.role === 'owner' || selectedDepartamento?.role === 'admin'}
                 isOwner={selectedDepartamento?.role === 'owner'}
-                onDelete={handleDeleteDepartamento}
+                onDelete={() => {
+                    setIsSettingsModalOpen(false);
+                    setIsConfirmDeleteOpen(true);
+                }}
                 onSuccess={(departamentoAtualizado: DepartamentoType) => {
                     setDepartamentosLocal(prev => 
                         prev.map(d => 
@@ -247,41 +253,57 @@ export default function DepartamentosFront({ departamentos, departamento, userId
                 }}
             />
 
-            <SideBar
-                userEmail={userEmail}
-                userName={userName}
-                user={{
-                    id: userId,
-                    nome: userName || '',
-                    email: userEmail || '',
-                    senha: ''
+            <ConfirmarExclusaoModal
+                isOpen={isConfirmDeleteOpen}
+                onClose={() => setIsConfirmDeleteOpen(false)}
+                onConfirm={async () => {
+                    await handleDeleteDepartamento();
+                    setIsConfirmDeleteOpen(false);
                 }}
+                titulo="Excluir departamento"
+                descricao="Todas as categorias e patrimônios do departamento também serão excluídos."
+                itemNome={selectedDepartamento?.titulo}
+                tipo="departamento"
             />
 
+            <GavetaLateral aberta={isMenuMobileOpen} onFechar={fecharMenuMobile}>
+                <SideBar
+                    userEmail={userEmail}
+                    userName={userName}
+                    user={{
+                        id: userId,
+                        nome: userName || '',
+                        email: userEmail || '',
+                        senha: ''
+                    }}
+                />
+            </GavetaLateral>
+
+            <div className="flex min-w-0 flex-1 flex-col">
+            <BarraTopoMobile onAbrirMenu={() => setIsMenuMobileOpen(true)} />
+
             <motion.main
-                className="flex-grow bg-[#0F0F0F] p-6 overflow-hidden"
+                className="flex min-h-0 flex-1 flex-col bg-page p-4 sm:p-6"
                 initial="hidden"
                 animate={isLoaded ? "visible" : "hidden"}
                 variants={containerVariants}
             >
                 <motion.div
-                    className="flex justify-between items-center mb-6"
+                    className="flex flex-wrap justify-between items-center gap-4 mb-6"
                     variants={itemVariants}
                 >
                     <h1 className="text-2xl font-bold text-white relative">
                         Seus Departamentos
-                        <span className="absolute -bottom-2 left-0 w-12 h-1 bg-[#F6CF45] rounded-full"></span>
+                        <span className="absolute -bottom-2 left-0 w-12 h-1 bg-primary rounded-full"></span>
                     </h1>
-                    <div className="flex gap-4 items-center">
-                        <motion.button
+                    <div className="grid w-full grid-cols-1 gap-3 sm:flex sm:w-auto sm:items-center">
+                        <button
                             onClick={() => setIsEnterModalOpen(true)}
-                            className="bg-transparent text-[#F6CF45] flex items-center gap-2 border border-[#F6CF45] px-4 py-2 rounded-full transition-all duration-300 hover:bg-[#F6CF45]/10"
-                            whileHover={{ scale: 1.03 }}
-                            whileTap={{ scale: 0.97 }}
+                            className="h-10 px-5 inline-flex items-center gap-2 rounded-full border border-primary text-sm font-medium text-primary transition-colors duration-200 hover:bg-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-page"
                         >
-                            <TbLogin2 className="text-xl" /> Entrar no departamento
-                        </motion.button>
-                        <ButtonCriarSala userId={userId} />
+                            <TbLogin2 className="text-lg" aria-hidden /> Entrar no departamento
+                        </button>
+                        <ButtonCriarSala />
                     </div>
                 </motion.div>
 
@@ -296,7 +318,7 @@ export default function DepartamentosFront({ departamentos, departamento, userId
                     onFilterChange={setFiltroSelecionado}
                 />
 
-                <div className="overflow-y-auto h-[73vh] pr-4 hide-scrollbar">
+                <div className="min-h-0 flex-1 overflow-y-auto pb-6 sm:pr-4 hide-scrollbar">
                     <DepartmentGrid
                         departamentos={departamentosFiltrados}
                         searchTerm={buscaDepartamento}
@@ -309,11 +331,7 @@ export default function DepartamentosFront({ departamentos, departamento, userId
                     />
                 </div>
             </motion.main>
-
-            <DepartmentSidebar
-                departamentos={departamentosLocal}
-                onDepartmentClick={(id) => router.push(`/departamentos/${id}`)}
-            />
+            </div>
         </div>
     );
 }

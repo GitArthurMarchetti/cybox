@@ -30,11 +30,23 @@ export async function sendEmail({ to, subject, html }: EmailOptions) {
     }
 }
 
+function escapeHtml(valor: string): string {
+    return valor
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
+
 export function createInviteEmailTemplate(
-    departmentName: string,
-    inviterName: string,
+    departmentNameRaw: string,
+    inviterNameRaw: string,
     inviteLink: string
 ): string {
+    const departmentName = escapeHtml(departmentNameRaw);
+    const inviterName = escapeHtml(inviterNameRaw);
+
     return `
     <!DOCTYPE html>
     <html lang="pt-BR">
@@ -109,4 +121,84 @@ export function createInviteEmailTemplate(
     </body>
     </html>
     `;
+}
+interface TemplateAcaoOptions {
+    titulo: string;
+    nome: string;
+    texto: string;
+    botao: string;
+    link: string;
+    validade: string;
+    rodape: string;
+}
+
+function createActionEmailTemplate({ titulo, nome, texto, botao, link, validade, rodape }: TemplateAcaoOptions): string {
+    const userName = escapeHtml(nome);
+
+    return `
+    <!DOCTYPE html>
+    <html lang="pt-BR">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>${titulo}</title>
+    </head>
+    <body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: #0F0F0F;">
+        <div style="max-width: 600px; margin: 0 auto; background-color: #0F0F0F;">
+            <div style="background: linear-gradient(135deg, #1F1F1F 0%, #2C2C2C 100%); padding: 40px 30px; text-align: center; border-radius: 12px 12px 0 0;">
+                <img src="${process.env.NEXTAUTH_URL}/logo-completa-branca.png" alt="Cybox" style="height: 60px; margin: 0 auto 10px; display: block;" />
+                <p style="color: #8C8888; margin: 10px 0 0; font-size: 16px;">Sistema de Gestão Patrimonial</p>
+            </div>
+
+            <div style="background-color: #1F1F1F; padding: 40px 30px; text-align: center;">
+                <h2 style="color: #FFFFFF; margin: 0 0 10px; font-size: 24px; font-weight: bold;">Olá, ${userName}!</h2>
+                <p style="color: #B4B4B4; margin: 0 0 25px; font-size: 16px; line-height: 1.6;">
+                    ${texto}
+                </p>
+
+                <a href="${link}"
+                   style="display: inline-block; background-color: #F6CF45; color: #000000; padding: 15px 30px; border-radius: 12px; text-decoration: none; font-weight: bold; font-size: 16px;">
+                    ${botao}
+                </a>
+
+                <p style="color: #8C8888; margin: 20px 0 0; font-size: 14px;">
+                    ${validade}
+                </p>
+            </div>
+
+            <div style="background-color: #0F0F0F; padding: 30px; text-align: center; border-radius: 0 0 12px 12px;">
+                <div style="border-top: 1px solid #2C2C2C; padding-top: 20px;">
+                    <p style="color: #6C6C6C; margin: 0; font-size: 12px;">
+                        ${rodape}
+                    </p>
+                </div>
+            </div>
+        </div>
+    </body>
+    </html>
+    `;
+}
+
+export function createVerificationEmailTemplate(userName: string, verificationLink: string): string {
+    return createActionEmailTemplate({
+        titulo: 'Confirme seu email',
+        nome: userName,
+        texto: 'Confirme seu email para aceitar convites de departamentos no Cybox.',
+        botao: 'Confirmar email',
+        link: verificationLink,
+        validade: 'Este link expira em 24 horas.',
+        rodape: 'Se você não criou uma conta no Cybox, pode ignorar este email com segurança.',
+    });
+}
+
+export function createResetPasswordEmailTemplate(userName: string, resetLink: string): string {
+    return createActionEmailTemplate({
+        titulo: 'Redefinir senha',
+        nome: userName,
+        texto: 'Recebemos um pedido para redefinir a senha da sua conta no Cybox.',
+        botao: 'Criar nova senha',
+        link: resetLink,
+        validade: 'Este link expira em 1 hora.',
+        rodape: 'Se você não pediu isso, ignore este email: sua senha continua a mesma.',
+    });
 }

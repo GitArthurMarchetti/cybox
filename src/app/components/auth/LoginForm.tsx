@@ -1,20 +1,54 @@
 "use client"
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { signIn } from "next-auth/react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
+import Link from "next/link";
 import { IoMdEye, IoMdEyeOff } from "react-icons/io";
 import { FcGoogle } from "react-icons/fc";
 import { MdEmail, MdLock, MdArrowBack } from "react-icons/md";
 import { AiOutlineLoading3Quarters } from "react-icons/ai";
 import { motion } from "framer-motion";
 import { DoCredentialsLogin } from "../../services/login";
+import { destinoSeguro } from "@/lib/destino";
 import { toast } from "sonner";
+
+const MENSAGENS_ERRO_LOGIN: Record<string, { titulo: string; descricao: string }> = {
+    credentials: {
+        titulo: "Credenciais inválidas",
+        descricao: "Verifique seu email e senha e tente novamente.",
+    },
+    conta_bloqueada: {
+        titulo: "Muitas tentativas",
+        descricao: "Por segurança, o login foi bloqueado por 15 minutos.",
+    },
+    conta_inativa: {
+        titulo: "Conta desativada",
+        descricao: "Entre em contato com o suporte para reativar sua conta.",
+    },
+    AccessDenied: {
+        titulo: "Não foi possível entrar com o Google",
+        descricao: "Verifique se o email da sua conta Google está confirmado.",
+    },
+};
 
 export default function LoginForm() {
     const [isVisible, setIsVisible] = useState(false);
     const router = useRouter();
     const [isLoading, setIsLoading] = useState(false);
+    const searchParams = useSearchParams();
+    const erroUrl = searchParams.get('error');
+    const callbackUrl = searchParams.get('callbackUrl');
+    const destino = destinoSeguro(callbackUrl);
+
+    useEffect(() => {
+        if (!erroUrl) return;
+        const mensagem = MENSAGENS_ERRO_LOGIN[erroUrl] ?? {
+            titulo: "Erro ao fazer login",
+            descricao: "Tente novamente em alguns instantes.",
+        };
+        toast.error(mensagem.titulo, { description: mensagem.descricao, duration: 5000 });
+    }, [erroUrl]);
 
     async function handleFormSubmit(event: React.FormEvent<HTMLFormElement>) {
         event.preventDefault();
@@ -24,9 +58,13 @@ export default function LoginForm() {
             const formData = new FormData(event.currentTarget);
             const response = await DoCredentialsLogin(formData);
 
-            if (response?.error) {
-                toast.error("Credenciais inválidas", {
-                    description: "Verifique seu email e senha e tente novamente.",
+            if (response.error) {
+                const mensagem = MENSAGENS_ERRO_LOGIN[response.error] ?? {
+                    titulo: "Erro ao fazer login",
+                    descricao: "Tente novamente em alguns instantes.",
+                };
+                toast.error(mensagem.titulo, {
+                    description: mensagem.descricao,
                     duration: 4000,
                 });
             } else {
@@ -36,7 +74,7 @@ export default function LoginForm() {
                 });
 
                 setTimeout(() => {
-                    router.push('/departamentos');
+                    router.push(destino);
                 }, 500);
             }
         } catch (e: unknown) {
@@ -56,14 +94,14 @@ export default function LoginForm() {
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.8, delay: 0.4 }}
         >
-            <div className="bg-[#1F1F1F] rounded-3xl p-8 shadow-2xl border border-[#2c2c2c]">
+            <div className="bg-surface rounded-3xl p-8 shadow-2xl border border-line">
                 <div className="text-center mb-8">
                     <h2 className="text-2xl font-bold text-white mb-2">Entrar na sua conta</h2>
-                    <p className="text-[#8c8888]">Digite suas credenciais para acessar</p>
+                    <p className="text-subtle">Digite suas credenciais para acessar</p>
                 </div>
 
                 <button
-                    onClick={() => signIn('google', { callbackUrl: '/departamentos' })}
+                    onClick={() => signIn('google', { callbackUrl: destino })}
                     type="button"
                     className="w-full flex items-center justify-center gap-3 bg-white text-gray-700 border border-gray-300 rounded-xl py-3 px-4 hover:bg-gray-50 transition-all duration-300 mb-6"
                 >
@@ -72,43 +110,43 @@ export default function LoginForm() {
                 </button>
 
                 <div className="flex items-center my-6">
-                    <div className="flex-1 h-px bg-[#2c2c2c]"></div>
-                    <span className="px-4 text-sm text-[#8c8888]">ou</span>
-                    <div className="flex-1 h-px bg-[#2c2c2c]"></div>
+                    <div className="flex-1 h-px bg-surface-2"></div>
+                    <span className="px-4 text-sm text-subtle">ou</span>
+                    <div className="flex-1 h-px bg-surface-2"></div>
                 </div>
 
                 <form onSubmit={handleFormSubmit} className="space-y-6">
                     <div className="space-y-2">
-                        <label className="text-sm font-medium text-[#b4b4b4]">Email</label>
+                        <label className="text-sm font-medium text-muted">Email</label>
                         <div className="relative">
-                            <MdEmail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-[#8c8888]" size={20} />
+                            <MdEmail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-subtle" size={20} />
                             <input
                                 type="email"
                                 name="email"
                                 required
                                 autoComplete="email"
-                                className="w-full bg-[#2c2c2c] text-white pl-10 pr-4 py-3 rounded-xl border border-transparent focus:outline-none focus:ring-2 focus:ring-[#F6CF45] focus:border-transparent transition-all duration-300"
+                                className="w-full bg-surface-2 text-white pl-10 pr-4 py-3 rounded-xl border border-transparent focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all duration-300"
                                 placeholder="seu@email.com"
                             />
                         </div>
                     </div>
 
                     <div className="space-y-2">
-                        <label className="text-sm font-medium text-[#b4b4b4]">Senha</label>
+                        <label className="text-sm font-medium text-muted">Senha</label>
                         <div className="relative">
-                            <MdLock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-[#8c8888]" size={20} />
+                            <MdLock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-subtle" size={20} />
                             <input
                                 type={isVisible ? "text" : "password"}
                                 name="password"
                                 required
                                 autoComplete="current-password"
-                                className="w-full bg-[#2c2c2c] text-white pl-10 pr-12 py-3 rounded-xl border border-transparent focus:outline-none focus:ring-2 focus:ring-[#F6CF45] focus:border-transparent transition-all duration-300"
+                                className="w-full bg-surface-2 text-white pl-10 pr-12 py-3 rounded-xl border border-transparent focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all duration-300"
                                 placeholder="••••••••"
                             />
                             <button
                                 type="button"
                                 onClick={() => setIsVisible(!isVisible)}
-                                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-[#8c8888] hover:text-white transition-colors"
+                                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-subtle hover:text-white transition-colors"
                             >
                                 {isVisible ? <IoMdEye size={20} /> : <IoMdEyeOff size={20} />}
                             </button>
@@ -116,15 +154,15 @@ export default function LoginForm() {
                     </div>
 
                     <div className="text-right">
-                        <button type="button" className="text-sm text-[#F6CF45] hover:underline">
+                        <Link href="/esqueci-senha" className="text-sm text-primary hover:underline">
                             Esqueceu a senha?
-                        </button>
+                        </Link>
                     </div>
 
                     <button
                         type="submit"
                         disabled={isLoading}
-                        className="w-full bg-[#F6CF45] text-black font-semibold py-3 px-4 rounded-xl hover:bg-[#F6CF45]/90 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                        className="w-full bg-primary text-black font-semibold py-3 px-4 rounded-xl hover:bg-primary/90 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                     >
                         {isLoading ? (
                             <>
@@ -137,10 +175,10 @@ export default function LoginForm() {
                     </button>
                 </form>
 
-                <div className="text-center mt-8 pt-6 border-t border-[#2c2c2c]">
-                    <p className="text-sm text-[#8c8888]">
+                <div className="text-center mt-8 pt-6 border-t border-line">
+                    <p className="text-sm text-subtle">
                         Não tem uma conta?{' '}
-                        <a href="/cadastro" className="text-[#F6CF45] font-medium hover:underline">
+                        <a href={callbackUrl ? `/cadastro?callbackUrl=${encodeURIComponent(destino)}` : "/cadastro"} className="text-primary font-medium hover:underline">
                             Criar conta
                         </a>
                     </p>
@@ -149,7 +187,7 @@ export default function LoginForm() {
                 <div className="text-center mt-4">
                     <a 
                         href="/" 
-                        className="inline-flex items-center gap-2 text-sm text-[#8c8888] hover:text-white transition-colors"
+                        className="inline-flex items-center gap-2 text-sm text-subtle hover:text-white transition-colors"
                     >
                         <MdArrowBack size={16} />
                         Voltar ao início

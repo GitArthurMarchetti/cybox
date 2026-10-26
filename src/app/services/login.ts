@@ -1,34 +1,34 @@
 'use server'
 
 import { signIn, signOut } from "@/auth"
-
-export async function doSocialLogin(formData: FormData) {
-  const action = formData.get('action') as string;
-  return await signIn(action, { redirectTo: "/departamentos" })
-}
+import { CredentialsSignin } from "next-auth"
 
 export async function DoLogout() {
   await signOut({ redirectTo: "/" })
 }
 
-export async function DoCredentialsLogin(formData: FormData) {
+export async function DoCredentialsLogin(formData: FormData): Promise<{ error?: string }> {
+  const email = formData.get('email') as string;
+  const password = formData.get('password') as string;
+
+  if (!email || !password) {
+    return { error: 'credentials' };
+  }
+
   try {
-    const email = formData.get('email') as string;
-    const password = formData.get('password') as string;
-
-    if (!email || !password) {
-      throw new Error('Por favor, preencha todos os campos');
-    }
-
-    const response = await signIn("credentials", {
+    await signIn("credentials", {
       email,
       password,
       redirect: false,
     });
 
-    return response;
+    return {};
   } catch (err) {
+    if (err instanceof CredentialsSignin) {
+      return { error: err.code };
+    }
+
     console.error('Erro ao fazer login:', err);
-    return { error: 'Erro ao fazer login' };
+    return { error: 'erro' };
   }
 }
