@@ -32,25 +32,112 @@ body {
   backdrop-filter: blur(8px);
 }
 
-.fundoHome {
-  z-index: 10;
-  background: linear-gradient(-45deg,
-      rgba(252, 183, 88, 0.47) 4%,
+/* ---------- Landing page ---------- */
 
-      #000000 20%,
-      #000000 80%,
-      rgba(252, 183, 88, 0.47) 120%);
-
+/* Faint dot grid that covers the page; masked so it fades toward the edges */
+.bg-dots {
+  background-image: radial-gradient(rgba(255, 255, 255, 0.07) 1px, transparent 1px);
+  background-size: 28px 28px;
+  mask-image: radial-gradient(ellipse 80% 70% at 50% 40%, #000 30%, transparent 100%);
 }
 
-.fundoSec2 {
-  z-index: 0;
-  background: linear-gradient(30deg,
-      rgba(252, 184, 88, 0) 0%,
-      #000000 20%,
-      #000000 80%,
-      rgba(252, 183, 88, 0.47) 96%);
+/* Perspective "warehouse floor" under the hero */
+.floor-grid {
+  background-image:
+    linear-gradient(rgba(246, 207, 69, 0.22) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(246, 207, 69, 0.22) 1px, transparent 1px);
+  background-size: 64px 64px;
+  transform: perspective(600px) rotateX(62deg);
+  transform-origin: 50% 0%;
+  mask-image: linear-gradient(to bottom, transparent 0%, #000 25%, #000 55%, transparent 95%);
+}
 
+/* Film grain to take the flatness off the black */
+.grain {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.5'/%3E%3C/svg%3E");
+  opacity: 0.06;
+  mix-blend-mode: overlay;
+}
+
+/* Barcode stripes used on asset tags */
+.barcode {
+  background-image: repeating-linear-gradient(90deg,
+      currentColor 0 2px, transparent 2px 3px,
+      currentColor 3px 4px, transparent 4px 7px,
+      currentColor 7px 10px, transparent 10px 11px,
+      currentColor 11px 12px, transparent 12px 15px);
+}
+
+/* Card spotlight that follows the pointer (--mx / --my set from JS) */
+.spotlight::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  background: radial-gradient(420px circle at var(--mx, 50%) var(--my, 50%), rgba(246, 207, 69, 0.12), transparent 45%);
+}
+
+.spotlight:hover::before {
+  opacity: 1;
+}
+
+/* Scrollable strips without the chunky yellow scrollbar */
+.no-scrollbar {
+  scrollbar-width: none;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.preserve-3d {
+  transform-style: preserve-3d;
+}
+
+/* Range inputs for the depreciation playground */
+.range {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 6px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #F6CF45 0%, #FFAE3F var(--fill, 50%), #2C2C2C var(--fill, 50%));
+  cursor: pointer;
+}
+
+.range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  background: #050505;
+  border: 2px solid #F6CF45;
+  box-shadow: 0 0 0 4px rgba(246, 207, 69, 0.15);
+  transform: rotate(45deg);
+}
+
+.range::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  border-radius: 6px;
+  background: #050505;
+  border: 2px solid #F6CF45;
+  transform: rotate(45deg);
+}
+
+.range:focus-visible {
+  box-shadow: 0 0 0 3px rgba(246, 207, 69, 0.4) !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-marquee,
+  .animate-floor-scroll,
+  .animate-blink {
+    animation: none !important;
+  }
 }
 
 /* Personalize a barra de rolagem */
@@ -65,12 +152,23 @@ body {
 }
 
 ::-webkit-scrollbar {
-  width: 8px;
+  width: 10px;
+  height: 10px;
 }
 
 ::-webkit-scrollbar-thumb {
-  background-color: #F6CF45;
-  border-radius: 8px;
+  background-color: rgba(255, 255, 255, 0.14);
+  border: 3px solid transparent;
+  background-clip: padding-box;
+  border-radius: 999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(246, 207, 69, 0.7);
+}
+
+html {
+  scrollbar-color: rgba(255, 255, 255, 0.18) transparent;
 }
 
 ::-webkit-scrollbar-track {

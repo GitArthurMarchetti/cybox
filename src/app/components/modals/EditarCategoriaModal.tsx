@@ -75,15 +75,15 @@ export default function EditarCategoriaModal({
 
             const resultado = await saveCategoria(formDataToSend);
             if (!resultado.success) {
-                toast.error(resultado.error || 'Erro ao atualizar categoria');
+                toast.error(resultado.error || "Couldn't update the category");
                 return;
             }
 
-            toast.success("Categoria atualizada com sucesso!");
+            toast.success("Category updated");
             onClose();
             if (onSuccess) onSuccess();
         } catch (error) {
-            toast.error("Erro ao atualizar categoria");
+            toast.error("Couldn't update the category");
         } finally {
             setIsLoading(false);
         }
@@ -95,8 +95,8 @@ export default function EditarCategoriaModal({
         <Modal isOpen={isOpen} onClose={onClose} className="max-w-2xl">
                         <ModalHeader
                             icone={<MdCategory size={20} />}
-                            titulo="Editar Categoria"
-                            subtitulo={<>Atualize as informações da categoria &quot;{categoria.name}&quot;</>}
+                            titulo="Edit category"
+                            subtitulo={<>Update &quot;{categoria.name}&quot;</>}
                             onClose={onClose}
                         />
 
@@ -107,7 +107,7 @@ export default function EditarCategoriaModal({
                                     animate={{ opacity: 1, y: 0 }}
                                     transition={{ duration: 0.3, delay: 0.1 }}
                                 >
-                                    <label className="block text-sm font-medium text-muted mb-2">Nome da categoria</label>
+                                    <label className="block text-sm font-medium text-muted mb-2">Category name</label>
                                     <input
                                         autoComplete='off'
                                         type="text"
@@ -116,7 +116,7 @@ export default function EditarCategoriaModal({
                                         value={formData.nome}
                                         onChange={(e) => setFormData(prev => ({ ...prev, nome: e.target.value }))}
                                         className="w-full bg-surface-2 text-white px-4 py-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 placeholder-subtle"
-                                        placeholder="Ex: Notebooks, Mobiliário, Veículos..."
+                                        placeholder="e.g. Laptops, Furniture, Vehicles"
                                     />
                                 </motion.div>
 
@@ -125,14 +125,14 @@ export default function EditarCategoriaModal({
                                     animate={{ opacity: 1, y: 0 }}
                                     transition={{ duration: 0.3, delay: 0.2 }}
                                 >
-                                    <label className="block text-sm font-medium text-muted mb-2">Descrição</label>
+                                    <label className="block text-sm font-medium text-muted mb-2">Description</label>
                                     <textarea
                                         name="descricao"
                                         value={formData.descricao}
                                         onChange={(e) => setFormData(prev => ({ ...prev, descricao: e.target.value }))}
                                         rows={4}
                                         className="w-full bg-surface-2 text-white px-4 py-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 resize-none placeholder-subtle"
-                                        placeholder="Adicione uma descrição ou observação sobre esta categoria..."
+                                        placeholder="Anything worth noting about this category"
                                     ></textarea>
                                 </motion.div>
 
@@ -141,22 +141,22 @@ export default function EditarCategoriaModal({
                                     animate={{ opacity: 1, y: 0 }}
                                     transition={{ duration: 0.3, delay: 0.3 }}
                                 >
-                                    <label className="block text-sm font-medium text-muted mb-2">Padrão de Depreciação</label>
+                                    <label className="block text-sm font-medium text-muted mb-2">Depreciation preset</label>
                                     <select
                                         name="padrao_depreciacao_id"
                                         value={formData.padrao_depreciacao_id}
                                         onChange={(e) => setFormData(prev => ({ ...prev, padrao_depreciacao_id: e.target.value }))}
                                         className="w-full bg-surface-2 text-white px-4 py-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50"
                                     >
-                                        <option value="">Selecione um padrão (opcional)</option>
+                                        <option value="">Pick a preset (optional)</option>
                                         {padroesDepreciacao.map(padrao => (
                                             <option key={padrao.id} value={padrao.id}>
-                                                {padrao.categoria} - {padrao.taxa_anual_percent}% a.a. ({padrao.vida_util_anos} anos)
+                                                {padrao.categoria} · {Number(padrao.taxa_anual_percent)}% per year ({padrao.vida_util_anos} years)
                                             </option>
                                         ))}
                                     </select>
                                     <p className="text-xs text-subtle mt-2">
-                                        Baseado nos padrões da Receita Federal para depreciação de ativos
+                                        Presets follow standard annual depreciation rates for each asset type
                                     </p>
                                 </motion.div>
 
@@ -167,7 +167,7 @@ export default function EditarCategoriaModal({
                                     transition={{ duration: 0.3, delay: 0.4 }}
                                 >
                                     <div className="text-sm text-subtle">
-                                        Atualize as informações desta categoria
+                                        Changes apply to this category only
                                     </div>
                                     <div className="flex items-center gap-3">
                                         <button
@@ -175,7 +175,7 @@ export default function EditarCategoriaModal({
                                             className="px-6 py-3 text-muted hover:text-white hover:bg-surface-2 rounded-lg transition-all duration-300"
                                             onClick={onClose}
                                         >
-                                            Cancelar
+                                            Cancel
                                         </button>
                                         <button
                                             type="submit"
@@ -185,12 +185,12 @@ export default function EditarCategoriaModal({
                                             {isLoading ? (
                                                 <>
                                                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-black"></div>
-                                                    Salvando...
+                                                    Saving…
                                                 </>
                                             ) : (
                                                 <>
                                                     <FaSave size={16} />
-                                                    Salvar Alterações
+                                                    Save changes
                                                 </>
                                             )}
                                         </button>

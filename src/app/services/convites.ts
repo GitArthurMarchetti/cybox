@@ -1,5 +1,6 @@
 'use server'
 
+import { demo, isDemoSession, DEMO_READ_ONLY } from "@/lib/demo";
 import { query } from '@/lib/mysql';
 import { ConviteDetalhadoType } from '@/lib/types/types';
 import { sendEmail, createInviteEmailTemplate } from '@/lib/email';
@@ -21,6 +22,7 @@ function dataExpiracaoConvite(): string {
 }
 
 export async function enviarConvite(idDepartamento: number, idDestinatario: string): Promise<void> {
+    if (await isDemoSession()) throw new Error(DEMO_READ_ONLY);
     try {
         const { userId: idRemetente } = await requireDepartamentoRole(idDepartamento);
 
@@ -35,7 +37,7 @@ export async function enviarConvite(idDepartamento: number, idDestinatario: stri
         );
 
         if ((conviteExistente as unknown[]).length > 0) {
-            throw new Error("O usuário já foi convidado para este departamento.");
+            throw new Error("This person was already invited to this room.");
         }
 
         await query(
@@ -45,11 +47,12 @@ export async function enviarConvite(idDepartamento: number, idDestinatario: stri
             [idDepartamento, idRemetente, idDestinatario, gerarCodigoConvite(), dataExpiracaoConvite()]
         );
     } catch (error) {
-        throw new Error("Não foi possível enviar o convite.");
+        throw new Error("Couldn't send the invite.");
     }
 }
 
 export async function listarConvites(): Promise<ConviteDetalhadoType[]> {
+    if (await isDemoSession()) return demo.invites();
     try {
         const idUsuario = await requireUserId();
 
@@ -71,6 +74,7 @@ export async function listarConvites(): Promise<ConviteDetalhadoType[]> {
 }
 
 export async function responderConvite(idConvite: number, status: "aceito" | "recusado"): Promise<void> {
+    if (await isDemoSession()) throw new Error(DEMO_READ_ONLY);
     try {
         if (status !== "aceito" && status !== "recusado") {
             throw new Error("Status inválido.");
@@ -113,11 +117,12 @@ export async function responderConvite(idConvite: number, status: "aceito" | "re
             );
         }
     } catch (error) {
-        throw new Error("Não foi possível responder ao convite.");
+        throw new Error("Couldn't answer the invite.");
     }
 }
 
 export async function getConviteDetalhes(idConvite: number): Promise<ConviteDetalhadoType | null> {
+    if (await isDemoSession()) return demo.invites().find((c) => c.id === idConvite) ?? null;
     try {
         const idUsuario = await requireUserId();
 
@@ -143,6 +148,7 @@ export async function enviarConvitesPorEmail(
     idDepartamento: number,
     emails: string[]
 ): Promise<{ success: boolean; message: string; enviados: number }> {
+    if (await isDemoSession()) return { success: false, message: DEMO_READ_ONLY, enviados: 0 };
     try {
         const { userId: idRemetente } = await requireDepartamentoRole(idDepartamento);
 
@@ -166,7 +172,7 @@ export async function enviarConvitesPorEmail(
         if (emailsNormalizados.length > MAX_CONVITES_POR_ENVIO) {
             return {
                 success: false,
-                message: `Envie no máximo ${MAX_CONVITES_POR_ENVIO} convites por vez.`,
+                message: `Send at most ${MAX_CONVITES_POR_ENVIO} invites at a time.`,
                 enviados: 0
             };
         }
@@ -175,7 +181,7 @@ export async function enviarConvitesPorEmail(
 
         for (const email of emailsNormalizados) {
             if (!EMAIL_REGEX.test(email)) {
-                erros.push(`${email} não é um email válido`);
+                erros.push(`${email} isn't a valid email`);
                 continue;
             }
 
@@ -195,7 +201,7 @@ export async function enviarConvitesPorEmail(
                 );
 
                 if ((convitePendente as unknown[]).length > 0) {
-                    erros.push(`${email} já tem um convite pendente`);
+                    erros.push(`${email} already has a pending invite`);
                     continue;
                 }
 
@@ -208,7 +214,7 @@ export async function enviarConvitesPorEmail(
                     );
 
                     if ((jaEstaNoDepartamento as unknown[]).length > 0) {
-                        erros.push(`${email} já é membro do departamento`);
+                        erros.push(`${email} is already in this room`);
                         continue;
                     }
 
@@ -237,13 +243,13 @@ export async function enviarConvitesPorEmail(
 
                 await sendEmail({
                     to: email,
-                    subject: `Convite para o departamento ${departamentoNome} - Cybox`,
+                    subject: `You're invited to ${departamentoNome} - Cybox`,
                     html: emailHtml
                 });
 
                 enviados++;
             } catch (error) {
-                erros.push(`Erro ao enviar convite para ${email}`);
+                erros.push(`Couldn't send the invite to ${email}`);
             }
         }
 
@@ -263,6 +269,6 @@ export async function enviarConvitesPorEmail(
             enviados
         };
     } catch (error) {
-        throw new Error("Não foi possível enviar os convites.");
+        throw new Error("Couldn't send the invites.");
     }
 }

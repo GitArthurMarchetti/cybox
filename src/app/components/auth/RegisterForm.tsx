@@ -2,24 +2,30 @@
 
 import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { destinoSeguro } from "@/lib/destino";
 import { signIn } from "next-auth/react";
-import { IoMdEye, IoMdEyeOff } from "react-icons/io";
 import { FcGoogle } from "react-icons/fc";
-import { MdEmail, MdLock, MdPerson, MdArrowBack, MdCheck } from "react-icons/md";
-import { AiOutlineLoading3Quarters } from "react-icons/ai";
+import { FiArrowRight, FiCheck, FiEye, FiEyeOff, FiLock, FiMail, FiUser, FiX } from "react-icons/fi";
+import { toast } from "sonner";
+import { destinoSeguro } from "@/lib/destino";
 import { saveUser } from "../../services/user";
 import { UserType } from "@/lib/types/types";
-import { toast } from "sonner";
-import { motion } from "framer-motion";
+import { AuthHeading, DemoButton, Field, OrDivider } from "./AuthShell";
 
 interface RegisterFormProps {
     user: UserType;
 }
 
+const STRENGTH = [
+    { min: 0, label: "", color: "", width: 0 },
+    { min: 1, label: "Too weak", color: "bg-red-500", width: 25 },
+    { min: 6, label: "Weak", color: "bg-orange-500", width: 50 },
+    { min: 8, label: "Good", color: "bg-yellow-500", width: 75 },
+    { min: 12, label: "Strong", color: "bg-green-500", width: 100 },
+];
+
 export default function RegisterForm({ user: novoUser }: RegisterFormProps) {
-    const [isVisible, setIsVisible] = useState(false);
-    const [isVisible2, setIsVisible2] = useState(false);
+    const [showPassword, setShowPassword] = useState(false);
+    const [showConfirm, setShowConfirm] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
     const [formData, setFormData] = useState({
         nome: novoUser.nome || '',
@@ -31,56 +37,33 @@ export default function RegisterForm({ user: novoUser }: RegisterFormProps) {
     const callbackUrl = useSearchParams().get('callbackUrl');
     const destino = destinoSeguro(callbackUrl);
 
-    const handleInputChange = (field: string, value: string) => {
-        setFormData(prev => ({
-            ...prev,
-            [field]: value
-        }));
-    };
+    const set = (field: keyof typeof formData, value: string) => setFormData(prev => ({ ...prev, [field]: value }));
 
     const validateForm = () => {
-        if (!formData.nome.trim()) {
-            toast.error("Nome é obrigatório");
-            return false;
-        }
-
-        if (!formData.email.trim()) {
-            toast.error("Email é obrigatório");
-            return false;
-        }
-
-        if (formData.senha.length < 8) {
-            toast.error("A senha deve ter pelo menos 8 caracteres");
-            return false;
-        }
-
-        if (formData.senha !== formData.confirmarSenha) {
-            toast.error("As senhas não coincidem");
-            return false;
-        }
-
+        if (!formData.nome.trim()) { toast.error("Add your name"); return false; }
+        if (!formData.email.trim()) { toast.error("Add your email"); return false; }
+        if (formData.senha.length < 8) { toast.error("Your password needs at least 8 characters"); return false; }
+        if (formData.senha !== formData.confirmarSenha) { toast.error("Passwords don't match"); return false; }
         return true;
     };
 
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
-
         if (!validateForm()) return;
 
         setIsLoading(true);
-
         try {
-            const formDataToSend = new FormData();
-            formDataToSend.append('nome', formData.nome);
-            formDataToSend.append('email', formData.email);
-            formDataToSend.append('senha', formData.senha);
-            formDataToSend.append('confirmarSenha', formData.confirmarSenha);
+            const payload = new FormData();
+            payload.append('nome', formData.nome);
+            payload.append('email', formData.email);
+            payload.append('senha', formData.senha);
+            payload.append('confirmarSenha', formData.confirmarSenha);
 
-            const result = await saveUser(formDataToSend);
+            const result = await saveUser(payload);
 
             if (result.success) {
-                toast.success("Cadastro realizado!", {
-                    description: `Enviamos um link para confirmar ${formData.email}. Ele é necessário para aceitar convites.`,
+                toast.success("Account created!", {
+                    description: `We sent a link to ${formData.email}. You'll need to confirm it to accept invites.`,
                     duration: 8000,
                 });
 
@@ -92,200 +75,115 @@ export default function RegisterForm({ user: novoUser }: RegisterFormProps) {
 
                 router.push(loginResult?.error ? '/login' : destino);
             } else {
-                toast.error("Erro no cadastro", {
-                    description: result.error || "Verifique os dados e tente novamente.",
+                toast.error("Couldn't create your account", {
+                    description: result.error || "Check your details and try again.",
                     duration: 5000,
                 });
             }
-        } catch (err: unknown) {
-            toast.error("Erro no cadastro", {
-                description: "Verifique os dados e tente novamente.",
-                duration: 5000,
-            });
+        } catch {
+            toast.error("Couldn't create your account", { description: "Check your details and try again.", duration: 5000 });
         } finally {
             setIsLoading(false);
         }
     };
 
-    const getPasswordStrength = () => {
-        const password = formData.senha;
-        if (password.length === 0) return { strength: 0, text: "", color: "" };
-        if (password.length < 6) return { strength: 25, text: "Muito fraca", color: "bg-red-500" };
-        if (password.length < 8) return { strength: 50, text: "Fraca", color: "bg-orange-500" };
-        if (password.length < 12) return { strength: 75, text: "Boa", color: "bg-yellow-500" };
-        return { strength: 100, text: "Forte", color: "bg-green-500" };
-    };
+    const strength = [...STRENGTH].reverse().find(s => formData.senha.length >= s.min) ?? STRENGTH[0];
+    const matches = formData.confirmarSenha.length > 0 && formData.senha === formData.confirmarSenha;
 
-    const passwordStrength = getPasswordStrength();
+    const eye = (visible: boolean, toggle: () => void) => (
+        <button
+            type="button"
+            onClick={toggle}
+            aria-label={visible ? "Hide password" : "Show password"}
+            className="flex h-9 w-9 items-center justify-center rounded-lg text-white/40 transition-colors hover:bg-white/5 hover:text-white"
+        >
+            {visible ? <FiEyeOff size={17} /> : <FiEye size={17} />}
+        </button>
+    );
 
     return (
-        <motion.div 
-            className="w-full max-w-md mx-auto"
-            initial={{ opacity: 0, x: 50 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.8, delay: 0.4 }}
-        >
-            <div className="bg-surface rounded-3xl p-8 shadow-2xl border border-line">
-                <div className="text-center mb-8">
-                    <h2 className="text-2xl font-bold text-white mb-2">Criar sua conta</h2>
-                    <p className="text-subtle">Preencha os dados para começar</p>
-                </div>
+        <div>
+            <AuthHeading eyebrow="Sign up" title="Create your account" subtitle="Set up your first room in minutes." />
+
+            <button
+                onClick={() => signIn('google', { callbackUrl: destino })}
+                type="button"
+                className="flex h-12 w-full items-center justify-center gap-3 rounded-xl bg-white font-medium text-gray-800 transition-colors hover:bg-gray-100"
+            >
+                <FcGoogle size={20} aria-hidden />
+                Continue with Google
+            </button>
+
+            <OrDivider label="or with email" />
+
+            <form onSubmit={handleSubmit} className="space-y-5">
+                <Field label="Full name" name="nome" required autoComplete="name" placeholder="Jane Cooper" icon={<FiUser aria-hidden />} value={formData.nome} onChange={e => set('nome', e.target.value)} />
+                <Field label="Email" name="email" type="email" required autoComplete="email" placeholder="you@company.com" icon={<FiMail aria-hidden />} value={formData.email} onChange={e => set('email', e.target.value)} />
+                <Field
+                    label="Password"
+                    name="senha"
+                    type={showPassword ? "text" : "password"}
+                    required
+                    autoComplete="new-password"
+                    placeholder="At least 8 characters"
+                    icon={<FiLock aria-hidden />}
+                    value={formData.senha}
+                    onChange={e => set('senha', e.target.value)}
+                    trailing={eye(showPassword, () => setShowPassword(v => !v))}
+                    hint={formData.senha && (
+                        <div className="mt-2 flex items-center gap-3">
+                            <div className="h-1 flex-1 overflow-hidden rounded-full bg-white/10">
+                                <div className={`h-full rounded-full transition-all duration-300 ${strength.color}`} style={{ width: `${strength.width}%` }} />
+                            </div>
+                            <span className="w-16 text-right font-mono text-[11px] text-white/45">{strength.label}</span>
+                        </div>
+                    )}
+                />
+                <Field
+                    label="Confirm password"
+                    name="confirmarSenha"
+                    type={showConfirm ? "text" : "password"}
+                    required
+                    autoComplete="new-password"
+                    placeholder="Type it again"
+                    icon={<FiLock aria-hidden />}
+                    value={formData.confirmarSenha}
+                    onChange={e => set('confirmarSenha', e.target.value)}
+                    trailing={eye(showConfirm, () => setShowConfirm(v => !v))}
+                    hint={formData.confirmarSenha && (
+                        <p className={`mt-2 flex items-center gap-1.5 text-xs ${matches ? 'text-green-400' : 'text-red-400'}`}>
+                            {matches ? <FiCheck aria-hidden /> : <FiX aria-hidden />} {matches ? "Passwords match" : "Passwords don't match"}
+                        </p>
+                    )}
+                />
 
                 <button
-                    onClick={() => signIn('google', { callbackUrl: destino })}
-                    type="button"
-                    className="w-full flex items-center justify-center gap-3 bg-white text-gray-700 border border-gray-300 rounded-xl py-3 px-4 hover:bg-gray-50 transition-all duration-300 mb-6"
+                    type="submit"
+                    disabled={isLoading}
+                    className="group flex h-12 w-full items-center justify-center gap-2 rounded-full bg-primary font-semibold text-black shadow-[0_0_40px_-10px_rgba(246,207,69,0.8)] transition-colors hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-60"
                 >
-                    <FcGoogle size={20} />
-                    <span className="font-medium">Continuar com Google</span>
+                    {isLoading ? (
+                        <><span className="h-4 w-4 animate-spin rounded-full border-2 border-black/30 border-t-black" /> Creating your account…</>
+                    ) : (
+                        <>Create account <FiArrowRight className="transition-transform group-hover:translate-x-1" aria-hidden /></>
+                    )}
                 </button>
+                <p className="text-center text-xs leading-relaxed text-white/40">
+                    By creating an account you agree to our{' '}
+                    <a href="/terms" className="text-white/70 underline-offset-4 hover:text-primary hover:underline">Terms of Use</a> and{' '}
+                    <a href="/privacy" className="text-white/70 underline-offset-4 hover:text-primary hover:underline">Privacy Policy</a>.
+                </p>
+            </form>
 
-                <div className="flex items-center my-6">
-                    <div className="flex-1 h-px bg-surface-2"></div>
-                    <span className="px-4 text-sm text-subtle">ou</span>
-                    <div className="flex-1 h-px bg-surface-2"></div>
-                </div>
+            <p className="mt-6 text-center text-sm text-white/50">
+                Already have an account?{' '}
+                <a href={callbackUrl ? `/login?callbackUrl=${encodeURIComponent(destino)}` : "/login"} className="font-medium text-primary hover:underline">
+                    Log in
+                </a>
+            </p>
 
-                <form onSubmit={handleSubmit} className="space-y-6">
-                    <div className="space-y-2">
-                        <label className="text-sm font-medium text-muted">Nome completo</label>
-                        <div className="relative">
-                            <MdPerson className="absolute left-3 top-1/2 transform -translate-y-1/2 text-subtle" size={20} />
-                            <input
-                                type="text"
-                                required
-                                value={formData.nome}
-                                onChange={(e) => handleInputChange('nome', e.target.value)}
-                                className="w-full bg-surface-2 text-white pl-10 pr-4 py-3 rounded-xl border border-transparent focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all duration-300"
-                                placeholder="Seu nome completo"
-                            />
-                        </div>
-                    </div>
-
-                    <div className="space-y-2">
-                        <label className="text-sm font-medium text-muted">Email</label>
-                        <div className="relative">
-                            <MdEmail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-subtle" size={20} />
-                            <input
-                                type="email"
-                                required
-                                value={formData.email}
-                                onChange={(e) => handleInputChange('email', e.target.value)}
-                                className="w-full bg-surface-2 text-white pl-10 pr-4 py-3 rounded-xl border border-transparent focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all duration-300"
-                                placeholder="seu@email.com"
-                            />
-                        </div>
-                    </div>
-
-                    <div className="space-y-2">
-                        <label className="text-sm font-medium text-muted">Senha</label>
-                        <div className="relative">
-                            <MdLock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-subtle" size={20} />
-                            <input
-                                type={isVisible ? "text" : "password"}
-                                required
-                                value={formData.senha}
-                                onChange={(e) => handleInputChange('senha', e.target.value)}
-                                className="w-full bg-surface-2 text-white pl-10 pr-12 py-3 rounded-xl border border-transparent focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all duration-300"
-                                placeholder="••••••••"
-                            />
-                            <button
-                                type="button"
-                                onClick={() => setIsVisible(!isVisible)}
-                                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-subtle hover:text-white transition-colors"
-                            >
-                                {isVisible ? <IoMdEye size={20} /> : <IoMdEyeOff size={20} />}
-                            </button>
-                        </div>
-                        
-                        {formData.senha && (
-                            <div className="mt-2">
-                                <div className="flex justify-between items-center mb-1">
-                                    <span className="text-xs text-subtle">Força da senha</span>
-                                    <span className={`text-xs ${passwordStrength.color.replace('bg-', 'text-')}`}>
-                                        {passwordStrength.text}
-                                    </span>
-                                </div>
-                                <div className="w-full bg-surface-2 rounded-full h-2">
-                                    <div 
-                                        className={`h-2 rounded-full transition-all duration-300 ${passwordStrength.color}`}
-                                        style={{ width: `${passwordStrength.strength}%` }}
-                                    ></div>
-                                </div>
-                            </div>
-                        )}
-                    </div>
-
-                    <div className="space-y-2">
-                        <label className="text-sm font-medium text-muted">Confirmar senha</label>
-                        <div className="relative">
-                            <MdLock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-subtle" size={20} />
-                            <input
-                                type={isVisible2 ? "text" : "password"}
-                                required
-                                value={formData.confirmarSenha}
-                                onChange={(e) => handleInputChange('confirmarSenha', e.target.value)}
-                                className="w-full bg-surface-2 text-white pl-10 pr-12 py-3 rounded-xl border border-transparent focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all duration-300"
-                                placeholder="••••••••"
-                            />
-                            <button
-                                type="button"
-                                onClick={() => setIsVisible2(!isVisible2)}
-                                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-subtle hover:text-white transition-colors"
-                            >
-                                {isVisible2 ? <IoMdEye size={20} /> : <IoMdEyeOff size={20} />}
-                            </button>
-                        </div>
-                        
-                        {formData.confirmarSenha && (
-                            <div className="flex items-center gap-2 mt-2">
-                                {formData.senha === formData.confirmarSenha ? (
-                                    <>
-                                        <MdCheck className="text-green-500" size={16} />
-                                        <span className="text-xs text-green-500">Senhas coincidem</span>
-                                    </>
-                                ) : (
-                                    <span className="text-xs text-red-500">Senhas não coincidem</span>
-                                )}
-                            </div>
-                        )}
-                    </div>
-
-                    <button
-                        type="submit"
-                        disabled={isLoading}
-                        className="w-full bg-primary text-black font-semibold py-3 px-4 rounded-xl hover:bg-primary/90 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-                    >
-                        {isLoading ? (
-                            <>
-                                <AiOutlineLoading3Quarters className="animate-spin" size={20} />
-                                Criando conta...
-                            </>
-                        ) : (
-                            'Criar conta'
-                        )}
-                    </button>
-                </form>
-
-                <div className="text-center mt-8 pt-6 border-t border-line">
-                    <p className="text-sm text-subtle">
-                        Já tem uma conta?{' '}
-                        <a href={callbackUrl ? `/login?callbackUrl=${encodeURIComponent(destino)}` : "/login"} className="text-primary font-medium hover:underline">
-                            Fazer login
-                        </a>
-                    </p>
-                </div>
-
-                <div className="text-center mt-4">
-                    <a 
-                        href="/" 
-                        className="inline-flex items-center gap-2 text-sm text-subtle hover:text-white transition-colors"
-                    >
-                        <MdArrowBack size={16} />
-                        Voltar ao início
-                    </a>
-                </div>
-            </div>
-        </motion.div>
+            <OrDivider label="not ready yet?" />
+            <DemoButton />
+        </div>
     );
 }

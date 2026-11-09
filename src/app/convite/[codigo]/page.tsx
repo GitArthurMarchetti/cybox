@@ -11,6 +11,23 @@ export default async function ConviteHandler({ params }: { params: { codigo: str
     const session = await auth();
     const { codigo } = params;
 
+    if (session?.provider === "demo") {
+        return (
+            <PaginaStatus
+                icone={<MdSwitchAccount size={28} />}
+                titulo="Joining rooms is off in the demo"
+                acoes={
+                    <>
+                        <Link href="/cadastro" className={classeBotaoPrimario}>Create an account</Link>
+                        <Link href="/departamentos" className={classeBotaoSecundario}>Back to the demo</Link>
+                    </>
+                }
+            >
+                The demo uses sample data, so invite codes don&apos;t work here. Create an account to join your team&apos;s rooms.
+            </PaginaStatus>
+        );
+    }
+
     const convitesExternos = await query(`
         SELECT ce.*, d.titulo as departamento_titulo, u.nome as remetente_nome
         FROM convites_externos ce
@@ -46,14 +63,14 @@ export default async function ConviteHandler({ params }: { params: { codigo: str
             <PaginaStatus
                 icone={<MdErrorOutline size={28} />}
                 tom="erro"
-                titulo="Convite inválido"
+                titulo="This invite isn't valid"
                 acoes={
                     <Link href={session?.user ? "/departamentos" : "/login"} className={classeBotaoPrimario}>
-                        {session?.user ? "Ir para meus departamentos" : "Fazer login"}
+                        {session?.user ? "Go to my rooms" : "Log in"}
                     </Link>
                 }
             >
-                Este convite não existe, já foi usado ou expirou. Peça um novo link a quem te convidou.
+                This invite doesn&apos;t exist, was already used or has expired. Ask whoever invited you for a new link.
             </PaginaStatus>
         );
     }
@@ -80,11 +97,11 @@ export default async function ConviteHandler({ params }: { params: { codigo: str
     const pedirConfirmacaoEmail = () => (
         <PaginaStatus
             icone={<MdMarkEmailUnread size={28} />}
-            titulo="Confirme seu email"
+            titulo="Confirm your email first"
             acoes={<ReenviarVerificacao email={usuario.email} />}
         >
-            Para aceitar este convite, confirme <strong className="text-white">{usuario.email}</strong> pelo
-            link que enviamos no seu cadastro e depois abra este convite de novo.
+            To accept this invite, confirm <strong className="text-white">{usuario.email}</strong> pelo
+            link we sent when you signed up, then open this invite again.
         </PaginaStatus>
     );
 
@@ -92,14 +109,14 @@ export default async function ConviteHandler({ params }: { params: { codigo: str
         <PaginaStatus
             icone={<MdSwitchAccount size={28} />}
             tom="erro"
-            titulo="Este convite é para outra conta"
+            titulo="This invite is for another account"
             acoes={
                 <>
                     <Link href={`/login?callbackUrl=/convite/${codigo}`} className={classeBotaoPrimario}>
-                        Entrar com outra conta
+                        Log in with another account
                     </Link>
                     <Link href="/departamentos" className={classeBotaoSecundario}>
-                        Voltar aos meus departamentos
+                        Back to my rooms
                     </Link>
                 </>
             }
@@ -112,8 +129,8 @@ export default async function ConviteHandler({ params }: { params: { codigo: str
         if (conviteExterno.email_destinatario.toLowerCase() !== usuario.email.toLowerCase()) {
             return pedirTrocaDeConta(
                 <>
-                    Este convite foi enviado para <strong className="text-white">{conviteExterno.email_destinatario}</strong>,
-                    mas você está logado como <strong className="text-white">{usuario.email}</strong>.
+                    This invite was sent to <strong className="text-white">{conviteExterno.email_destinatario}</strong>,
+                    but you&apos;re logged in as <strong className="text-white">{usuario.email}</strong>.
                 </>
             );
         }
@@ -126,7 +143,7 @@ export default async function ConviteHandler({ params }: { params: { codigo: str
     } else if (conviteInterno) {
         if (conviteInterno.id_destinatario !== userId) {
             return pedirTrocaDeConta(
-                <>Este convite foi enviado para outra pessoa. Entre com a conta que recebeu o convite.</>
+                <>This invite was sent to someone else. Log in with the account that received it.</>
             );
         }
 

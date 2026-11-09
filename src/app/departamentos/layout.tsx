@@ -1,10 +1,13 @@
 import type { Metadata } from "next";
+import { auth } from "@/auth";
+import { DemoProvider } from "../components/demo/DemoContext";
 
 export const metadata: Metadata = {
-    title: "Departamentos",
+    title: "Rooms",
     robots: { index: false, follow: false },
 };
 
-export default function Layout({ children }: { children: React.ReactNode }) {
-    return children;
+export default async function Layout({ children }: { children: React.ReactNode }) {
+    const session = await auth();
+    return <DemoProvider demo={session?.provider === "demo"}>{children}</DemoProvider>;
 }

@@ -1,10 +1,9 @@
 "use client"
 
 import { Suspense } from "react";
-import { motion } from "framer-motion";
 import { UserType } from "@/lib/types/types";
-import RegisterBranding from "../components/auth/RegisterBranding";
 import RegisterForm from "../components/auth/RegisterForm";
+import { AuthShell } from "../components/auth/AuthShell";
 
 type Props = {
     user: UserType;
@@ -12,23 +11,14 @@ type Props = {
 
 export default function Cadastro({ user }: Props) {
     return (
-        <div className="min-h-screen bg-gradient-to-br from-page via-[#1a1a1a] to-page flex items-center justify-center p-4">
-            <div className="absolute inset-0 overflow-hidden">
-                <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-primary/10 rounded-full blur-3xl"></div>
-                <div className="absolute bottom-1/4 right-1/4 w-64 h-64 bg-primary/5 rounded-full blur-2xl"></div>
-            </div>
-
-            <motion.div 
-                className="relative w-full max-w-6xl mx-auto grid lg:grid-cols-2 gap-8 items-center"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6 }}
-            >
-                <RegisterBranding />
-                <Suspense>
-                    <RegisterForm user={user} />
-                </Suspense>
-            </motion.div>
-        </div>
+        <AuthShell
+            title="Every asset,"
+            accent="in its box."
+            text="Create a room for each department, invite your team and see what everything is worth today, with depreciation done for you."
+        >
+            <Suspense>
+                <RegisterForm user={user} />
+            </Suspense>
+        </AuthShell>
     );
 }

@@ -16,7 +16,7 @@ export default function ReenviarVerificacao({ email }: { email: string }) {
     };
 
     if (enviado) {
-        return <p className="text-sm text-primary" role="status">Pronto! Confira sua caixa de entrada (e o spam).</p>;
+        return <p className="text-sm text-primary" role="status">Done! Check your inbox (and your spam folder).</p>;
     }
 
     return (
@@ -26,7 +26,7 @@ export default function ReenviarVerificacao({ email }: { email: string }) {
             disabled={isLoading}
             className={`${classeBotaoPrimario} disabled:cursor-not-allowed disabled:bg-surface-3 disabled:text-subtle`}
         >
-            {isLoading ? 'Enviando...' : 'Reenviar link de confirmação'}
+            {isLoading ? 'Sending…' : 'Resend confirmation link'}
         </button>
     );
 }

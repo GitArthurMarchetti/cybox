@@ -50,7 +50,7 @@ export default function EditarPatrimonioModal({
         const numero = valor.replace(/\D/g, '');
         if (numero === '') return '';
         const valorNumerico = parseInt(numero) / 100;
-        return valorNumerico.toLocaleString('pt-BR', {
+        return valorNumerico.toLocaleString('en-US', {
             minimumFractionDigits: 2,
             maximumFractionDigits: 2
         });
@@ -63,8 +63,8 @@ export default function EditarPatrimonioModal({
                 codigo: patrimonio.codigo || '',
                 descricao: patrimonio.especificacoes || '',
                 localizacao: patrimonio.local || '',
-                valor_inicial: patrimonio.preco_inicial ? patrimonio.preco_inicial.toString().replace('.', ',') : '',
-                valor_atual: patrimonio.valor_atual ? patrimonio.valor_atual.toString().replace('.', ',') : '',
+                valor_inicial: patrimonio.preco_inicial ? Number(patrimonio.preco_inicial).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '',
+                valor_atual: patrimonio.valor_atual ? Number(patrimonio.valor_atual).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '',
                 taxa_depreciacao: patrimonio.depreciacao_percentual?.toString() || '',
                 data_aquisicao: patrimonio.data_aquisicao ? patrimonio.data_aquisicao.split('T')[0] : ''
             });
@@ -86,23 +86,23 @@ export default function EditarPatrimonioModal({
             }
 
 
-            const valorInicialNum = parseFloat(formData.valor_inicial.replace(/\./g, '').replace(',', '.'));
-            const valorAtualNum = parseFloat(formData.valor_atual.replace(/\./g, '').replace(',', '.'));
+            const valorInicialNum = parseFloat(formData.valor_inicial.replace(/,/g, ''));
+            const valorAtualNum = parseFloat(formData.valor_atual.replace(/,/g, ''));
 
             formDataToSend.set('valor_inicial', valorInicialNum.toString());
             formDataToSend.set('valor_atual', valorAtualNum.toString());
 
             const resultado = await savePatrimonio(formDataToSend);
             if (!resultado.success) {
-                toast.error(resultado.error || 'Erro ao atualizar patrimônio');
+                toast.error(resultado.error || "Couldn't update the asset");
                 return;
             }
 
-            toast.success("Patrimônio atualizado com sucesso!");
+            toast.success("Asset updated");
             onClose();
             if (onSuccess) onSuccess();
         } catch (error) {
-            toast.error("Erro ao atualizar patrimônio");
+            toast.error("Couldn't update the asset");
         } finally {
             setIsLoading(false);
         }
@@ -115,7 +115,7 @@ export default function EditarPatrimonioModal({
                         
                         <ModalHeader
                             icone={<MdEdit size={20} />}
-                            titulo="Editar Patrimônio"
+                            titulo="Edit asset"
                             subtitulo={<>{patrimonio.name}</>}
                             onClose={onClose}
                         />
@@ -126,7 +126,7 @@ export default function EditarPatrimonioModal({
                                 
                                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-6">
                                     <div>
-                                        <label className="block text-sm text-muted mb-2">Nome do Patrimônio</label>
+                                        <label className="block text-sm text-muted mb-2">Asset name</label>
                                         <input
                                             autoComplete='off'
                                             type="text"
@@ -135,12 +135,12 @@ export default function EditarPatrimonioModal({
                                             value={formData.nome}
                                             onChange={(e) => setFormData(prev => ({ ...prev, nome: e.target.value }))}
                                             className="w-full bg-surface-2 text-white px-4 py-3 rounded-lg border border-transparent focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent placeholder-subtle transition-all duration-300"
-                                            placeholder="Ex: Notebook Dell Inspiron"
+                                            placeholder="e.g. Dell XPS 13"
                                         />
                                     </div>
 
                                     <div>
-                                        <label className="block text-sm text-muted mb-2">Código do Patrimônio</label>
+                                        <label className="block text-sm text-muted mb-2">Asset code</label>
                                         <input
                                             autoComplete='off'
                                             type="text"
@@ -148,28 +148,28 @@ export default function EditarPatrimonioModal({
                                             value={formData.codigo}
                                             onChange={(e) => setFormData(prev => ({ ...prev, codigo: e.target.value }))}
                                             className="w-full bg-surface-2 text-white px-4 py-3 rounded-lg border border-transparent focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent placeholder-subtle transition-all duration-300"
-                                            placeholder="PAT-2024-001"
+                                            placeholder="e.g. CYB-0142"
                                         />
                                     </div>
                                 </div>
 
                                 
                                 <div>
-                                    <label className="block text-sm text-muted mb-2">Descrição</label>
+                                    <label className="block text-sm text-muted mb-2">Description</label>
                                     <textarea
                                         name="descricao"
                                         value={formData.descricao}
                                         onChange={(e) => setFormData(prev => ({ ...prev, descricao: e.target.value }))}
                                         rows={3}
                                         className="w-full bg-surface-2 text-white px-4 py-3 rounded-lg border border-transparent focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent resize-none placeholder-subtle transition-all duration-300"
-                                        placeholder="Especificações técnicas, características, modelo..."
+                                        placeholder="Model, specs, serial number…"
                                     />
                                 </div>
 
                                 
                                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-6">
                                     <div>
-                                        <label className="block text-sm text-muted mb-2">Localização</label>
+                                        <label className="block text-sm text-muted mb-2">Location</label>
                                         <input
                                             autoComplete='off'
                                             type="text"
@@ -177,12 +177,12 @@ export default function EditarPatrimonioModal({
                                             value={formData.localizacao}
                                             onChange={(e) => setFormData(prev => ({ ...prev, localizacao: e.target.value }))}
                                             className="w-full bg-surface-2 text-white px-4 py-3 rounded-lg border border-transparent focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent placeholder-subtle transition-all duration-300"
-                                            placeholder="Sala 205, Andar 2, Prédio A"
+                                            placeholder="e.g. Desk 12, 2nd floor"
                                         />
                                     </div>
 
                                     <div>
-                                        <label className="block text-sm text-muted mb-2">Taxa de Depreciação (% ao ano)</label>
+                                        <label className="block text-sm text-muted mb-2">Depreciation rate (% per year)</label>
                                         <input
                                             autoComplete='off'
                                             type="number"
@@ -202,9 +202,9 @@ export default function EditarPatrimonioModal({
                                 
                                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-3 sm:gap-6">
                                     <div>
-                                        <label className="block text-sm text-muted mb-2">Valor Inicial (R$)</label>
+                                        <label className="block text-sm text-muted mb-2">Purchase price ($)</label>
                                         <div className="relative">
-                                            <span className="absolute left-4 top-1/2 transform -translate-y-1/2 text-subtle">R$</span>
+                                            <span className="absolute left-4 top-1/2 transform -translate-y-1/2 text-subtle">$</span>
                                             <input
                                                 autoComplete='off'
                                                 type="text"
@@ -216,15 +216,15 @@ export default function EditarPatrimonioModal({
                                                     setFormData(prev => ({ ...prev, valor_inicial: formatted }));
                                                 }}
                                                 className="w-full bg-surface-2 text-white pl-10 pr-4 py-3 rounded-lg border border-transparent focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent placeholder-subtle transition-all duration-300"
-                                                placeholder="3.500,00"
+                                                placeholder="3,500.00"
                                             />
                                         </div>
                                     </div>
 
                                     <div>
-                                        <label className="block text-sm text-muted mb-2">Valor Atual (R$)</label>
+                                        <label className="block text-sm text-muted mb-2">Value today ($)</label>
                                         <div className="relative">
-                                            <span className="absolute left-4 top-1/2 transform -translate-y-1/2 text-subtle">R$</span>
+                                            <span className="absolute left-4 top-1/2 transform -translate-y-1/2 text-subtle">$</span>
                                             <input
                                                 autoComplete='off'
                                                 type="text"
@@ -236,13 +236,13 @@ export default function EditarPatrimonioModal({
                                                     setFormData(prev => ({ ...prev, valor_atual: formatted }));
                                                 }}
                                                 className="w-full bg-surface-2 text-white pl-10 pr-4 py-3 rounded-lg border border-transparent focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent placeholder-subtle transition-all duration-300"
-                                                placeholder="2.800,00"
+                                                placeholder="2,800.00"
                                             />
                                         </div>
                                     </div>
 
                                     <div>
-                                        <label className="block text-sm text-muted mb-2">Data de Aquisição</label>
+                                        <label className="block text-sm text-muted mb-2">Purchase date</label>
                                         <input
                                             autoComplete='off'
                                             type="date"
@@ -258,32 +258,32 @@ export default function EditarPatrimonioModal({
 
                                 
                                 <div className="bg-surface-2 rounded-lg p-4 border border-surface-3">
-                                    <h4 className="text-white font-medium mb-3">Status Atual</h4>
+                                    <h4 className="text-white font-medium mb-3">Right now</h4>
                                     <div className="grid grid-cols-1 gap-2 text-sm sm:grid-cols-3 sm:gap-4">
                                         <div>
-                                            <p className="text-subtle">Valor de mercado</p>
+                                            <p className="text-subtle">Value today</p>
                                             <p className="text-primary font-medium">
-                                                {formData.valor_atual ? `R$ ${formData.valor_atual}` : 'R$ 0,00'}
+                                                {formData.valor_atual ? `$${formData.valor_atual}` : '$0.00'}
                                             </p>
                                         </div>
                                         <div>
-                                            <p className="text-subtle">Depreciação total</p>
+                                            <p className="text-subtle">Value lost</p>
                                             <p className="text-red-400 font-medium">
                                                 {formData.valor_inicial && formData.valor_atual ? (
-                                                    `R$ ${(
-                                                        parseFloat(formData.valor_inicial.replace(/\./g, '').replace(',', '.')) -
-                                                        parseFloat(formData.valor_atual.replace(/\./g, '').replace(',', '.'))
-                                                    ).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
-                                                ) : 'R$ 0,00'}
+                                                    `$${(
+                                                        parseFloat(formData.valor_inicial.replace(/,/g, '')) -
+                                                        parseFloat(formData.valor_atual.replace(/,/g, ''))
+                                                    ).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+                                                ) : '$0.00'}
                                             </p>
                                         </div>
                                         <div>
-                                            <p className="text-subtle">Percentual restante</p>
+                                            <p className="text-subtle">Value left</p>
                                             <p className="text-green-400 font-medium">
                                                 {formData.valor_inicial && formData.valor_atual ? (
                                                     `${Math.round((
-                                                        parseFloat(formData.valor_atual.replace(/\./g, '').replace(',', '.')) /
-                                                        parseFloat(formData.valor_inicial.replace(/\./g, '').replace(',', '.'))
+                                                        parseFloat(formData.valor_atual.replace(/,/g, '')) /
+                                                        parseFloat(formData.valor_inicial.replace(/,/g, ''))
                                                     ) * 100)}%`
                                                 ) : '0%'}
                                             </p>
@@ -298,7 +298,7 @@ export default function EditarPatrimonioModal({
                                         onClick={onClose}
                                         className="px-6 py-2.5 text-subtle hover:text-white transition-colors duration-300"
                                     >
-                                        Cancelar
+                                        Cancel
                                     </button>
 
                                     <button
@@ -309,12 +309,12 @@ export default function EditarPatrimonioModal({
                                         {isLoading ? (
                                             <>
                                                 <AiOutlineLoading3Quarters className="animate-spin h-4 w-4" />
-                                                Salvando...
+                                                Saving…
                                             </>
                                         ) : (
                                             <>
                                                 <MdSave size={16} />
-                                                Salvar Alterações
+                                                Save changes
                                             </>
                                         )}
                                     </button>

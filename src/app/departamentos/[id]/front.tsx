@@ -1,30 +1,74 @@
 'use client'
 
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import Link from 'next/link';
+import { motion, AnimatePresence } from 'framer-motion';
+import { FiArrowLeft, FiBox, FiChevronRight, FiEdit2, FiLayers, FiPercent, FiPlus, FiTrash2, FiTrendingDown, FiDollarSign } from 'react-icons/fi';
 import { serieDepreciacao } from '@/lib/depreciacao-calculo';
 import { DepartamentoType } from '@/lib/types/types';
 import { Category, PatrimonioDetalhadoType, CategoriasProps } from '@/lib/types/categoria.types';
-import { motion, AnimatePresence } from 'framer-motion';
-import { MdFilterList, MdKeyboardArrowLeft, MdKeyboardArrowRight, MdModeEdit, MdSearch, MdAdd, MdSortByAlpha, MdClear } from 'react-icons/md';
-import { RiDeleteBinLine } from 'react-icons/ri';
-import { FaShare, FaSortAmountDown, FaSortAmountUp, FaBoxOpen, FaInbox, FaChartLine } from 'react-icons/fa';
 import { SidebarCategorias } from '@/app/components/Navigation/SidebarCategorias';
 import { BarraTopoMobile, GavetaLateral } from '@/app/components/Navigation/GavetaMobile';
+import SearchBar from '@/app/components/SearchBar';
 import { getPatrimoniosByCategoria, removePatrimonio } from '@/app/services/patrimonios';
 import { removeCategoria, getCategoriasComTotalPatrimonios } from '@/app/services/categoria';
 import { removeDepartamento } from '@/app/services/departamento';
-import { toast } from 'sonner';
-import {
-     CriarCategoriaModal,
-     CriarPatrimonioModal,
-     EditarCategoriaModal,
-     EditarPatrimonioModal,
-     ConfiguracoesDepartamentoModal,
-     ConfirmarExclusaoModal,
-     CompartilharModal,
-     DetalhesPatrimonioModal
-} from '@/app/components/modals';
 import { enviarConvitesPorEmail } from '@/app/services/convites';
+import { Backdrop } from '@/app/components/home/landing/Backdrop';
+import { useDemo } from '@/app/components/demo/DemoContext';
+import { money, compactMoney, monthYear, valueTone } from '@/lib/format';
+import { toast } from 'sonner';
+import dynamic from 'next/dynamic';
+import CriarCategoriaModal from '@/app/components/modals/CriarCategoriaModal';
+import CriarPatrimonioModal from '@/app/components/modals/CriarPatrimonioModal';
+import EditarCategoriaModal from '@/app/components/modals/EditarCategoriaModal';
+import EditarPatrimonioModal from '@/app/components/modals/EditarPatrimonioModal';
+import ConfiguracoesDepartamentoModal from '@/app/components/modals/ConfiguracoesDepartamentoModal';
+import ConfirmarExclusaoModal from '@/app/components/modals/ConfirmarExclusaoModal';
+import { CompartilharModal } from '@/app/components/modals/CompartilharModal';
+
+// The asset detail modal carries the chart library, so it loads after the page instead of with it.
+const DetalhesPatrimonioModal = dynamic(
+     () => import('@/app/components/modals/DetalhesPatrimonioModal').then(m => m.DetalhesPatrimonioModal),
+     { ssr: false }
+);
+
+type SortId = 'a-z' | 'z-a' | 'mais-itens' | 'menos-itens' | 'com-itens' | 'vazias' | 'desvalorizados';
+
+const CATEGORY_FILTERS: { id: SortId; label: string }[] = [
+     { id: 'a-z', label: 'A–Z' },
+     { id: 'mais-itens', label: 'Most items' },
+     { id: 'desvalorizados', label: 'Most depreciated' },
+     { id: 'com-itens', label: 'With items' },
+     { id: 'vazias', label: 'Empty' },
+];
+
+function ValueBar({ pct, className = '' }: { pct: number; className?: string }) {
+     const tone = valueTone(pct);
+     return (
+          <div className={`h-1.5 overflow-hidden rounded-full bg-white/10 ${className}`}>
+               <motion.div
+                    className={`h-full rounded-full ${tone.bg}`}
+                    initial={{ width: 0 }}
+                    animate={{ width: `${Math.max(0, Math.min(100, pct))}%` }}
+                    transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
+               />
+          </div>
+     );
+}
+
+function Stat({ icon: Icon, label, value, hint }: { icon: React.ComponentType<{ size?: number }>; label: string; value: React.ReactNode; hint?: React.ReactNode }) {
+     return (
+          <div className="rounded-2xl border border-white/[0.07] bg-surface/80 p-4">
+               <div className="flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.18em] text-white/40">
+                    <span className="text-primary"><Icon size={12} /></span>
+                    {label}
+               </div>
+               <p className="mt-2 font-display text-xl font-semibold tracking-tight text-white sm:text-2xl">{value}</p>
+               {hint && <div className="mt-1 text-xs text-white/45">{hint}</div>}
+          </div>
+     );
+}
 
 export default function CategoriaFront({
      departamento,
@@ -33,13 +77,14 @@ export default function CategoriaFront({
      membros = [],
      categorias = []
 }: CategoriasProps) {
+     const { blockIfDemo } = useDemo();
      const currentUserMembro = membros.find(m => m.id === user.id);
      const userRole = currentUserMembro?.role || 'member';
      const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
      const [isMenuMobileOpen, setIsMenuMobileOpen] = useState(false);
      const fecharMenuMobile = useCallback(() => setIsMenuMobileOpen(false), []);
      const [searchTerm, setSearchTerm] = useState("");
-     const [hasInitiallyLoaded, setHasInitiallyLoaded] = useState(false);
+     const [isSearchFocused, setIsSearchFocused] = useState(false);
      const [isAddNewOpen, setIsAddNewOpen] = useState(false);
      const [isAddPatrimonioOpen, setIsAddPatrimonioOpen] = useState(false);
      const [selectedCategoryForPatrimonio, setSelectedCategoryForPatrimonio] = useState<Category | null>(null);
@@ -51,26 +96,27 @@ export default function CategoriaFront({
      const [isConfirmDeleteOpen, setIsConfirmDeleteOpen] = useState(false);
      const [itemToDelete, setItemToDelete] = useState<{ tipo: string, nome: string, onConfirm: () => Promise<void> | void } | null>(null);
      const [isShareModalOpen, setIsShareModalOpen] = useState(false);
-     const [isFilterDropdownOpen, setIsFilterDropdownOpen] = useState(false);
-     const [filtroSelecionado, setFiltroSelecionado] = useState<string | null>(null);
+     const [filtroSelecionado, setFiltroSelecionado] = useState<SortId | null>(null);
+     const [isModalOpen, setIsModalOpen] = useState(false);
+     const [selectedPatrimonio, setSelectedPatrimonio] = useState<PatrimonioDetalhadoType | null>(null);
+     const [patrimoniosPorCategoria, setPatrimoniosPorCategoria] = useState<{ [key: number]: PatrimonioDetalhadoType[] }>({});
+     const [loadingPatrimonios, setLoadingPatrimonios] = useState<{ [key: number]: boolean }>({});
+     const [categoriasBase, setCategoriasBase] = useState(categorias);
+     const [departamentoLocal, setDepartamentoLocal] = useState(departamento);
+
      const handleOpenPatrimonioModal = (category: Category) => {
           setSelectedCategoryForPatrimonio(category);
           setIsAddPatrimonioOpen(true);
      };
 
-     const [isModalOpen, setIsModalOpen] = useState(false);
-     const [selectedPatrimonio, setSelectedPatrimonio] = useState<PatrimonioDetalhadoType | null>(null);
-     
      const carregarPatrimonios = async (categoriaId: number, forceReload = false) => {
-          if (patrimoniosPorCategoria[categoriaId] && !forceReload) {
-               return; 
-          }
+          if (patrimoniosPorCategoria[categoriaId] && !forceReload) return;
 
           setLoadingPatrimonios(prev => ({ ...prev, [categoriaId]: true }));
 
           try {
                const patrimonios = await getPatrimoniosByCategoria(categoriaId);
-               const patrimoniosFormatados = patrimonios.map(p => ({
+               const formatted = patrimonios.map(p => ({
                     id: p.id,
                     name: p.nome,
                     codigo: p.codigo_patrimonio || '',
@@ -85,181 +131,121 @@ export default function CategoriaFront({
                     depreciacao_historico: serieDepreciacao(p.valor_inicial, p.tempo_depreciacao, p.data_aquisicao)
                }));
 
-               setPatrimoniosPorCategoria(prev => ({
-                    ...prev,
-                    [categoriaId]: patrimoniosFormatados
-               }));
-          } catch (error) {
-               toast.error('Erro ao carregar patrimônios da categoria');
+               setPatrimoniosPorCategoria(prev => ({ ...prev, [categoriaId]: formatted }));
+          } catch {
+               toast.error("Couldn't load this category's assets");
           } finally {
                setLoadingPatrimonios(prev => ({ ...prev, [categoriaId]: false }));
           }
      };
-     const [patrimoniosPorCategoria, setPatrimoniosPorCategoria] = useState<{ [key: number]: PatrimonioDetalhadoType[] }>({});
-     const [loadingPatrimonios, setLoadingPatrimonios] = useState<{ [key: number]: boolean }>({});
-     const [categories, setCategories] = useState<Category[]>([]);
-     const [categoriasBase, setCategoriasBase] = useState(categorias);
-     const filtroRef = useRef<HTMLDivElement>(null);
-     const [departamentoLocal, setDepartamentoLocal] = useState(departamento);
-     useEffect(() => {
-          setHasInitiallyLoaded(true);
-     }, []);
 
-     useEffect(() => {
-          const handleClickOutside = (event: MouseEvent) => {
-               if (isFilterDropdownOpen && filtroRef.current && !filtroRef.current.contains(event.target as Node)) {
-                    setIsFilterDropdownOpen(false);
-               }
-          };
+     useEffect(() => { setDepartamentoLocal(departamento); }, [departamento]);
+     useEffect(() => { setCategoriasBase(categorias); }, [categorias]);
 
-          document.addEventListener('mousedown', handleClickOutside);
-          return () => document.removeEventListener('mousedown', handleClickOutside);
-     }, [isFilterDropdownOpen]);
-     useEffect(() => {
-          setDepartamentoLocal(departamento);
-     }, [departamento]);
-     
-     useEffect(() => {
-          setCategoriasBase(categorias);
-     }, [categorias]);
+     const categories: Category[] = useMemo(() => categoriasBase.map(cat => ({
+          id: cat.id,
+          name: cat.nome,
+          observation: cat.descricao || (cat.padrao_categoria ? `Preset: ${cat.padrao_categoria} (${cat.taxa_anual_percent}% / year)` : ''),
+          total: Number(cat.total_patrimonios) || 0,
+          percentualValor: cat.percentual_valor != null ? Number(cat.percentual_valor) : null,
+          valorTotal: Number(cat.valor_total) || 0,
+          taxa: cat.taxa_anual_percent != null ? Number(cat.taxa_anual_percent) : null,
+          notebooks: patrimoniosPorCategoria[cat.id] || [],
+          padrao_depreciacao_id: cat.padrao_depreciacao_id || null
+     })), [categoriasBase, patrimoniosPorCategoria]);
 
-     useEffect(() => {
-          setCategories(categoriasBase.map(cat => ({
-               id: cat.id,
-               name: cat.nome,
-               observation: cat.descricao || (cat.padrao_categoria ? `Padrão: ${cat.padrao_categoria} (${cat.taxa_anual_percent}% a.a.)` : 'Sem descrição'),
-               total: Number(cat.total_patrimonios) || 0,
-               percentualValor: cat.percentual_valor ?? null,
-               notebooks: patrimoniosPorCategoria[cat.id] || [],
-               padrao_depreciacao_id: cat.padrao_depreciacao_id || null
-          })));
-     }, [categoriasBase, patrimoniosPorCategoria]);
+     // Room-level summary built from the per-category totals.
+     const summary = useMemo(() => {
+          const value = categories.reduce((s, c) => s + (c.valorTotal || 0), 0);
+          const assets = categories.reduce((s, c) => s + c.total, 0);
+          const initial = categories.reduce((s, c) => s + (c.percentualValor ? (c.valorTotal || 0) / (c.percentualValor / 100) : 0), 0);
+          return { value, assets, count: categories.length, pctLeft: initial > 0 ? Math.round((value / initial) * 100) : null };
+     }, [categories]);
 
      const recarregarCategorias = async () => {
           try {
                setCategoriasBase(await getCategoriasComTotalPatrimonios(Number(departamentoLocal.id_departamentos)));
-          } catch (error) {
-               toast.error('Erro ao atualizar categorias');
+          } catch {
+               toast.error("Couldn't refresh the categories");
           }
      };
 
      const recarregarPatrimoniosETotais = async (categoriaId: number) => {
           await Promise.all([carregarPatrimonios(categoriaId, true), recarregarCategorias()]);
      };
-     const handleDepartamentoSuccess = async (departamentoAtualizado: DepartamentoType) => {
+
+     const handleDepartamentoSuccess = async (updated: DepartamentoType) => {
           setIsConfigDepartamentoOpen(false);
-          setDepartamentoLocal(departamentoAtualizado); 
+          setDepartamentoLocal(updated);
      };
+
      const handleCategoriaSuccess = async () => {
           setIsEditCategoriaOpen(false);
-          await recarregarCategorias(); 
+          await recarregarCategorias();
      };
 
      const handleInvite = async (emails: string[]) => {
           try {
-               const result = await enviarConvitesPorEmail(
-                    Number(departamentoLocal.id_departamentos),
-                    emails
-               );
-
-               if (result.success) {
-                    toast.success(result.message);
-               } else {
-                    toast.error(result.message);
-               }
+               const result = await enviarConvitesPorEmail(Number(departamentoLocal.id_departamentos), emails);
+               if (result.success) toast.success(result.message);
+               else toast.error(result.message);
                return result.success;
-          } catch (error) {
-               toast.error('Erro ao enviar convites');
+          } catch {
+               toast.error("Couldn't send the invites");
                return false;
           }
      };
-     const getUpdatedSelectedCategory = () => {
-          if (!selectedCategory) return null;
-          return categories.find(cat => cat.id === selectedCategory.id) || selectedCategory;
-     };
 
-     const aplicarFiltros = (cats: Category[]) => {
-          let resultado = [...cats];
+     const currentCategory = selectedCategory ? categories.find(c => c.id === selectedCategory.id) || selectedCategory : null;
 
-          if (!filtroSelecionado) return resultado;
-
+     const filteredCategories = useMemo(() => {
+          const term = searchTerm.toLowerCase();
+          let list = categories.filter(c => c.name.toLowerCase().includes(term) || c.observation.toLowerCase().includes(term));
           switch (filtroSelecionado) {
-               case 'a-z':
-                    resultado.sort((a, b) => a.name.localeCompare(b.name));
-                    break;
-               case 'z-a':
-                    resultado.sort((a, b) => b.name.localeCompare(a.name));
-                    break;
-               case 'mais-itens':
-                    resultado.sort((a, b) => b.total - a.total);
-                    break;
-               case 'menos-itens':
-                    resultado.sort((a, b) => a.total - b.total);
-                    break;
-               case 'com-itens':
-                    resultado = resultado.filter(cat => cat.total > 0);
-                    break;
-               case 'vazias':
-                    resultado = resultado.filter(cat => cat.total === 0);
-                    break;
+               case 'a-z': list = [...list].sort((a, b) => a.name.localeCompare(b.name)); break;
+               case 'z-a': list = [...list].sort((a, b) => b.name.localeCompare(a.name)); break;
+               case 'mais-itens': list = [...list].sort((a, b) => b.total - a.total); break;
+               case 'menos-itens': list = [...list].sort((a, b) => a.total - b.total); break;
+               case 'com-itens': list = list.filter(c => c.total > 0); break;
+               case 'vazias': list = list.filter(c => c.total === 0); break;
                case 'desvalorizados':
-                    resultado = resultado
-                         .filter(cat => cat.percentualValor != null && cat.percentualValor < 100)
+                    list = list.filter(c => c.percentualValor != null && c.percentualValor < 100)
                          .sort((a, b) => (a.percentualValor ?? 100) - (b.percentualValor ?? 100));
                     break;
           }
+          return list;
+     }, [categories, searchTerm, filtroSelecionado]);
 
-          return resultado;
+     const selectCategory = (category: Category) => {
+          setSelectedCategory(category);
+          carregarPatrimonios(category.id);
      };
 
-     const filteredCategories = aplicarFiltros(
-          categories.filter(cat =>
-               cat.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-               cat.observation.toLowerCase().includes(searchTerm.toLowerCase())
-          )
-     );
-     const handleOpenModal = (patrimonio: PatrimonioDetalhadoType) => {
-          setSelectedPatrimonio(patrimonio);
-          setIsModalOpen(true);
-     };
-     
-     const containerVariants = hasInitiallyLoaded ? {
-          hidden: { opacity: 1 },
-          visible: { opacity: 1 }
-     } : {
-          hidden: { opacity: 0 },
-          visible: {
-               opacity: 1,
-               transition: {
-                    duration: 0.4,
-                    when: "beforeChildren",
-                    staggerChildren: 0.1
+     const confirmDeleteCategory = (category: Category) => {
+          setItemToDelete({
+               tipo: 'categoria',
+               nome: category.name,
+               onConfirm: async () => {
+                    if (blockIfDemo()) return;
+                    try {
+                         await removeCategoria(category.id);
+                         toast.success('Category deleted');
+                         setSelectedCategory(null);
+                         await recarregarCategorias();
+                    } catch {
+                         toast.error("Couldn't delete the category");
+                    }
                }
-          }
+          });
+          setIsConfirmDeleteOpen(true);
      };
 
-     const itemVariants = hasInitiallyLoaded ? {
-          hidden: { y: 0, opacity: 1 },
-          visible: { y: 0, opacity: 1 }
-     } : {
-          hidden: { y: 20, opacity: 0 },
-          visible: {
-               y: 0,
-               opacity: 1,
-               transition: { duration: 0.3 }
-          }
-     };
+     const assets = currentCategory?.notebooks ?? [];
 
      return (
-          <div className="min-h-screen bg-page text-white">
-               {/* Container principal */}
-               <motion.div
-                    className="flex h-screen"
-                    initial={hasInitiallyLoaded ? "visible" : "hidden"}
-                    animate="visible"
-                    variants={containerVariants}
-               >
-                    {/* Sidebar esquerda - Informações do departamento */}
+          <div className="relative min-h-screen text-white">
+               <Backdrop />
+               <div className="flex h-screen">
                     <GavetaLateral aberta={isMenuMobileOpen} onFechar={fecharMenuMobile}>
                          <SidebarCategorias
                               departamento={departamentoLocal}
@@ -269,382 +255,297 @@ export default function CategoriaFront({
                               onAddCategoryClick={() => setIsAddNewOpen(true)}
                               onConfigClick={() => setIsConfigDepartamentoOpen(true)}
                               onShareClick={() => setIsShareModalOpen(true)}
-                              hasInitiallyLoaded={hasInitiallyLoaded}
+                              hasInitiallyLoaded
                          />
                     </GavetaLateral>
 
-                    {/* Conteúdo principal - Lista de categorias */}
-                    <motion.main className="flex min-w-0 flex-1 flex-col overflow-hidden" variants={itemVariants}>
+                    <main className="flex min-w-0 flex-1 flex-col overflow-hidden">
                          <BarraTopoMobile onAbrirMenu={() => setIsMenuMobileOpen(true)} titulo={departamentoLocal.titulo} />
-                         <motion.div className="flex flex-wrap items-center justify-between gap-3 border-b border-line p-4 sm:p-6" variants={itemVariants}>
-                              <h1 className="text-xl font-bold">Categorias</h1>
-                              <div className="flex w-full items-center gap-3 sm:w-auto sm:gap-4">
-                                   <div className="relative flex-1 sm:flex-none">
-                                        <input
-                                             autoComplete='off'
-                                             type="text"
-                                             placeholder="Buscar categoria..."
-                                             aria-label="Buscar categoria"
-                                             className="bg-surface-2 text-white pl-10 pr-4 py-2 rounded-lg w-full sm:w-64 focus:outline-none focus:ring-2 focus:ring-primary/50"
-                                             value={searchTerm}
-                                             onChange={(e) => setSearchTerm(e.target.value)}
-                                        />
-                                        <MdSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-subtle" size={20} />
-                                   </div>
-                                   <div className="relative" ref={filtroRef}>
+
+                         <div className="flex-1 overflow-y-auto">
+                              {/* room header + summary */}
+                              <motion.header
+                                   initial={{ opacity: 0, y: 12 }}
+                                   animate={{ opacity: 1, y: 0 }}
+                                   transition={{ duration: 0.4 }}
+                                   className="px-4 pt-6 sm:px-8 sm:pt-8"
+                              >
+                                   <nav aria-label="Breadcrumb" className="mb-3 flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.18em] text-white/40">
+                                        <Link href="/departamentos" className="transition-colors hover:text-primary">Rooms</Link>
+                                        <FiChevronRight size={12} aria-hidden />
+                                        <span className="truncate text-primary/80">{departamentoLocal.titulo}</span>
+                                   </nav>
+                                   <div className="flex flex-wrap items-end justify-between gap-4">
+                                        <h1 className="font-display text-2xl font-semibold tracking-tight sm:text-3xl">{departamentoLocal.titulo}</h1>
                                         <button
                                              type="button"
-                                             aria-label="Filtrar e ordenar categorias"
-                                             aria-expanded={isFilterDropdownOpen}
-                                             className={`flex h-10 w-10 items-center justify-center rounded-lg transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${filtroSelecionado ? 'bg-primary text-black' : 'bg-surface-2 text-subtle hover:text-white'}`}
-                                             onClick={() => setIsFilterDropdownOpen(!isFilterDropdownOpen)}
+                                             onClick={() => setIsAddNewOpen(true)}
+                                             className="inline-flex h-11 items-center gap-1.5 rounded-full bg-primary px-5 text-sm font-semibold text-black shadow-[0_0_30px_-10px_rgba(246,207,69,0.7)] transition-colors hover:bg-primary-hover"
                                         >
-                                             <MdFilterList size={20} />
+                                             <FiPlus aria-hidden /> New category
                                         </button>
-
-                                        <AnimatePresence>
-                                             {isFilterDropdownOpen && (
-                                                  <motion.div
-                                                       className="absolute right-0 mt-2 w-64 bg-[#1a1a1a] border border-line rounded-xl shadow-xl z-50 overflow-hidden"
-                                                       initial={{ opacity: 0, y: -10 }}
-                                                       animate={{ opacity: 1, y: 0 }}
-                                                       exit={{ opacity: 0, y: -10 }}
-                                                       transition={{ duration: 0.2 }}
-                                                  >
-                                                       <div className="p-2">
-                                                            <div className="px-3 py-2 text-xs font-semibold text-subtle uppercase">Ordenar</div>
-
-                                                            <button
-                                                                 className="w-full flex items-center gap-3 px-3 py-2 text-sm text-white hover:bg-surface-2 rounded-lg transition-colors duration-200"
-                                                                 onClick={() => {
-                                                                      setFiltroSelecionado('a-z');
-                                                                      setIsFilterDropdownOpen(false);
-                                                                 }}
-                                                            >
-                                                                 <MdSortByAlpha size={18} className="text-primary" />
-                                                                 <span>A-Z</span>
-                                                            </button>
-
-                                                            <button
-                                                                 className="w-full flex items-center gap-3 px-3 py-2 text-sm text-white hover:bg-surface-2 rounded-lg transition-colors duration-200"
-                                                                 onClick={() => {
-                                                                      setFiltroSelecionado('z-a');
-                                                                      setIsFilterDropdownOpen(false);
-                                                                 }}
-                                                            >
-                                                                 <MdSortByAlpha size={18} className="text-primary transform rotate-180" />
-                                                                 <span>Z-A</span>
-                                                            </button>
-
-                                                            <button
-                                                                 className="w-full flex items-center gap-3 px-3 py-2 text-sm text-white hover:bg-surface-2 rounded-lg transition-colors duration-200"
-                                                                 onClick={() => {
-                                                                      setFiltroSelecionado('mais-itens');
-                                                                      setIsFilterDropdownOpen(false);
-                                                                 }}
-                                                            >
-                                                                 <FaSortAmountDown size={16} className="text-primary" />
-                                                                 <span>Mais itens</span>
-                                                            </button>
-
-                                                            <button
-                                                                 className="w-full flex items-center gap-3 px-3 py-2 text-sm text-white hover:bg-surface-2 rounded-lg transition-colors duration-200"
-                                                                 onClick={() => {
-                                                                      setFiltroSelecionado('menos-itens');
-                                                                      setIsFilterDropdownOpen(false);
-                                                                 }}
-                                                            >
-                                                                 <FaSortAmountUp size={16} className="text-primary" />
-                                                                 <span>Menos itens</span>
-                                                            </button>
-
-                                                            <div className="my-2 border-t border-line"></div>
-
-                                                            <div className="px-3 py-2 text-xs font-semibold text-subtle uppercase">Filtrar</div>
-
-                                                            <button
-                                                                 className="w-full flex items-center gap-3 px-3 py-2 text-sm text-white hover:bg-surface-2 rounded-lg transition-colors duration-200"
-                                                                 onClick={() => {
-                                                                      setFiltroSelecionado('com-itens');
-                                                                      setIsFilterDropdownOpen(false);
-                                                                 }}
-                                                            >
-                                                                 <FaBoxOpen size={16} className="text-primary" />
-                                                                 <span>Com itens</span>
-                                                            </button>
-
-                                                            <button
-                                                                 className="w-full flex items-center gap-3 px-3 py-2 text-sm text-white hover:bg-surface-2 rounded-lg transition-colors duration-200"
-                                                                 onClick={() => {
-                                                                      setFiltroSelecionado('vazias');
-                                                                      setIsFilterDropdownOpen(false);
-                                                                 }}
-                                                            >
-                                                                 <FaInbox size={16} className="text-primary" />
-                                                                 <span>Vazias</span>
-                                                            </button>
-
-                                                            <button
-                                                                 className="w-full flex items-center gap-3 px-3 py-2 text-sm text-white hover:bg-surface-2 rounded-lg transition-colors duration-200"
-                                                                 onClick={() => {
-                                                                      setFiltroSelecionado('desvalorizados');
-                                                                      setIsFilterDropdownOpen(false);
-                                                                 }}
-                                                            >
-                                                                 <FaChartLine size={16} className="text-red-500" />
-                                                                 <span>Mais desvalorizados</span>
-                                                            </button>
-
-                                                            {filtroSelecionado && (
-                                                                 <>
-                                                                      <div className="my-2 border-t border-line"></div>
-                                                                      <button
-                                                                           className="w-full flex items-center gap-3 px-3 py-2 text-sm text-red-400 hover:bg-surface-2 rounded-lg transition-colors duration-200"
-                                                                           onClick={() => {
-                                                                                setFiltroSelecionado(null);
-                                                                                setIsFilterDropdownOpen(false);
-                                                                           }}
-                                                                      >
-                                                                           <MdClear size={18} />
-                                                                           <span>Limpar filtros</span>
-                                                                      </button>
-                                                                 </>
-                                                            )}
-                                                       </div>
-                                                  </motion.div>
-                                             )}
-                                        </AnimatePresence>
                                    </div>
-                              </div>
-                         </motion.div>
 
-                         <div className="flex flex-1 overflow-hidden">
-                              {/* Painel esquerdo - Lista de categorias */}
-                              <div className={`${selectedCategory ? 'hidden lg:block' : 'block'} w-full overflow-y-auto p-4 sm:p-6 lg:w-3/5 2xl:w-2/3`}>
-                                   {filteredCategories.length > 0 ? (
-                                        <motion.div 
-                                             className="space-y-4" 
-                                             variants={containerVariants}
-                                             initial={hasInitiallyLoaded ? "visible" : "hidden"}
-                                             animate="visible"
-                                        >
-                                             {filteredCategories.map((category, index) => (
-                                                  <motion.button
+                                   <div className="mt-6 grid grid-cols-2 gap-3 lg:grid-cols-4">
+                                        <Stat icon={FiDollarSign} label="Value today" value={compactMoney(summary.value)} hint={money(summary.value)} />
+                                        <Stat icon={FiBox} label="Assets" value={summary.assets} hint="tracked in this room" />
+                                        <Stat icon={FiLayers} label="Categories" value={summary.count} hint="each with its own rate" />
+                                        <Stat
+                                             icon={FiPercent}
+                                             label="Value left"
+                                             value={summary.pctLeft != null ? <span className={valueTone(summary.pctLeft).text}>{summary.pctLeft}%</span> : '—'}
+                                             hint={summary.pctLeft != null ? <ValueBar pct={summary.pctLeft} className="mt-2" /> : 'add assets to see it'}
+                                        />
+                                   </div>
+                              </motion.header>
+
+                              {/* categories + detail */}
+                              <div className="grid grid-cols-1 gap-6 px-4 pb-10 pt-8 sm:px-8 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]">
+                                   <section aria-label="Categories" className={currentCategory ? 'hidden lg:block' : 'block'}>
+                                        <div className="mb-4 flex items-center justify-between">
+                                             <h2 className="font-display text-base font-semibold tracking-tight">Categories</h2>
+                                             <span className="font-mono text-[11px] text-white/35">{filteredCategories.length} of {categories.length}</span>
+                                        </div>
+                                        <SearchBar
+                                             value={searchTerm}
+                                             onChange={setSearchTerm}
+                                             isSearchFocused={isSearchFocused}
+                                             onFocus={() => setIsSearchFocused(true)}
+                                             onBlur={() => setIsSearchFocused(false)}
+                                             itemVariants={{ hidden: { opacity: 1, y: 0 }, visible: { opacity: 1, y: 0, transition: {} } }}
+                                             placeholder="Search categories"
+                                        />
+                                        <div className="no-scrollbar -mt-2 mb-4 flex gap-2 overflow-x-auto pb-1">
+                                             {CATEGORY_FILTERS.map(f => (
+                                                  <button
+                                                       key={f.id}
                                                        type="button"
-                                                       key={category.id}
-                                                       aria-pressed={selectedCategory?.id === category.id}
-                                                       className={`block w-full p-4 text-left rounded-xl cursor-pointer transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${selectedCategory?.id === category.id
-                                                            ? 'bg-surface-2 border-l-4 border-primary'
-                                                            : 'bg-[#1a1a1a] hover:bg-surface-2'
-                                                            }`}
-                                                       onClick={() => {
-                                                            setSelectedCategory(category);
-                                                            carregarPatrimonios(category.id);
-                                                       }}
-                                                       variants={itemVariants}
-                                                       initial={hasInitiallyLoaded ? "visible" : "hidden"}
-                                                       animate="visible"
-                                                       whileHover={hasInitiallyLoaded ? {} : { x: 5 }}
-                                                       custom={index}
+                                                       aria-pressed={filtroSelecionado === f.id}
+                                                       onClick={() => setFiltroSelecionado(cur => cur === f.id ? null : f.id)}
+                                                       className={`shrink-0 rounded-full px-3 py-1.5 text-xs transition-colors ${filtroSelecionado === f.id ? 'bg-primary text-black' : 'border border-white/10 text-white/60 hover:border-white/25 hover:text-white'}`}
                                                   >
-                                                       <div className="flex items-center justify-between gap-3">
-                                                            <div className="flex min-w-0 items-center gap-3 sm:gap-4">
-                                                                 <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-surface-2 text-primary sm:h-12 sm:w-12">
-                                                                      {category.name.charAt(0)}
-                                                                 </div>
-                                                                 <div className="min-w-0">
-                                                                      <h3 className="truncate font-medium text-white">{category.name}</h3>
-                                                                      <p className="line-clamp-2 text-sm text-muted sm:line-clamp-1">{category.observation}</p>
-                                                                 </div>
-                                                            </div>
-                                                            <div className="flex shrink-0 items-center gap-2 sm:gap-6">
-                                                                 <div className="text-right">
-                                                                      <span className="hidden text-sm text-muted sm:inline">Total de itens</span>
-                                                                      <p className="text-lg font-semibold text-white">{category.total}</p>
-                                                                 </div>
-                                                                 <MdKeyboardArrowRight size={24} className="text-primary" aria-hidden />
-                                                            </div>
-                                                       </div>
-                                                  </motion.button>
+                                                       {f.label}
+                                                  </button>
                                              ))}
-                                        </motion.div>
-                                   ) : (
-                                        <motion.div className="flex flex-col items-center justify-center h-full text-center" variants={itemVariants}>
-                                             <div className="bg-surface-2 p-6 rounded-xl mb-4">
-                                                  <MdSearch className="text-primary" size={48} />
-                                             </div>
-                                             <h3 className="text-xl font-medium mb-2">Nenhuma categoria encontrada</h3>
-                                             <p className="text-subtle max-w-md">
-                                                  Não encontramos categorias com este termo. Tente outra busca ou crie uma nova categoria.
-                                             </p>
-                                             <button
-                                                  className="mt-4 flex items-center gap-2 bg-primary text-black px-4 py-2 rounded-lg hover:bg-primary/90 transition-colors duration-300"
-                                                  onClick={() => {
-                                                       setSearchTerm("");
-                                                       setIsAddNewOpen(true);
-                                                  }}
-                                             >
-                                                  <MdAdd /> Criar nova categoria
-                                             </button>
-                                        </motion.div>
-                                   )}
-                              </div>
+                                        </div>
 
-                              {/* Painel direito - Detalhes da categoria selecionada */}
-                              <div className={`${selectedCategory ? 'block' : 'hidden lg:block'} w-full overflow-y-auto lg:w-2/5 lg:border-l lg:border-line 2xl:w-1/3`}>
-                                   <AnimatePresence>
-                                        {(() => {
-                                             const currentCategory = getUpdatedSelectedCategory();
-                                             return currentCategory ? (
+                                        {filteredCategories.length > 0 ? (
+                                             <ul className="space-y-2.5">
+                                                  {filteredCategories.map((category, index) => {
+                                                       const active = currentCategory?.id === category.id;
+                                                       const pct = category.percentualValor;
+                                                       return (
+                                                            <motion.li
+                                                                 key={category.id}
+                                                                 initial={{ opacity: 0, y: 10 }}
+                                                                 animate={{ opacity: 1, y: 0 }}
+                                                                 transition={{ delay: Math.min(index, 8) * 0.04 }}
+                                                            >
+                                                                 <button
+                                                                      type="button"
+                                                                      aria-pressed={active}
+                                                                      onClick={() => selectCategory(category)}
+                                                                      className={`group relative w-full rounded-2xl border p-4 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${active ? 'border-primary/50 bg-primary/[0.06]' : 'border-white/[0.07] bg-surface/80 hover:border-white/20'}`}
+                                                                 >
+                                                                      {active && <motion.span layoutId="category-active" className="absolute inset-y-4 left-0 w-[3px] rounded-full bg-primary" />}
+                                                                      <div className="flex items-center gap-3">
+                                                                           <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl font-display text-sm font-semibold ${active ? 'bg-primary text-black' : 'bg-white/[0.06] text-primary'}`}>
+                                                                                {category.name.charAt(0).toUpperCase()}
+                                                                           </span>
+                                                                           <div className="min-w-0 flex-1">
+                                                                                <p className="truncate font-medium text-white">{category.name}</p>
+                                                                                <p className="mt-0.5 truncate text-xs text-white/45">
+                                                                                     {category.total} {category.total === 1 ? 'asset' : 'assets'}
+                                                                                     {category.taxa != null && <> · {category.taxa}% / year</>}
+                                                                                </p>
+                                                                           </div>
+                                                                           <div className="text-right">
+                                                                                <p className="text-sm font-semibold text-white">{category.total ? compactMoney(category.valorTotal) : '—'}</p>
+                                                                                {pct != null && <p className={`font-mono text-[11px] ${valueTone(pct).text}`}>{pct}% left</p>}
+                                                                           </div>
+                                                                           <FiChevronRight className="shrink-0 text-white/30 transition-colors group-hover:text-primary" aria-hidden />
+                                                                      </div>
+                                                                      {pct != null && <ValueBar pct={pct} className="ml-[3.25rem] mt-3" />}
+                                                                 </button>
+                                                            </motion.li>
+                                                       );
+                                                  })}
+                                             </ul>
+                                        ) : (
+                                             <div className="flex flex-col items-center rounded-3xl border border-dashed border-white/10 px-6 py-12 text-center">
+                                                  <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl border border-primary/30 bg-primary/10 text-primary">
+                                                       <FiLayers size={20} />
+                                                  </div>
+                                                  <p className="font-display font-semibold">{categories.length ? 'No categories match' : 'No categories yet'}</p>
+                                                  <p className="mt-2 max-w-xs text-sm text-white/50">
+                                                       {categories.length ? 'Try another search or clear the filter.' : 'Categories group your assets and set how fast they depreciate.'}
+                                                  </p>
+                                                  <button
+                                                       type="button"
+                                                       className="mt-5 inline-flex items-center gap-1.5 rounded-full bg-primary px-4 py-2 text-sm font-semibold text-black hover:bg-primary-hover"
+                                                       onClick={() => { setSearchTerm(''); setFiltroSelecionado(null); setIsAddNewOpen(true); }}
+                                                  >
+                                                       <FiPlus aria-hidden /> Create a category
+                                                  </button>
+                                             </div>
+                                        )}
+                                   </section>
+
+                                   <section aria-label="Category details" className={currentCategory ? 'block' : 'hidden lg:block'}>
+                                        <AnimatePresence mode="wait">
+                                             {currentCategory ? (
                                                   <motion.div
-                                                       className="p-4 sm:p-6"
-                                                       initial={{ opacity: 0, x: 20 }}
+                                                       key={currentCategory.id}
+                                                       className="rounded-3xl border border-white/[0.07] bg-surface/80 p-4 sm:p-6"
+                                                       initial={{ opacity: 0, x: 16 }}
                                                        animate={{ opacity: 1, x: 0 }}
-                                                       exit={{ opacity: 0, x: 20 }}
-                                                       transition={{ duration: 0.3 }}
+                                                       exit={{ opacity: 0, x: 16 }}
+                                                       transition={{ duration: 0.25 }}
                                                   >
                                                        <button
                                                             type="button"
-                                                            className="-ml-2 mb-2 flex h-10 items-center gap-1 rounded-lg px-2 text-sm text-muted transition-colors hover:bg-white/5 hover:text-white"
+                                                            className="-ml-2 mb-3 flex h-9 items-center gap-1.5 rounded-full px-3 text-sm text-white/60 transition-colors hover:bg-white/5 hover:text-white lg:hidden"
                                                             onClick={() => setSelectedCategory(null)}
                                                        >
-                                                            <MdKeyboardArrowLeft size={20} aria-hidden /> Voltar para lista
+                                                            <FiArrowLeft aria-hidden /> All categories
                                                        </button>
 
-                                                       <div className="mb-6 flex items-start justify-between gap-3">
-                                                            <h2 className="min-w-0 break-words text-xl font-bold">{currentCategory.name}</h2>
-                                                            <div className="flex shrink-0 items-center gap-2">
+                                                       <div className="flex items-start justify-between gap-3">
+                                                            <div className="min-w-0">
+                                                                 <h2 className="break-words font-display text-xl font-semibold tracking-tight">{currentCategory.name}</h2>
+                                                                 <p className="mt-1 text-sm text-white/50">
+                                                                      {currentCategory.total} {currentCategory.total === 1 ? 'asset' : 'assets'} · <span className="text-primary">{money(currentCategory.valorTotal)}</span> today
+                                                                      {currentCategory.taxa != null && <> · {currentCategory.taxa}% / year</>}
+                                                                 </p>
+                                                            </div>
+                                                            <div className="flex shrink-0 items-center gap-1.5">
                                                                  <button
                                                                       type="button"
-                                                                      aria-label="Editar categoria"
-                                                                      title="Editar categoria"
-                                                                      className="flex h-10 w-10 items-center justify-center bg-surface-2 text-primary hover:bg-surface-3 hover:text-white rounded-lg transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-                                                                      onClick={() => {
-                                                                           setSelectedCategoryForEdit(currentCategory);
-                                                                           setIsEditCategoriaOpen(true);
-                                                                      }}
+                                                                      aria-label="Edit category"
+                                                                      title="Edit category"
+                                                                      className="flex h-9 w-9 items-center justify-center rounded-xl border border-white/10 text-white/70 transition-colors hover:border-primary/50 hover:text-primary"
+                                                                      onClick={() => { setSelectedCategoryForEdit(currentCategory); setIsEditCategoriaOpen(true); }}
                                                                  >
-                                                                      <MdModeEdit size={18} />
+                                                                      <FiEdit2 size={15} />
                                                                  </button>
                                                                  <button
                                                                       type="button"
-                                                                      aria-label="Excluir categoria"
-                                                                      title="Excluir categoria"
-                                                                      className="flex h-10 w-10 items-center justify-center bg-surface-2 text-red-400 hover:bg-red-500/15 hover:text-red-300 rounded-lg transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-                                                                      onClick={() => {
-                                                                           setItemToDelete({
-                                                                                tipo: 'categoria',
-                                                                                nome: currentCategory.name,
-                                                                                onConfirm: async () => {
-                                                                                     try {
-                                                                                          await removeCategoria(currentCategory.id);
-                                                                                          toast.success('Categoria excluída com sucesso!');
-                                                                                          setSelectedCategory(null);
-                                                                                          
-                                                                                          await recarregarCategorias();
-                                                                                     } catch (error) {
-                                                                                          toast.error('Erro ao excluir categoria');
-                                                                                     }
-                                                                                }
-                                                                           });
-                                                                           setIsConfirmDeleteOpen(true);
-                                                                      }}
+                                                                      aria-label="Delete category"
+                                                                      title="Delete category"
+                                                                      className="flex h-9 w-9 items-center justify-center rounded-xl border border-white/10 text-white/70 transition-colors hover:border-red-500/50 hover:bg-red-500/10 hover:text-red-300"
+                                                                      onClick={() => confirmDeleteCategory(currentCategory)}
                                                                  >
-                                                                      <RiDeleteBinLine size={18} />
+                                                                      <FiTrash2 size={15} />
                                                                  </button>
                                                             </div>
                                                        </div>
 
-                                                       <div className="bg-[#1a1a1a] p-4 rounded-xl mb-6">
-                                                            <p className="text-muted text-sm mb-2">Observação</p>
-                                                            <p className="text-white">{currentCategory.observation}</p>
-                                                       </div>
+                                                       {currentCategory.observation && (
+                                                            <p className="mt-4 rounded-2xl bg-white/[0.03] px-4 py-3 text-sm leading-relaxed text-white/65">{currentCategory.observation}</p>
+                                                       )}
 
-                                                       <div className="flex justify-between items-center mb-4">
-                                                            <h3 className="font-medium">Patrimônios cadastrados</h3>
+                                                       <div className="mb-3 mt-6 flex items-center justify-between">
+                                                            <h3 className="font-mono text-[11px] uppercase tracking-[0.18em] text-white/40">Assets</h3>
                                                             <button
                                                                  type="button"
-                                                                 className="flex h-9 items-center gap-1 rounded-lg px-2 -mr-2 text-sm text-primary hover:bg-primary/10 transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                                                                 className="inline-flex h-9 items-center gap-1.5 rounded-full border border-primary/40 px-3 text-xs font-medium text-primary transition-colors hover:bg-primary/10"
                                                                  onClick={() => handleOpenPatrimonioModal(currentCategory)}
                                                             >
-                                                                 <MdAdd size={16} /> Novo patrimônio
+                                                                 <FiPlus aria-hidden /> New asset
                                                             </button>
                                                        </div>
 
-                                                       <div className="space-y-3">
-                                                            {loadingPatrimonios[currentCategory.id] ? (
-                                                                 <div className="flex items-center justify-center py-8">
-                                                                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-                                                                      <span className="ml-3 text-subtle">Carregando patrimônios...</span>
-                                                                 </div>
-                                                            ) : (currentCategory.notebooks?.length || 0) > 0 ? (
-                                                                 currentCategory.notebooks?.map((item, index) => (
-                                                                      <motion.button
-                                                                           type="button"
-                                                                           key={item.id ?? index}
-                                                                           className="w-full gap-3 bg-surface-2 p-3 text-left rounded-lg flex items-center justify-between cursor-pointer hover:bg-[#353535] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-                                                                           initial={hasInitiallyLoaded ? { opacity: 1, y: 0 } : { opacity: 0, y: 10 }}
-                                                                           animate={{ opacity: 1, y: 0 }}
-                                                                           transition={hasInitiallyLoaded ? {} : { delay: index * 0.05, duration: 0.2 }}
-                                                                           whileHover={hasInitiallyLoaded ? {} : { scale: 1.02 }}
-                                                                           onClick={() => handleOpenModal(item)}
-                                                                      >
-                                                                           <div className="flex min-w-0 items-center gap-3">
-                                                                                <div className={`w-10 h-10 shrink-0 rounded-lg ${item.finalValue >= 70 ? 'bg-green-500' : item.finalValue >= 50 ? 'bg-yellow-500' : 'bg-red-500'} flex items-center justify-center text-white font-bold`}>
-                                                                                     {item.name.charAt(0)}
-                                                                                </div>
-                                                                                <span className="truncate font-medium">{item.name}</span>
-                                                                           </div>
-                                                                           <div className="flex shrink-0 items-center gap-2 sm:gap-4">
-                                                                                <div className="flex flex-col items-end">
-                                                                                     <span className={`text-sm ${item.finalValue >= 70 ? 'text-green-500' : item.finalValue >= 50 ? 'text-yellow-500' : 'text-red-500'}`}>
-                                                                                          {item.finalValue}% valor
-                                                                                     </span>
-                                                                                     <span className="text-xs text-subtle">
-                                                                                          Depreciação: {100 - item.finalValue}%
-                                                                                     </span>
-                                                                                </div>
-                                                                                <MdKeyboardArrowRight size={20} className="text-muted" aria-hidden />
-                                                                           </div>
-                                                                      </motion.button>
-                                                                 ))
-                                                            ) : (
-                                                                 <div className="text-center py-8 text-subtle">
-                                                                      <p>Nenhum patrimônio cadastrado nesta categoria.</p>
-                                                                      <button
-                                                                           className="mt-2 text-primary hover:text-white transition-colors"
-                                                                           onClick={() => handleOpenPatrimonioModal(currentCategory)}
-                                                                      >
-                                                                           Adicionar primeiro patrimônio
-                                                                      </button>
-                                                                 </div>
-                                                            )}
-                                                       </div>
+                                                       {loadingPatrimonios[currentCategory.id] ? (
+                                                            <div className="space-y-2" aria-label="Loading assets">
+                                                                 {[0, 1, 2].map(i => <div key={i} className="h-14 animate-pulse rounded-xl bg-white/[0.04]" />)}
+                                                            </div>
+                                                       ) : assets.length > 0 ? (
+                                                            <div className="overflow-hidden rounded-2xl ring-1 ring-white/10">
+                                                                 <table className="w-full text-left text-sm">
+                                                                      <thead className="bg-white/[0.03] font-mono text-[10px] uppercase tracking-wider text-white/40">
+                                                                           <tr>
+                                                                                <th className="px-3 py-2.5 font-normal sm:px-4">Asset</th>
+                                                                                <th className="hidden px-3 py-2.5 font-normal xl:table-cell">Acquired</th>
+                                                                                <th className="hidden px-3 py-2.5 text-right font-normal sm:table-cell">Purchase</th>
+                                                                                <th className="px-3 py-2.5 text-right font-normal">Today</th>
+                                                                                <th className="px-3 py-2.5 font-normal sm:w-36">Value left</th>
+                                                                           </tr>
+                                                                      </thead>
+                                                                      <tbody>
+                                                                           {assets.map((item, index) => {
+                                                                                const tone = valueTone(item.finalValue);
+                                                                                return (
+                                                                                     <motion.tr
+                                                                                          key={item.id ?? index}
+                                                                                          initial={{ opacity: 0 }}
+                                                                                          animate={{ opacity: 1 }}
+                                                                                          transition={{ delay: Math.min(index, 10) * 0.03 }}
+                                                                                          tabIndex={0}
+                                                                                          role="button"
+                                                                                          aria-label={`Open ${item.name}`}
+                                                                                          onClick={() => { setSelectedPatrimonio(item); setIsModalOpen(true); }}
+                                                                                          onKeyDown={(e) => { if (e.key === 'Enter') { setSelectedPatrimonio(item); setIsModalOpen(true); } }}
+                                                                                          className="cursor-pointer border-t border-white/[0.05] transition-colors hover:bg-white/[0.04] focus-visible:bg-white/[0.05] focus-visible:outline-none"
+                                                                                     >
+                                                                                          <td className="px-3 py-3 sm:px-4">
+                                                                                               <div className="flex items-center gap-3">
+                                                                                                    <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-xs font-bold text-white ${tone.bg}`}>{item.name.charAt(0)}</span>
+                                                                                                    <div className="min-w-0">
+                                                                                                         <p className="truncate text-white">{item.name}</p>
+                                                                                                         {item.codigo && <p className="font-mono text-[10px] text-white/35">{item.codigo}</p>}
+                                                                                                    </div>
+                                                                                               </div>
+                                                                                          </td>
+                                                                                          <td className="hidden whitespace-nowrap px-3 py-3 text-white/55 xl:table-cell">{monthYear(item.data_aquisicao)}</td>
+                                                                                          <td className="hidden px-3 py-3 text-right text-white/55 sm:table-cell">{money(item.preco_inicial)}</td>
+                                                                                          <td className="px-3 py-3 text-right font-medium text-white">{money(item.valor_atual)}</td>
+                                                                                          <td className="px-3 py-3">
+                                                                                               <div className="flex items-center gap-2">
+                                                                                                    <ValueBar pct={item.finalValue} className="hidden flex-1 sm:block" />
+                                                                                                    <span className={`w-9 text-right font-mono text-[11px] ${tone.text}`}>{item.finalValue}%</span>
+                                                                                               </div>
+                                                                                          </td>
+                                                                                     </motion.tr>
+                                                                                );
+                                                                           })}
+                                                                      </tbody>
+                                                                 </table>
+                                                            </div>
+                                                       ) : (
+                                                            <div className="rounded-2xl border border-dashed border-white/10 px-6 py-10 text-center">
+                                                                 <FiTrendingDown className="mx-auto text-white/30" size={22} aria-hidden />
+                                                                 <p className="mt-3 text-sm text-white/60">No assets in this category yet.</p>
+                                                                 <button
+                                                                      type="button"
+                                                                      className="mt-3 text-sm font-medium text-primary hover:underline"
+                                                                      onClick={() => handleOpenPatrimonioModal(currentCategory)}
+                                                                 >
+                                                                      Add the first asset
+                                                                 </button>
+                                                            </div>
+                                                       )}
                                                   </motion.div>
                                              ) : (
                                                   <motion.div
-                                                       className="flex flex-col items-center justify-center h-full text-center p-6"
+                                                       key="empty"
                                                        initial={{ opacity: 0 }}
                                                        animate={{ opacity: 1 }}
-                                                       transition={{ duration: 0.3 }}
+                                                       className="sticky top-6 flex flex-col items-center justify-center rounded-3xl border border-dashed border-white/10 px-6 py-20 text-center"
                                                   >
-                                                       <div className="bg-surface-2 p-6 rounded-full mb-4">
-                                                            <FaShare className="text-subtle" size={32} />
+                                                       <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.03] text-white/40">
+                                                            <FiBox size={22} />
                                                        </div>
-                                                       <h3 className="text-xl font-medium mb-2">Selecione uma categoria</h3>
-                                                       <p className="text-subtle max-w-md">
-                                                            Selecione uma categoria para visualizar seus detalhes e itens.
-                                                       </p>
+                                                       <p className="font-display font-semibold">Pick a category</p>
+                                                       <p className="mt-2 max-w-xs text-sm text-white/50">Its assets, what they cost and what they&apos;re worth today will show up here.</p>
                                                   </motion.div>
-                                             );
-                                        })()}
-                                   </AnimatePresence>
+                                             )}
+                                        </AnimatePresence>
+                                   </section>
                               </div>
                          </div>
-                    </motion.main>
-               </motion.div>
+                    </main>
+               </div>
 
-               {/* Modal de detalhes do patrimônio */}
                <DetalhesPatrimonioModal
                     isOpen={isModalOpen}
                     onClose={() => setIsModalOpen(false)}
@@ -659,15 +560,16 @@ export default function CategoriaFront({
                               tipo: 'patrimonio',
                               nome: patrimonio.name,
                               onConfirm: async () => {
+                                   if (blockIfDemo()) return;
                                    try {
                                         if (patrimonio.id && selectedCategory) {
                                              await removePatrimonio(patrimonio.id);
-                                             toast.success('Patrimônio excluído com sucesso!');
+                                             toast.success('Asset deleted');
                                              setIsModalOpen(false);
                                              await recarregarPatrimoniosETotais(selectedCategory.id);
                                         }
-                                   } catch (error) {
-                                        toast.error('Erro ao excluir patrimônio');
+                                   } catch {
+                                        toast.error("Couldn't delete the asset");
                                    }
                               }
                          });
@@ -676,7 +578,6 @@ export default function CategoriaFront({
                     }}
                />
 
-               {/* Modais */}
                <CriarCategoriaModal
                     isOpen={isAddNewOpen}
                     onClose={() => setIsAddNewOpen(false)}
@@ -692,9 +593,7 @@ export default function CategoriaFront({
                     onClose={() => setIsAddPatrimonioOpen(false)}
                     selectedCategory={selectedCategoryForPatrimonio}
                     onSuccess={() => {
-                         if (selectedCategoryForPatrimonio) {
-                              recarregarPatrimoniosETotais(selectedCategoryForPatrimonio.id);
-                         }
+                         if (selectedCategoryForPatrimonio) recarregarPatrimoniosETotais(selectedCategoryForPatrimonio.id);
                     }}
                />
 
@@ -712,9 +611,7 @@ export default function CategoriaFront({
                     patrimonio={selectedPatrimonioForEdit}
                     categoryId={selectedCategory?.id}
                     onSuccess={() => {
-                         if (selectedCategory) {
-                              recarregarPatrimoniosETotais(selectedCategory.id);
-                         }
+                         if (selectedCategory) recarregarPatrimoniosETotais(selectedCategory.id);
                     }}
                />
 
@@ -731,12 +628,13 @@ export default function CategoriaFront({
                               tipo: 'departamento',
                               nome: departamentoLocal.titulo,
                               onConfirm: async () => {
+                                   if (blockIfDemo()) return;
                                    try {
                                         await removeDepartamento(departamentoLocal);
-                                        toast.success('Departamento excluído com sucesso!');
+                                        toast.success('Room deleted');
                                         window.location.href = '/departamentos';
-                                   } catch (error) {
-                                        toast.error('Erro ao excluir departamento');
+                                   } catch {
+                                        toast.error("Couldn't delete the room");
                                    }
                               }
                          });
@@ -752,20 +650,18 @@ export default function CategoriaFront({
                          setItemToDelete(null);
                     }}
                     onConfirm={async () => {
-                         if (itemToDelete) {
-                              await itemToDelete.onConfirm();
-                         }
+                         if (itemToDelete) await itemToDelete.onConfirm();
                          setIsConfirmDeleteOpen(false);
                          setItemToDelete(null);
                     }}
-                    titulo={`Excluir ${itemToDelete?.tipo === 'patrimonio' ? 'patrimônio' : itemToDelete?.tipo || 'item'}`}
+                    titulo={`Delete ${itemToDelete?.tipo === 'patrimonio' ? 'asset' : itemToDelete?.tipo === 'categoria' ? 'category' : itemToDelete?.tipo === 'departamento' ? 'room' : 'item'}`}
                     descricao={
-                         itemToDelete?.tipo === 'categoria' ? 'Os patrimônios desta categoria também serão excluídos.'
-                              : itemToDelete?.tipo === 'departamento' ? 'Todas as categorias e patrimônios do departamento também serão excluídos.'
-                                   : 'Tem certeza que deseja excluir este item?'
+                         itemToDelete?.tipo === 'categoria' ? 'Every asset in this category will be deleted too.'
+                              : itemToDelete?.tipo === 'departamento' ? 'Every category and asset in this room will be deleted too.'
+                                   : 'This asset and its history will be removed.'
                     }
                     itemNome={itemToDelete?.nome}
-                    tipo={itemToDelete?.tipo as any}
+                    tipo={itemToDelete?.tipo as 'categoria' | 'patrimonio' | 'departamento'}
                />
 
                <CompartilharModal

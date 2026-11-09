@@ -1,312 +1,163 @@
-# Cybox - Sistema de Gestão Patrimonial
+# Cybox
 
-Cybox é um sistema moderno de gestão patrimonial desenvolvido em Next.js 14, permitindo que organizações gerenciem seus departamentos, categorias e patrimônios de forma eficiente e organizada.
+**Know what you own. Know what it's worth.**
 
-## 🎨 Paleta de Cores
+Cybox is an asset management app organized by department. Each department gets a **room**; rooms hold **categories** (each with its own annual depreciation rate) and categories hold **assets**. Cybox recalculates every asset's value monthly with straight-line depreciation, so you always know what everything is worth today.
 
-- **Cor Primária**: `#F6CF45` (Amarelo dourado)
-- **Background Principal**: `#000000` (Preto)
-- **Background Secundário**: `#0F0F0F` (Quase preto)
-- **Background Terciário**: `#1F1F1F` (Cinza escuro)
-- **Background Cards**: `#2C2C2C` (Cinza médio)
-- **Texto Principal**: `#FFFFFF` (Branco)
-- **Texto Secundário**: `#B4B4B4` (Cinza claro)
-- **Texto Desabilitado**: `#8C8888` (Cinza médio)
-- **Bordas**: `#333333` (Cinza escuro)
+Built by the **Adapto Software House Inc.** team in Vancouver, BC. · [adapto-sh.com](https://www.adapto-sh.com)
 
-## 🏗️ Arquitetura
+---
 
-### Frontend
-- **Framework**: Next.js 14 com App Router
-- **Linguagem**: TypeScript
-- **Estilização**: Tailwind CSS
-- **Animações**: Framer Motion
-- **Ícones**: React Icons (Lucide React, Font Awesome)
-- **Componentes UI**: Radix UI
-- **Notificações**: Sonner
+## Features
 
-### Backend
-- **API**: Next.js Server Actions
-- **Autenticação**: NextAuth v5 (Beta)
-- **Banco de Dados**: MySQL com mysql2
-- **Email**: Nodemailer
-- **Criptografia**: bcryptjs
-- **Validação**: TypeScript nativo
+- **Rooms per department**: create a room, or join one with an invite code or email invite.
+- **Roles**: owner, admin and member, enforced on the server for every action.
+- **Categories with depreciation presets**: standard annual rates per asset type.
+- **Assets**: purchase price, date, location and specs, with value today, value lost and a value-over-time chart.
+- **Room overview**: total value today, number of assets and % of value left.
+- **Notifications**: pending room invites, with accept / decline.
+- **Accounts**: email + password or Google sign-in, email confirmation, password reset, login lockout after repeated failures.
+- **Demo mode**: explore the whole app with sample data, without an account (see below).
 
-### Ferramentas de Desenvolvimento
-- **Build**: Next.js Build System
-- **Linting**: ESLint
-- **Type Checking**: TypeScript
-- **Deployment**: Configuração pronta para Vercel
+## Demo mode
 
-## 📊 Estrutura do Banco de Dados
+Visitors can click **Try the demo** (landing page hero and navbar) or **Explore the demo** (log in / sign up) to open the app with sample data, with no account needed.
 
-### Tabelas Principais
+How it works:
 
-1. **users**
-   - `id` (VARCHAR(36) - UUID)
-   - `nome` (VARCHAR(255))
-   - `email` (VARCHAR(255) - UNIQUE)
-   - `senha` (VARCHAR(255) - Hash bcrypt)
-   - `google_id` (VARCHAR(255) - UNIQUE)
-   - `avatar_url` (VARCHAR(500))
-   - `status` (ENUM: 'ativo', 'inativo', 'suspenso', 'deletado')
-   - `ultimo_login` (TIMESTAMP)
-   - `created_at` (TIMESTAMP)
-   - `updated_at` (TIMESTAMP)
+- The demo is a normal NextAuth session from a `demo` credentials provider (`src/auth.ts`). It needs **no database**.
+- Every server action checks `isDemoSession()` first and answers from the sample data in `src/lib/demo.ts`.
+- Demo mode is **read-only**: every write is refused on the server, and the UI shows a friendly notice with a "Create account" button (`src/app/components/demo/DemoContext.tsx`).
 
-2. **departamentos**
-   - `id_departamentos` (INT - AUTO_INCREMENT)
-   - `titulo` (VARCHAR(255))
-   - `descricao` (TEXT)
-   - `convite` (VARCHAR(255))
-   - `codigo_convite` (VARCHAR(255) - UNIQUE)
-   - `localizacao` (VARCHAR(255))
-   - `fotoDepartamento` (VARCHAR(255))
-   - `status` (ENUM: 'ativo', 'inativo', 'deletado')
-   - `created_at` (TIMESTAMP)
-   - `updated_at` (TIMESTAMP)
+## Tech stack
 
-3. **categorias**
-   - `id` (INT - AUTO_INCREMENT)
-   - `id_departamento` (INT - FK)
-   - `nome` (VARCHAR)
-   - `descricao` (TEXT)
-   - `padrao_depreciacao_id` (INT - FK)
-   - `status` (ENUM: 'ativo', 'inativo')
+- **Next.js 14** (App Router, Server Actions) + **TypeScript**
+- **Tailwind CSS** + **Framer Motion**
+- **NextAuth v5** (credentials, Google, demo)
+- **MySQL** via `mysql2`
+- **Nodemailer** for transactional email
+- **Recharts** for charts
 
-4. **patrimonios**
-   - `id` (INT - AUTO_INCREMENT)
-   - `id_categoria` (INT - FK)
-   - `nome` (VARCHAR)
-   - `descricao` (TEXT)
-   - `codigo_patrimonio` (VARCHAR - UNIQUE)
-   - `localizacao` (VARCHAR)
-   - `valor_inicial` (DECIMAL)
-   - `valor_atual` (DECIMAL)
-   - `data_aquisicao` (DATE)
-   - `tempo_depreciacao` (DECIMAL(5,2) - taxa anual de depreciação em %, linear; o valor atual é calculado a partir dela)
-   - `status` (ENUM: 'ativo', 'inativo', 'vendido', 'descartado')
+## Brand
 
-5. **users_departamentos**
-   - `id_users` (VARCHAR - FK)
-   - `id_departamentos` (INT - FK)
-   - `role` (ENUM: 'owner', 'admin', 'member')
-   - `status` (ENUM: 'ativo', 'inativo')
+| Token | Value | Use |
+| --- | --- | --- |
+| `primary` | `#F6CF45` | Gold: main actions, highlights |
+| `amber` | `#FFAE3F` | The orange slash from the logo, accents |
+| `page` / `ink` | `#050505` | Background |
+| `surface` | `#0e0e0e` / `#181818` / `#242424` | Cards, inputs, hover |
+| Display font | Unbounded | Headings |
+| Mono font | JetBrains Mono | Labels, codes |
+| Body font | Inter | Text |
 
-6. **convites**
-   - `id` (INT - AUTO_INCREMENT)
-   - `id_departamentos` (INT - FK)
-   - `id_remetente` (VARCHAR - FK)
-   - `id_destinatario` (VARCHAR - FK)
-   - `codigo_convite` (VARCHAR - UNIQUE)
-   - `status` (ENUM: 'pendente', 'aceito', 'recusado')
+Trimmed logos live in `public/brand/` (`cybox-wordmark.png`, `cybox-mark.png`).
 
-7. **convites_externos**
-   - `id` (INT - AUTO_INCREMENT)
-   - `id_departamentos` (INT - FK)
-   - `id_remetente` (VARCHAR - FK)
-   - `email_destinatario` (VARCHAR)
-   - `codigo_convite` (VARCHAR - UNIQUE)
-   - `data_expiracao` (DATETIME)
-   - `status` (ENUM: 'pendente', 'aceito', 'recusado', 'expirado')
-
-8. **padroes_depreciacao**
-   - `id` (INT - AUTO_INCREMENT)
-   - `categoria` (VARCHAR)
-   - `vida_util_meses` (INT)
-   - `taxa_depreciacao_anual` (DECIMAL)
-
-9. **gastos**
-   - `id` (INT - AUTO_INCREMENT)
-   - `patrimonio_id` (INT - FK)
-   - `tipo` (ENUM: 'manutencao', 'reparo', 'upgrade', 'seguro', 'licenca', 'outros')
-   - `descricao` (TEXT)
-   - `valor` (DECIMAL(10,2))
-   - `data_gasto` (DATE)
-   - `fornecedor` (VARCHAR(255))
-   - `numero_nota_fiscal` (VARCHAR(100))
-   - `observacoes` (TEXT)
-   - `comprovante_url` (VARCHAR(500))
-   - `usuario_id` (VARCHAR(36) - FK)
-   - `status` (ENUM: 'pendente', 'aprovado', 'pago', 'cancelado')
-   - `created_at` (TIMESTAMP)
-   - `updated_at` (TIMESTAMP)
-
-10. **notificacoes**
-    - `id` (INT - AUTO_INCREMENT)
-    - `usuario_id` (VARCHAR(36) - FK)
-    - `titulo` (VARCHAR(255))
-    - `mensagem` (TEXT)
-    - `tipo` (ENUM: 'info', 'warning', 'success', 'error', 'depreciacao', 'manutencao', 'vencimento', 'convite')
-    - `lida` (TINYINT(1) - Default: 0)
-    - `acao_url` (VARCHAR(500))
-    - `acao_texto` (VARCHAR(100))
-    - `data_expiracao` (TIMESTAMP)
-    - `metadados` (JSON)
-    - `created_at` (TIMESTAMP)
-
-## 🛠️ Padrões de Desenvolvimento
-
-### Código Limpo
-- **❌ Nunca usar console.log em produção**
-- **❌ Nunca adicionar comentários desnecessários**
-- **✅ Usar TypeScript strict (sem tipos `any`)**
-- **✅ Remover imports não utilizados**
-- **✅ Seguir padrões de nomenclatura consistentes**
-
-### Componentes React
-```typescript
-// Estrutura padrão de componente
-"use client"
-
-import { ComponentProps } from "@/lib/types/types";
-import { motion } from "framer-motion";
-
-interface Props {
-    // Props tipadas
-}
-
-export function ComponentName({ ...props }: Props) {
-    return (
-        <motion.div className="...">
-            {/* JSX limpo e semântico */}
-        </motion.div>
-    );
-}
-```
-
-### Estilização
-- **Framework**: Tailwind CSS
-- **Animações**: Framer Motion para transições
-- **Responsividade**: Mobile-first approach
-- **Foco**: Sistema customizado sem outline padrão do browser
-- **Scrollbar**: Customizada com cor primária `#F6CF45`
-
-### Server Actions
-```typescript
-// src/app/services/exemplo.ts
-"use server"
-
-import { connectToDatabase } from "@/lib/mysql";
-import { auth } from "@/auth";
-
-export async function exemploAction(data: ExemploType) {
-    const session = await auth();
-    if (!session?.user?.id) {
-        throw new Error("Não autorizado");
-    }
-
-    const connection = await connectToDatabase();
-    // Lógica do servidor
-    await connection.end();
-}
-```
-
-## 📝 Scripts Disponíveis
+## Getting started
 
 ```bash
-# Desenvolvimento
+cp .env.exemple .env.local   # then fill in the values
+npm install
+npm run seed:improved        # first run only: creates all tables + sample data
 npm run dev
-
-# Build de produção
-npm run build
-
-# Iniciar produção
-npm run start
-
-# Linting
-npm run lint
-
-# Banco de dados
-npm run seed:improved     # ⭐ CRIA TABELAS PELA PRIMEIRA VEZ + dados
-npm run db:show-tables    # Mostrar tabelas
-npm run db:table          # Visualizar estrutura de tabela
-npm run db:migrate        # Aplica as migrações pendentes (seguro rodar várias vezes)
-npm run db:reset          # Resetar banco de dados (dropa tudo)
-npm run db:fix-google-passwords  # Lista contas Google com a senha fixa antiga (--apply para corrigir)
 ```
 
-### 🗃️ Criação do Banco de Dados
+Open http://localhost:3000.
 
-**Para criar o banco pela primeira vez:**
-```bash
-npm run seed:improved
-```
+### Environment variables
 
-**Scripts de banco explicados:**
-- **`seed:improved`** - Cria TODAS as 10 tabelas do zero + popula com dados
-- **`db:migrate`** - Atualiza um banco existente para o schema atual (verificação de email, bloqueio de login, redefinição de senha e taxa de depreciação decimal)
-- **`db:reset`** - Remove tudo e recria estrutura completa
-- **`db:show-tables`** - Lista todas as tabelas do banco  
-- **`db:table <nome>`** - Mostra estrutura detalhada de uma tabela
-
-## 🔧 Configuração do Ambiente
-
-### Variáveis de Ambiente
-Copie `.env.exemple` para `.env` e preencha os valores:
 ```env
 # MySQL
 MYSQL_HOST=localhost
 MYSQL_PORT=3306
 MYSQL_USER=root
-MYSQL_PASSWORD=sua_senha
+MYSQL_PASSWORD=your_password
 MYSQL_DATABASE=cybox
 
 # NextAuth
-AUTH_SECRET=gere_com_npx_auth_secret
+AUTH_SECRET=generate_with_npx_auth_secret
 NEXTAUTH_URL=http://localhost:3000
 
 # Google OAuth
-GOOGLE_CLIENT_ID=seu_client_id.apps.googleusercontent.com
-GOOGLE_CLIENT_SECRET=seu_client_secret
+GOOGLE_CLIENT_ID=your_client_id.apps.googleusercontent.com
+GOOGLE_CLIENT_SECRET=your_client_secret
 
 # Email (SMTP)
 SMTP_HOST=smtp.gmail.com
 SMTP_PORT=587
-SMTP_USER=seu_email@gmail.com
-SMTP_PASS=sua_senha_de_app
+SMTP_USER=you@gmail.com
+SMTP_PASS=your_app_password
 SMTP_FROM="Cybox <noreply@cybox.com>"
 ```
 
-## 🚀 Funcionalidades
+`NEXTAUTH_URL` is also used to build links in emails and the social share image URL.
 
-- **Gestão de Departamentos**: Criação, edição e visualização
-- **Sistema de Categorias**: Organização de patrimônios por categoria
-- **Controle Patrimonial**: Cadastro completo com depreciação automática
-- **Sistema de Convites**: Convites internos e externos por email
-- **Autenticação**: Login seguro com NextAuth
-- **Responsivo**: Interface adaptável para mobile e desktop
-- **Animações**: Transições fluidas com Framer Motion
+## Scripts
 
-## 📋 Gestão do Projeto
+| Command | What it does |
+| --- | --- |
+| `npm run dev` | Development server |
+| `npm run build` / `npm run start` | Production build / server |
+| `npm run lint` | ESLint |
+| `npm run seed:improved` | Creates every table from scratch and adds sample data |
+| `npm run db:migrate` | Brings an existing database up to date (safe to run many times), including renaming the depreciation presets to English |
+| `npm run db:reset` | Drops everything and recreates the schema |
+| `npm run db:show-tables` | Lists the tables |
+| `npm run db:table <name>` | Shows a table's structure |
+| `npm run db:fix-google-passwords` | Lists Google accounts with the old fixed password (`--apply` to fix) |
 
-**Trello Board**: https://trello.com/b/TeG64eaK/cybox
+## Database
 
-## 🤝 Contribuição
+Main tables: `users`, `departamentos` (rooms), `users_departamentos` (membership + role), `categorias`, `patrimonios` (assets), `padroes_depreciacao` (depreciation presets), `convites` / `convites_externos` (invites), `gastos` (expenses) and `notificacoes`.
 
-1. Seguir os padrões de código estabelecidos
-2. Não adicionar logs ou comentários desnecessários
-3. Testar funcionalidades antes de commits
-4. Usar TypeScript strict
-5. Manter consistência visual com a paleta de cores
+`patrimonios.tempo_depreciacao` stores the **annual depreciation rate in %** (straight-line). The current value is always derived from it (`src/lib/depreciacao-calculo.ts`, mirrored in SQL by `sqlValorAtual` in `src/lib/depreciacao.ts`).
 
-## 📁 Estrutura do Projeto
+Deleting a room, category or asset marks it as `deletado` (soft delete).
+
+## Routes
+
+| Route | Page |
+| --- | --- |
+| `/` | Landing page |
+| `/login`, `/cadastro` | Log in, sign up |
+| `/esqueci-senha`, `/redefinir-senha/[token]` | Forgot / reset password |
+| `/verificar-email/[token]` | Email confirmation |
+| `/convite/[codigo]` | Join a room from an invite |
+| `/departamentos` | Your rooms (signed-in area) |
+| `/departamentos/[id]` | A room: categories and assets |
+| `/privacy`, `/terms` | Privacy Policy, Terms of Use |
+
+Only `/departamentos` is protected by the middleware (`src/auth.config.ts`); those pages also check the session themselves, and every server action checks access.
+
+## Project structure
 
 ```
 src/
 ├── app/
-│   ├── cadastro/           # Páginas de cadastro
-│   ├── components/         # Componentes reutilizáveis
-│   ├── convite/           # Sistema de convites
-│   ├── departamentos/     # Gestão de departamentos
-│   ├── login/             # Autenticação
-│   └── services/          # Server actions
+│   ├── components/
+│   │   ├── home/           # Landing page (hero box, tour, playground, pricing…)
+│   │   ├── auth/           # AuthShell, login and sign-up forms, demo button
+│   │   ├── demo/           # Demo context (read-only notices)
+│   │   ├── modals/         # Room, category, asset, members, invites, settings…
+│   │   ├── Navigation/     # App sidebar, room sidebar, mobile drawer, navbar
+│   │   └── legal/          # Privacy / Terms layout
+│   ├── departamentos/      # Rooms and room pages
+│   ├── services/           # Server actions (demo-aware)
+│   └── …                   # Auth, invite, legal and error pages
 ├── lib/
-│   ├── types/             # Definições TypeScript
-│   ├── email.ts           # Configuração de email
-│   └── mysql.ts           # Conexão com banco
-└── script/                # Scripts utilitários
+│   ├── demo.ts             # Demo data + isDemoSession()
+│   ├── format.ts           # Money / date formatting (USD, en-US)
+│   ├── depreciacao*.ts     # Depreciation math
+│   ├── authz.ts            # Role checks
+│   ├── email.ts            # Email templates
+│   └── mysql.ts            # Database connection
+└── script/                 # Seed script
 ```
 
----
+## Contributing
+
+1. Keep TypeScript strict (no `any`).
+2. Use the design tokens above instead of hard-coded colors where possible.
+3. Every new server action must check access **and** handle demo sessions (`isDemoSession()`).
+4. Test on mobile and desktop before committing.
+
+Project board: https://trello.com/b/TeG64eaK/cybox

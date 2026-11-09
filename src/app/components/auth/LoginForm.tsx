@@ -4,196 +4,139 @@ import { useEffect, useState } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { IoMdEye, IoMdEyeOff } from "react-icons/io";
 import { FcGoogle } from "react-icons/fc";
-import { MdEmail, MdLock, MdArrowBack } from "react-icons/md";
-import { AiOutlineLoading3Quarters } from "react-icons/ai";
-import { motion } from "framer-motion";
+import { FiEye, FiEyeOff, FiLock, FiMail, FiArrowRight } from "react-icons/fi";
 import { DoCredentialsLogin } from "../../services/login";
 import { destinoSeguro } from "@/lib/destino";
 import { toast } from "sonner";
+import { AuthHeading, DemoButton, Field, OrDivider } from "./AuthShell";
 
-const MENSAGENS_ERRO_LOGIN: Record<string, { titulo: string; descricao: string }> = {
+const LOGIN_ERRORS: Record<string, { title: string; description: string }> = {
     credentials: {
-        titulo: "Credenciais inválidas",
-        descricao: "Verifique seu email e senha e tente novamente.",
+        title: "Wrong email or password",
+        description: "Check your details and try again.",
     },
     conta_bloqueada: {
-        titulo: "Muitas tentativas",
-        descricao: "Por segurança, o login foi bloqueado por 15 minutos.",
+        title: "Too many attempts",
+        description: "For your security, sign-in is locked for 15 minutes.",
     },
     conta_inativa: {
-        titulo: "Conta desativada",
-        descricao: "Entre em contato com o suporte para reativar sua conta.",
+        title: "Account disabled",
+        description: "Contact support to reactivate your account.",
     },
     AccessDenied: {
-        titulo: "Não foi possível entrar com o Google",
-        descricao: "Verifique se o email da sua conta Google está confirmado.",
+        title: "Couldn't sign in with Google",
+        description: "Make sure the email on your Google account is verified.",
     },
 };
 
+const GENERIC_ERROR = { title: "Couldn't sign in", description: "Please try again in a moment." };
+
 export default function LoginForm() {
-    const [isVisible, setIsVisible] = useState(false);
-    const router = useRouter();
+    const [showPassword, setShowPassword] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
+    const router = useRouter();
     const searchParams = useSearchParams();
-    const erroUrl = searchParams.get('error');
+    const urlError = searchParams.get('error');
     const callbackUrl = searchParams.get('callbackUrl');
     const destino = destinoSeguro(callbackUrl);
 
     useEffect(() => {
-        if (!erroUrl) return;
-        const mensagem = MENSAGENS_ERRO_LOGIN[erroUrl] ?? {
-            titulo: "Erro ao fazer login",
-            descricao: "Tente novamente em alguns instantes.",
-        };
-        toast.error(mensagem.titulo, { description: mensagem.descricao, duration: 5000 });
-    }, [erroUrl]);
+        if (!urlError) return;
+        const message = LOGIN_ERRORS[urlError] ?? GENERIC_ERROR;
+        toast.error(message.title, { description: message.description, duration: 5000 });
+    }, [urlError]);
 
     async function handleFormSubmit(event: React.FormEvent<HTMLFormElement>) {
         event.preventDefault();
         setIsLoading(true);
 
         try {
-            const formData = new FormData(event.currentTarget);
-            const response = await DoCredentialsLogin(formData);
+            const response = await DoCredentialsLogin(new FormData(event.currentTarget));
 
             if (response.error) {
-                const mensagem = MENSAGENS_ERRO_LOGIN[response.error] ?? {
-                    titulo: "Erro ao fazer login",
-                    descricao: "Tente novamente em alguns instantes.",
-                };
-                toast.error(mensagem.titulo, {
-                    description: mensagem.descricao,
-                    duration: 4000,
-                });
+                const message = LOGIN_ERRORS[response.error] ?? GENERIC_ERROR;
+                toast.error(message.title, { description: message.description, duration: 4000 });
             } else {
-                toast.success("Login realizado com sucesso!", {
-                    description: "Redirecionando para seus departamentos...",
-                    duration: 2000,
-                });
-
-                setTimeout(() => {
-                    router.push(destino);
-                }, 500);
+                toast.success("Welcome back!", { description: "Taking you to your rooms…", duration: 2000 });
+                setTimeout(() => router.push(destino), 400);
             }
-        } catch (e: unknown) {
-            toast.error("Erro ao fazer login", {
-                description: (e as Error).message || "Tente novamente em alguns instantes.",
-                duration: 4000,
-            });
+        } catch {
+            toast.error(GENERIC_ERROR.title, { description: GENERIC_ERROR.description, duration: 4000 });
         } finally {
             setIsLoading(false);
         }
     }
 
     return (
-        <motion.div 
-            className="w-full max-w-md mx-auto"
-            initial={{ opacity: 0, x: 50 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.8, delay: 0.4 }}
-        >
-            <div className="bg-surface rounded-3xl p-8 shadow-2xl border border-line">
-                <div className="text-center mb-8">
-                    <h2 className="text-2xl font-bold text-white mb-2">Entrar na sua conta</h2>
-                    <p className="text-subtle">Digite suas credenciais para acessar</p>
+        <div>
+            <AuthHeading eyebrow="Log in" title="Welcome back" subtitle="Pick up right where you left your assets." />
+
+            <button
+                onClick={() => signIn('google', { callbackUrl: destino })}
+                type="button"
+                className="flex h-12 w-full items-center justify-center gap-3 rounded-xl bg-white font-medium text-gray-800 transition-colors hover:bg-gray-100"
+            >
+                <FcGoogle size={20} aria-hidden />
+                Continue with Google
+            </button>
+
+            <OrDivider label="or with email" />
+
+            <form onSubmit={handleFormSubmit} className="space-y-5">
+                <Field label="Email" name="email" type="email" required autoComplete="email" placeholder="you@company.com" icon={<FiMail aria-hidden />} />
+                <Field
+                    label="Password"
+                    name="password"
+                    type={showPassword ? "text" : "password"}
+                    required
+                    autoComplete="current-password"
+                    placeholder="••••••••"
+                    icon={<FiLock aria-hidden />}
+                    trailing={
+                        <button
+                            type="button"
+                            onClick={() => setShowPassword(v => !v)}
+                            aria-label={showPassword ? "Hide password" : "Show password"}
+                            className="flex h-9 w-9 items-center justify-center rounded-lg text-white/40 transition-colors hover:bg-white/5 hover:text-white"
+                        >
+                            {showPassword ? <FiEyeOff size={17} /> : <FiEye size={17} />}
+                        </button>
+                    }
+                />
+
+                <div className="flex justify-end">
+                    <Link href="/esqueci-senha" className="text-sm text-primary/90 hover:text-primary hover:underline">
+                        Forgot your password?
+                    </Link>
                 </div>
 
                 <button
-                    onClick={() => signIn('google', { callbackUrl: destino })}
-                    type="button"
-                    className="w-full flex items-center justify-center gap-3 bg-white text-gray-700 border border-gray-300 rounded-xl py-3 px-4 hover:bg-gray-50 transition-all duration-300 mb-6"
+                    type="submit"
+                    disabled={isLoading}
+                    className="group flex h-12 w-full items-center justify-center gap-2 rounded-full bg-primary font-semibold text-black shadow-[0_0_40px_-10px_rgba(246,207,69,0.8)] transition-colors hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-60"
                 >
-                    <FcGoogle size={20} />
-                    <span className="font-medium">Continuar com Google</span>
+                    {isLoading ? (
+                        <>
+                            <span className="h-4 w-4 animate-spin rounded-full border-2 border-black/30 border-t-black" /> Logging in…
+                        </>
+                    ) : (
+                        <>
+                            Log in <FiArrowRight className="transition-transform group-hover:translate-x-1" aria-hidden />
+                        </>
+                    )}
                 </button>
+            </form>
 
-                <div className="flex items-center my-6">
-                    <div className="flex-1 h-px bg-surface-2"></div>
-                    <span className="px-4 text-sm text-subtle">ou</span>
-                    <div className="flex-1 h-px bg-surface-2"></div>
-                </div>
+            <p className="mt-6 text-center text-sm text-white/50">
+                New to Cybox?{' '}
+                <a href={callbackUrl ? `/cadastro?callbackUrl=${encodeURIComponent(destino)}` : "/cadastro"} className="font-medium text-primary hover:underline">
+                    Create an account
+                </a>
+            </p>
 
-                <form onSubmit={handleFormSubmit} className="space-y-6">
-                    <div className="space-y-2">
-                        <label className="text-sm font-medium text-muted">Email</label>
-                        <div className="relative">
-                            <MdEmail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-subtle" size={20} />
-                            <input
-                                type="email"
-                                name="email"
-                                required
-                                autoComplete="email"
-                                className="w-full bg-surface-2 text-white pl-10 pr-4 py-3 rounded-xl border border-transparent focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all duration-300"
-                                placeholder="seu@email.com"
-                            />
-                        </div>
-                    </div>
-
-                    <div className="space-y-2">
-                        <label className="text-sm font-medium text-muted">Senha</label>
-                        <div className="relative">
-                            <MdLock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-subtle" size={20} />
-                            <input
-                                type={isVisible ? "text" : "password"}
-                                name="password"
-                                required
-                                autoComplete="current-password"
-                                className="w-full bg-surface-2 text-white pl-10 pr-12 py-3 rounded-xl border border-transparent focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all duration-300"
-                                placeholder="••••••••"
-                            />
-                            <button
-                                type="button"
-                                onClick={() => setIsVisible(!isVisible)}
-                                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-subtle hover:text-white transition-colors"
-                            >
-                                {isVisible ? <IoMdEye size={20} /> : <IoMdEyeOff size={20} />}
-                            </button>
-                        </div>
-                    </div>
-
-                    <div className="text-right">
-                        <Link href="/esqueci-senha" className="text-sm text-primary hover:underline">
-                            Esqueceu a senha?
-                        </Link>
-                    </div>
-
-                    <button
-                        type="submit"
-                        disabled={isLoading}
-                        className="w-full bg-primary text-black font-semibold py-3 px-4 rounded-xl hover:bg-primary/90 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-                    >
-                        {isLoading ? (
-                            <>
-                                <AiOutlineLoading3Quarters className="animate-spin" size={20} />
-                                Entrando...
-                            </>
-                        ) : (
-                            'Entrar'
-                        )}
-                    </button>
-                </form>
-
-                <div className="text-center mt-8 pt-6 border-t border-line">
-                    <p className="text-sm text-subtle">
-                        Não tem uma conta?{' '}
-                        <a href={callbackUrl ? `/cadastro?callbackUrl=${encodeURIComponent(destino)}` : "/cadastro"} className="text-primary font-medium hover:underline">
-                            Criar conta
-                        </a>
-                    </p>
-                </div>
-
-                <div className="text-center mt-4">
-                    <a 
-                        href="/" 
-                        className="inline-flex items-center gap-2 text-sm text-subtle hover:text-white transition-colors"
-                    >
-                        <MdArrowBack size={16} />
-                        Voltar ao início
-                    </a>
-                </div>
-            </div>
-        </motion.div>
+            <OrDivider label="just looking?" />
+            <DemoButton />
+        </div>
     );
 }

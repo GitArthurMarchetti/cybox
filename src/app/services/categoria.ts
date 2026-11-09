@@ -1,11 +1,13 @@
 "use server"
 
+import { demo, isDemoSession, DEMO_READ_ONLY } from "@/lib/demo";
 import { query } from '@/lib/mysql';
 import { CategoriaType, CategoriaComPatrimoniosType, PadraoDepreciacaoType } from "@/lib/types/types";
 import { requireCategoriaRole, requireDepartamentoRole, requireUserId } from "@/lib/authz";
 import { sqlValorAtual } from "@/lib/depreciacao";
 
 export async function getCategoriasByDepartamento(departamentoId: number): Promise<CategoriaType[]> {
+    if (await isDemoSession()) return demo.categories(departamentoId);
      try {
           if (!departamentoId) {
                throw new Error("ID do departamento é necessário.");
@@ -30,6 +32,7 @@ export async function getCategoriasByDepartamento(departamentoId: number): Promi
 }
 
 export async function getCategoriaById(categoriaId: number): Promise<CategoriaType | null> {
+    if (await isDemoSession()) return demo.category(categoriaId);
      try {
           if (!categoriaId) {
                throw new Error("ID da categoria é necessário.");
@@ -54,6 +57,7 @@ export async function getCategoriaById(categoriaId: number): Promise<CategoriaTy
 }
 
 export async function saveCategoria(formData: FormData): Promise<{ success: boolean; error?: string }> {
+    if (await isDemoSession()) return { success: false, error: DEMO_READ_ONLY };
      try {
           const id = +(formData.get('id') as string) || null;
           const id_departamento = +(formData.get('id_departamento') as string);
@@ -63,11 +67,11 @@ export async function saveCategoria(formData: FormData): Promise<{ success: bool
           const padrao_depreciacao_id = padrao_depreciacao_str && padrao_depreciacao_str !== '' ? +padrao_depreciacao_str : null;
 
           if (!id && !id_departamento) {
-               return { success: false, error: "Departamento não informado." };
+               return { success: false, error: "No room was given." };
           }
 
           if (!nome) {
-               return { success: false, error: "Informe o nome da categoria." };
+               return { success: false, error: "Give the category a name." };
           }
 
           if (!id) {
@@ -93,11 +97,12 @@ export async function saveCategoria(formData: FormData): Promise<{ success: bool
           return { success: true };
      } catch (error) {
           console.error("Erro ao salvar categoria:", error);
-          return { success: false, error: "Não foi possível salvar a categoria." };
+          return { success: false, error: "Couldn't save the category." };
      }
 }
 
 export async function removeCategoria(categoriaId: number) {
+    if (await isDemoSession()) throw new Error(DEMO_READ_ONLY);
      try {
           if (!categoriaId) {
                throw new Error("ID da categoria é necessário para deletar.");
@@ -124,6 +129,7 @@ export async function removeCategoria(categoriaId: number) {
 }
 
 export async function getCategoriasComTotalPatrimonios(departamentoId: number): Promise<CategoriaComPatrimoniosType[]> {
+    if (await isDemoSession()) return demo.categoriesWithTotals(departamentoId);
      try {
           if (!departamentoId) {
                throw new Error("ID do departamento é necessário.");
@@ -160,6 +166,7 @@ export async function getCategoriasComTotalPatrimonios(departamentoId: number): 
 }
 
 export async function getPadroesDepreciacao(): Promise<PadraoDepreciacaoType[]> {
+    if (await isDemoSession()) return demo.padroes();
      try {
           await requireUserId();
 

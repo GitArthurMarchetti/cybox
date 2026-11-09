@@ -23,7 +23,7 @@ export default function RedefinirSenha({ params }: { params: { token: string } }
         if (resultado.success) {
             setConcluido(true);
         } else {
-            setErro(resultado.error || "Não foi possível redefinir a senha.");
+            setErro(resultado.error || "Couldn't reset your password.");
         }
     };
 
@@ -32,36 +32,36 @@ export default function RedefinirSenha({ params }: { params: { token: string } }
             <PaginaStatus
                 icone={<MdCheckCircle size={28} />}
                 tom="sucesso"
-                titulo="Senha alterada!"
-                acoes={<Link href="/login" className={classeBotaoPrimario}>Entrar</Link>}
+                titulo="Password updated"
+                acoes={<Link href="/login" className={classeBotaoPrimario}>Log in</Link>}
             >
-                Use a nova senha para entrar. Por segurança, as outras sessões abertas foram encerradas.
+                Log in with your new password. For your security, other open sessions were signed out.
             </PaginaStatus>
         );
     }
 
-    const campo = "w-full rounded-lg bg-surface-2 px-4 py-3 text-white placeholder:text-subtle focus:outline-none focus:ring-2 focus:ring-primary";
+    const campo = "h-12 w-full rounded-xl border border-white/10 bg-white/[0.03] px-4 text-white placeholder:text-white/30 focus:border-primary/60 focus:outline-none focus:ring-4 focus:ring-primary/10";
 
     return (
-        <PaginaStatus icone={<MdLockReset size={28} />} titulo="Criar nova senha">
+        <PaginaStatus icone={<MdLockReset size={28} />} titulo="Set a new password">
             <form onSubmit={handleSubmit} className="space-y-4 text-left">
                 <div>
-                    <label htmlFor="senha" className="mb-2 block text-sm font-medium text-muted">Nova senha</label>
+                    <label htmlFor="senha" className="mb-2 block text-sm font-medium text-white/75">New password</label>
                     <input id="senha" type="password" required minLength={8} autoComplete="new-password"
                         value={senha} onChange={(e) => setSenha(e.target.value)} className={campo} />
-                    <p className="mt-1 text-xs text-subtle">Mínimo de 8 caracteres</p>
+                    <p className="mt-1 text-xs text-subtle">At least 8 characters</p>
                 </div>
                 <div>
-                    <label htmlFor="confirmacao" className="mb-2 block text-sm font-medium text-muted">Confirme a nova senha</label>
+                    <label htmlFor="confirmacao" className="mb-2 block text-sm font-medium text-white/75">Confirm new password</label>
                     <input id="confirmacao" type="password" required minLength={8} autoComplete="new-password"
                         value={confirmacao} onChange={(e) => setConfirmacao(e.target.value)} className={campo} />
                 </div>
                 {erro && <p role="alert" className="text-sm text-red-400">{erro}</p>}
-                <button type="submit" disabled={isLoading} className={`${classeBotaoPrimario} disabled:cursor-not-allowed disabled:bg-surface-3 disabled:text-subtle`}>
-                    {isLoading ? "Salvando..." : "Salvar nova senha"}
+                <button type="submit" disabled={isLoading} className={`${classeBotaoPrimario} disabled:cursor-not-allowed disabled:opacity-60`}>
+                    {isLoading ? "Saving…" : "Save new password"}
                 </button>
-                {erro?.includes("expirou") && (
-                    <Link href="/esqueci-senha" className="block text-center text-sm text-primary hover:underline">Pedir um novo link</Link>
+                {erro?.includes("expired") && (
+                    <Link href="/esqueci-senha" className="block text-center text-sm text-primary hover:underline">Request a new link</Link>
                 )}
             </form>
         </PaginaStatus>

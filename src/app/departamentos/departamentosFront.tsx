@@ -11,10 +11,15 @@ import { DepartamentoType } from "@/lib/types/types";
 import { removeDepartamento } from "../services/departamento";
 import ButtonCriarSala from "../components/Button/buttonCriarSala";
 import EnterDepartmentModal from "../components/modals/entrarSala";
-import { CompartilharModal, MembrosModal, ConfiguracoesDepartamentoModal, ConfirmarExclusaoModal } from "../components/modals";
+import { CompartilharModal } from "../components/modals/CompartilharModal";
+import MembrosModal from "../components/modals/MembrosModal";
+import ConfiguracoesDepartamentoModal from "../components/modals/ConfiguracoesDepartamentoModal";
+import ConfirmarExclusaoModal from "../components/modals/ConfirmarExclusaoModal";
 import { getMembrosPerDepartamento, MembroDepartamento } from "../services/membros";
 import { enviarConvitesPorEmail } from "../services/convites";
 import { toast } from "sonner";
+import { Backdrop } from "../components/home/landing/Backdrop";
+import { useDemo } from "../components/demo/DemoContext";
 
 type Props = {
     departamentos: DepartamentoType[];
@@ -24,6 +29,7 @@ type Props = {
 };
 
 export default function DepartamentosFront({ departamentos, userId, userName, userEmail }: Props) {
+    const { blockIfDemo } = useDemo();
     const [isEnterModalOpen, setIsEnterModalOpen] = useState(false);
     const [isMenuMobileOpen, setIsMenuMobileOpen] = useState(false);
     const [isConfirmDeleteOpen, setIsConfirmDeleteOpen] = useState(false);
@@ -97,16 +103,17 @@ export default function DepartamentosFront({ departamentos, userId, userName, us
                     setDepartamentoMembros(membros);
                 }
             } catch (error) {
-                console.error('Erro ao carregar membros:', error);
+                console.error('Error loading members:', error);
             }
         }
     };
 
     const handleDeleteDepartamento = async () => {
+        if (blockIfDemo()) return;
         if (selectedDepartamento) {
             try {
                 await removeDepartamento(selectedDepartamento);
-                toast.success('Departamento excluído com sucesso!');
+                toast.success('Room deleted');
                 setDepartamentosLocal(prev => 
                     prev.filter(d => d.id_departamentos !== selectedDepartamento.id_departamentos)
                 );
@@ -114,8 +121,8 @@ export default function DepartamentosFront({ departamentos, userId, userName, us
                 setSelectedDepartamento(null);
                 setDepartamentoMembros([]);
             } catch (error) {
-                toast.error('Erro ao excluir departamento');
-                console.error('Erro ao excluir departamento:', error);
+                toast.error("Couldn't delete the room");
+                console.error('Error deleting room:', error);
                 setIsSettingsModalOpen(false);
                 setSelectedDepartamento(null);
             }
@@ -138,8 +145,8 @@ export default function DepartamentosFront({ departamentos, userId, userName, us
             }
             return resultado.success;
         } catch (error) {
-            console.error('Erro ao enviar convites:', error);
-            toast.error('Erro ao enviar convites');
+            console.error('Error sending invites:', error);
+            toast.error("Couldn't send the invites");
             return false;
         }
     };
@@ -199,7 +206,8 @@ export default function DepartamentosFront({ departamentos, userId, userName, us
     const departamentosFiltrados = aplicarFiltros(departamentosLocal);
 
     return (
-        <div className="bg-page h-screen flex overflow-hidden">
+        <div className="relative flex h-screen overflow-hidden">
+            <Backdrop />
             <EnterDepartmentModal
                 isOpen={isEnterModalOpen}
                 onClose={() => setIsEnterModalOpen(false)}
@@ -260,8 +268,8 @@ export default function DepartamentosFront({ departamentos, userId, userName, us
                     await handleDeleteDepartamento();
                     setIsConfirmDeleteOpen(false);
                 }}
-                titulo="Excluir departamento"
-                descricao="Todas as categorias e patrimônios do departamento também serão excluídos."
+                titulo="Delete room"
+                descricao="Every category and asset in this room will be deleted too."
                 itemNome={selectedDepartamento?.titulo}
                 tipo="departamento"
             />
@@ -283,25 +291,30 @@ export default function DepartamentosFront({ departamentos, userId, userName, us
             <BarraTopoMobile onAbrirMenu={() => setIsMenuMobileOpen(true)} />
 
             <motion.main
-                className="flex min-h-0 flex-1 flex-col bg-page p-4 sm:p-6"
+                className="relative flex min-h-0 flex-1 flex-col p-4 sm:p-8"
                 initial="hidden"
                 animate={isLoaded ? "visible" : "hidden"}
                 variants={containerVariants}
             >
                 <motion.div
-                    className="flex flex-wrap justify-between items-center gap-4 mb-6"
+                    className="mb-8 flex flex-wrap items-end justify-between gap-5"
                     variants={itemVariants}
                 >
-                    <h1 className="text-2xl font-bold text-white relative">
-                        Seus Departamentos
-                        <span className="absolute -bottom-2 left-0 w-12 h-1 bg-primary rounded-full"></span>
-                    </h1>
-                    <div className="grid w-full grid-cols-1 gap-3 sm:flex sm:w-auto sm:items-center">
+                    <div>
+                        <p className="mb-2 font-mono text-[11px] uppercase tracking-[0.2em] text-primary/80">Workspace</p>
+                        <h1 className="font-display text-2xl font-semibold tracking-tight text-white sm:text-3xl">
+                            {userName ? `Hi, ${userName.split(' ')[0]}` : 'Your rooms'}
+                        </h1>
+                        <p className="mt-1.5 text-sm text-white/50">
+                            {departamentosLocal.length} {departamentosLocal.length === 1 ? 'room' : 'rooms'} · one for each department you manage
+                        </p>
+                    </div>
+                    <div className="grid w-full grid-cols-2 gap-3 sm:flex sm:w-auto sm:items-center">
                         <button
                             onClick={() => setIsEnterModalOpen(true)}
-                            className="h-10 px-5 inline-flex items-center gap-2 rounded-full border border-primary text-sm font-medium text-primary transition-colors duration-200 hover:bg-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-page"
+                            className="inline-flex h-11 items-center justify-center gap-2 rounded-full border border-white/15 px-5 text-sm font-medium text-white/90 transition-colors hover:border-primary/60 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
                         >
-                            <TbLogin2 className="text-lg" aria-hidden /> Entrar no departamento
+                            <TbLogin2 className="text-lg" aria-hidden /> <span className="sm:hidden">Join</span><span className="hidden sm:inline">Join with code</span>
                         </button>
                         <ButtonCriarSala />
                     </div>
@@ -318,7 +331,7 @@ export default function DepartamentosFront({ departamentos, userId, userName, us
                     onFilterChange={setFiltroSelecionado}
                 />
 
-                <div className="min-h-0 flex-1 overflow-y-auto pb-6 sm:pr-4 hide-scrollbar">
+                <div className="hide-scrollbar -mx-1 min-h-0 flex-1 overflow-y-auto px-1 pb-8 pt-1">
                     <DepartmentGrid
                         departamentos={departamentosFiltrados}
                         searchTerm={buscaDepartamento}
@@ -326,6 +339,7 @@ export default function DepartamentosFront({ departamentos, userId, userName, us
                         onShare={handleShareDepartamento}
                         onViewMembers={handleViewMembers}
                         onSettings={handleSettings}
+                        emptyAction={<ButtonCriarSala />}
                         containerVariants={containerVariants}
                         itemVariants={itemVariants}
                     />

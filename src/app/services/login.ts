@@ -7,6 +7,11 @@ export async function DoLogout() {
   await signOut({ redirectTo: "/" })
 }
 
+/** Opens the app in demo (exhibition) mode: no account needed, nothing is saved. */
+export async function DoDemoLogin() {
+  await signIn("demo", { redirectTo: "/departamentos" })
+}
+
 export async function DoCredentialsLogin(formData: FormData): Promise<{ error?: string }> {
   const email = formData.get('email') as string;
   const password = formData.get('password') as string;

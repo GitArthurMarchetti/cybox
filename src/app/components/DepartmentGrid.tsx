@@ -3,7 +3,8 @@
 import { motion } from "framer-motion";
 import { CardDepartamento } from "./cardDepartamentos";
 import { DepartamentoType } from "@/lib/types/types";
-import { FaBuilding } from "react-icons/fa";
+import { FiBox, FiSearch } from "react-icons/fi";
+import type { ReactNode } from "react";
 
 interface DepartmentGridProps {
     departamentos: DepartamentoType[];
@@ -12,6 +13,7 @@ interface DepartmentGridProps {
     onShare: (dept: DepartamentoType) => void;
     onViewMembers: (dept: DepartamentoType) => void;
     onSettings: (dept: DepartamentoType) => void;
+    emptyAction?: ReactNode;
     containerVariants: {
         hidden: { opacity: number };
         visible: { opacity: number; transition: { staggerChildren: number } };
@@ -29,6 +31,7 @@ export default function DepartmentGrid({
     onShare,
     onViewMembers,
     onSettings,
+    emptyAction,
     containerVariants,
     itemVariants
 }: DepartmentGridProps) {
@@ -37,33 +40,41 @@ export default function DepartmentGrid({
     );
 
     if (filteredDepartamentos.length === 0) {
+        const searching = searchTerm.trim().length > 0;
         return (
             <motion.div
-                className="flex flex-col items-center justify-center h-64 text-center"
+                className="flex flex-col items-center justify-center rounded-3xl border border-dashed border-white/10 px-6 py-16 text-center"
                 variants={itemVariants}
             >
-                <div className="bg-surface-2 text-primary p-8 rounded-xl mb-4 w-16 h-16 flex items-center justify-center">
-                    <FaBuilding />
+                <div className="mb-5 flex h-14 w-14 items-center justify-center rounded-2xl border border-primary/30 bg-primary/10 text-primary">
+                    {searching ? <FiSearch size={22} /> : <FiBox size={22} />}
                 </div>
-                <h3 className="text-xl text-white font-semibold mb-2">Nenhum departamento encontrado</h3>
-                <p className="text-subtle max-w-md">
-                    Não encontramos departamentos com esse nome. Tente outro termo ou crie um novo departamento.
+                <h3 className="font-display text-lg font-semibold text-white">
+                    {searching ? "No rooms match your search" : "No rooms here yet"}
+                </h3>
+                <p className="mt-2 max-w-sm text-sm leading-relaxed text-white/55">
+                    {searching
+                        ? `Nothing called "${searchTerm.trim()}". Try another name or clear the search.`
+                        : "Create a room for a department, or join a teammate's room with an invite code."}
                 </p>
-                <motion.button
-                    onClick={() => onSetSearchTerm("")}
-                    className="mt-4 text-primary border border-primary px-4 py-2 rounded-full hover:bg-primary/10 transition-colors duration-300"
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                >
-                    Limpar busca
-                </motion.button>
+                {searching ? (
+                    <button
+                        type="button"
+                        onClick={() => onSetSearchTerm("")}
+                        className="mt-6 rounded-full border border-white/15 px-5 py-2 text-sm text-white/80 transition-colors hover:border-primary/60 hover:text-white"
+                    >
+                        Clear search
+                    </button>
+                ) : (
+                    emptyAction && <div className="mt-6">{emptyAction}</div>
+                )}
             </motion.div>
         );
     }
 
     return (
         <motion.div
-            className="grid grid-cols-1 gap-4 sm:gap-6 md:grid-cols-2 2xl:grid-cols-3"
+            className="grid grid-cols-1 gap-4 sm:gap-5 md:grid-cols-2 xl:grid-cols-3"
             variants={containerVariants}
         >
             {filteredDepartamentos.map((d, index) => (
@@ -71,7 +82,7 @@ export default function DepartmentGrid({
                     key={d.id_departamentos}
                     variants={itemVariants}
                     custom={index}
-                    whileHover={{ y: -5 }}
+                    whileHover={{ y: -4 }}
                     transition={{ duration: 0.2 }}
                 >
                     <CardDepartamento

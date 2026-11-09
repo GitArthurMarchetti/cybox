@@ -1,91 +1,85 @@
 import Image from "next/image";
 import { FaInstagram, FaLinkedin } from "react-icons/fa6";
-import { MdEmail, MdLocationOn, MdPhone } from "react-icons/md";
-import logo from "../../../../public/logo-completa-branca.png"
+import { MdEmail, MdLanguage, MdLocationOn, MdPhone } from "react-icons/md";
+
+const LINKS = [
+     { href: "/#home", label: "Home" },
+     { href: "/#how", label: "How it works" },
+     { href: "/#playground", label: "Playground" },
+     { href: "/#product", label: "Product" },
+     { href: "/#pricing", label: "Pricing" },
+];
+
+const SERVICES = ["Rooms for every department", "Automatic depreciation", "Roles & invite codes", "Value history per asset"];
 
 export function HomeFooter() {
      return (
-          <footer id="contato" className="w-full scroll-mt-20 bg-surface-2 rounded-t-[40px] pt-14 pb-10 sm:rounded-t-[80px] lg:rounded-t-[120px] lg:pt-20">
-               <div className="mx-auto max-w-6xl px-6 lg:px-8">
-                    <div className="grid grid-cols-1 gap-10 mb-12 sm:grid-cols-2 lg:grid-cols-4 lg:gap-8">
-                         <div className="col-span-1">
-                              <Image src={logo} alt="Cybox Logo" width={100} className="mb-4" />
-                              <p className="text-gray-400 text-sm">
-                                   Gestão Estratégica de Ativos: Monitorando, Avaliando e Otimizando Seu Patrimônio Empresarial
+          <footer id="contact" className="relative w-full scroll-mt-20 overflow-hidden border-t border-white/10 bg-[#0a0a0a] pt-16 lg:pt-24">
+               <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+                    <div className="grid grid-cols-1 gap-12 sm:grid-cols-2 lg:grid-cols-12 lg:gap-8">
+                         <div className="lg:col-span-4">
+                              <Image src="/brand/cybox-wordmark.png" alt="Cybox" width={900} height={234} className="h-auto w-36" />
+                              <p className="mt-5 max-w-xs text-sm leading-relaxed text-white/50">
+                                   Strategic asset management: monitor, value and optimize everything your company owns.
                               </p>
-                              <p className="text-primary text-sm mt-2 font-medium">
-                                   Pensando dentro e fora da caixa
-                              </p>
+                              <p className="mt-3 font-mono text-xs uppercase tracking-widest text-primary">Know what you own. Know what it&apos;s worth.</p>
                          </div>
 
-                         <div className="col-span-1">
-                              <h3 className="text-white font-semibold text-lg mb-4">Links Úteis</h3>
-                              <ul className="space-y-2">
-                                   <li><a href="#home" className="text-gray-400 hover:text-primary transition-colors text-sm">Home</a></li>
-                                   <li><a href="#planos" className="text-gray-400 hover:text-primary transition-colors text-sm">Planos</a></li>
-                                   <li><a href="#sobre" className="text-gray-400 hover:text-primary transition-colors text-sm">Sobre nós</a></li>
-                                   <li><a href="#contato" className="text-gray-400 hover:text-primary transition-colors text-sm">Contato</a></li>
-                                   <li><a href="#" className="text-gray-400 hover:text-primary transition-colors text-sm">Política de Privacidade</a></li>
-                                   <li><a href="#" className="text-gray-400 hover:text-primary transition-colors text-sm">Termos de Uso</a></li>
+                         <div className="lg:col-span-2">
+                              <h3 className="mb-4 font-mono text-xs uppercase tracking-widest text-white/55">Explore</h3>
+                              <ul className="space-y-2.5">
+                                   {LINKS.map(l => (
+                                        <li key={l.href}><a href={l.href} className="text-sm text-white/70 transition-colors hover:text-primary">{l.label}</a></li>
+                                   ))}
+                                   <li><a href="/privacy" className="text-sm text-white/70 transition-colors hover:text-primary">Privacy policy</a></li>
+                                   <li><a href="/terms" className="text-sm text-white/70 transition-colors hover:text-primary">Terms of use</a></li>
                               </ul>
                          </div>
 
-                         <div className="col-span-1">
-                              <h3 className="text-white font-semibold text-lg mb-4">Nossos Serviços</h3>
-                              <ul className="space-y-2">
-                                   <li className="text-gray-400 text-sm">Cálculo de Depreciação</li>
-                                   <li className="text-gray-400 text-sm">Gestão de Ativos</li>
-                                   <li className="text-gray-400 text-sm">Análise LCC</li>
-                                   <li className="text-gray-400 text-sm">Relatórios em Tempo Real</li>
+                         <div className="lg:col-span-3">
+                              <h3 className="mb-4 font-mono text-xs uppercase tracking-widest text-white/55">Product</h3>
+                              <ul className="space-y-2.5">
+                                   {SERVICES.map(s => <li key={s} className="text-sm text-white/70">{s}</li>)}
                               </ul>
                          </div>
 
-                         <div className="col-span-1">
-                              <h3 className="text-white font-semibold text-lg mb-4">Contato</h3>
-                              <div className="space-y-3">
-                                   <div className="flex items-center gap-3">
-                                        <MdEmail className="text-primary" size={20} />
-                                        <a href="mailto:contato@cybox.com.br" className="text-gray-400 hover:text-primary transition-colors text-sm">
-                                             contato@cybox.com.br
-                                        </a>
-                                   </div>
-                                   <div className="flex items-center gap-3">
-                                        <MdPhone className="text-primary" size={20} />
-                                        <a href="tel:+551140028922" className="text-gray-400 hover:text-primary transition-colors text-sm">
-                                             (48) 99999-9999
-                                        </a>
-                                   </div>
-                                   <div className="flex items-center gap-3">
-                                        <MdLocationOn className="text-primary" size={20} />
-                                        <p className="text-gray-400 text-sm">
-                                             Florianópolis, SC - Brasil
-                                        </p>
-                                   </div>
+                         <div className="lg:col-span-3">
+                              <h3 className="mb-4 font-mono text-xs uppercase tracking-widest text-white/55">Contact</h3>
+                              <div className="space-y-3 text-sm">
+                                   <a href="mailto:contact@adapto-sh.com" className="flex items-center gap-3 text-white/70 transition-colors hover:text-primary">
+                                        <MdEmail className="text-primary" size={18} aria-hidden /> contact@adapto-sh.com
+                                   </a>
+                                   <a href="tel:+16727553873" className="flex items-center gap-3 text-white/70 transition-colors hover:text-primary">
+                                        <MdPhone className="text-primary" size={18} aria-hidden /> +1 (672) 755-3873
+                                   </a>
+                                   <a href="https://www.adapto-sh.com" target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 text-white/70 transition-colors hover:text-primary">
+                                        <MdLanguage className="text-primary" size={18} aria-hidden /> adapto-sh.com
+                                   </a>
+                                   <p className="flex items-center gap-3 text-white/70">
+                                        <MdLocationOn className="text-primary" size={18} aria-hidden /> Vancouver, BC, Canada
+                                   </p>
                               </div>
-
-                              <div className="mt-6">
-                                   <h4 className="text-white font-medium mb-3">Siga-nos</h4>
-                                   <div className="flex gap-4">
-                                        <a href="#" aria-label="LinkedIn" className="text-gray-400 hover:text-primary transition-colors">
-                                             <FaLinkedin size={24} />
-                                        </a>
-                                        <a href="#" aria-label="Instagram" className="text-gray-400 hover:text-primary transition-colors">
-                                             <FaInstagram size={24} />
-                                        </a>
-                                   </div>
+                              <div className="mt-6 flex gap-3">
+                                   <a href="https://www.linkedin.com/company/adapto-sh" target="_blank" rel="noopener noreferrer" aria-label="Adapto on LinkedIn" className="flex h-10 w-10 items-center justify-center rounded-full border border-white/10 text-white/70 transition-colors hover:border-primary hover:text-primary">
+                                        <FaLinkedin size={18} />
+                                   </a>
+                                   <a href="https://www.instagram.com/adapto_sh" target="_blank" rel="noopener noreferrer" aria-label="Adapto on Instagram (@adapto_sh)" className="flex h-10 w-10 items-center justify-center rounded-full border border-white/10 text-white/70 transition-colors hover:border-primary hover:text-primary">
+                                        <FaInstagram size={18} />
+                                   </a>
                               </div>
                          </div>
                     </div>
 
-                    <div className="border-t border-gray-700 pt-8">
-                         <div className="flex flex-col items-center justify-between gap-2 text-center sm:flex-row sm:text-left">
-                              <p className="text-gray-400 text-sm">
-                                   © 2024 Cybox. Todos os direitos reservados.
-                              </p>
-
-                         </div>
+                    <div className="mt-16 flex flex-col items-center justify-between gap-2 border-t border-white/10 py-6 text-center font-mono text-xs text-white/55 sm:flex-row sm:text-left">
+                         <p>© {new Date().getFullYear()} Cybox. All rights reserved.</p>
+                         <p>A project built by the <a href="https://www.adapto-sh.com" target="_blank" rel="noopener noreferrer" className="text-primary underline decoration-primary/40 underline-offset-4 transition-colors hover:text-white">Adapto Software House Inc.</a> team · Vancouver, BC</p>
                     </div>
                </div>
+
+               {/* giant outlined wordmark peeking from the bottom */}
+               <p aria-hidden className="pointer-events-none select-none bg-gradient-to-b from-primary/25 via-primary/[0.06] to-transparent bg-clip-text text-center font-display text-[22vw] font-semibold leading-[0.8] tracking-tighter text-transparent">
+                    CYBOX
+               </p>
           </footer>
      )
 }

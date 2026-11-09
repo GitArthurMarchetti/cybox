@@ -1,5 +1,6 @@
 "use server"
 
+import { demo, isDemoSession, DEMO_READ_ONLY } from "@/lib/demo";
 import { query } from '@/lib/mysql';
 import bcrypt from 'bcryptjs';
 import { UserType } from "@/lib/types/types";
@@ -25,24 +26,24 @@ export async function saveUser(formData: FormData): Promise<{ success: boolean; 
         const confirmarSenha = formData.get('confirmarSenha') as string;
 
         if (!nome || !email || !senha) {
-            return { success: false, error: 'Todos os campos (nome, email, senha) devem estar preenchidos.' };
+            return { success: false, error: 'Fill in your name, email and password.' };
         }
 
         if (!EMAIL_REGEX.test(email)) {
-            return { success: false, error: 'O email fornecido não é válido.' };
+            return { success: false, error: "That email isn't valid." };
         }
 
         if (senha.length < TAMANHO_MINIMO_SENHA) {
-            return { success: false, error: `A senha deve ter pelo menos ${TAMANHO_MINIMO_SENHA} caracteres.` };
+            return { success: false, error: `Your password needs at least ${TAMANHO_MINIMO_SENHA} characters.` };
         }
 
         if (senha !== confirmarSenha) {
-            return { success: false, error: 'A confirmação da senha não corresponde à senha.' };
+            return { success: false, error: "Passwords don't match." };
         }
 
         const existingUser = await findUserByEmail(email);
         if (existingUser) {
-            return { success: false, error: 'Este email já está em uso.' };
+            return { success: false, error: 'That email is already in use.' };
         }
 
         const hashedSenha = await bcrypt.hash(senha, 10);
@@ -62,7 +63,7 @@ export async function saveUser(formData: FormData): Promise<{ success: boolean; 
         return { success: true };
     } catch (error: unknown) {
         console.error('Erro ao salvar usuário:', error);
-        return { success: false, error: 'Erro ao processar o cadastro.' };
+        return { success: false, error: "Couldn't create your account." };
     }
 }
 
@@ -82,6 +83,7 @@ export async function reenviarVerificacao(emailInformado: string): Promise<{ suc
 }
 
 export async function getHostByDepartamento(departamentoId: number): Promise<UserType | null> {
+    if (await isDemoSession()) return demo.host(departamentoId);
     try {
         if (!departamentoId || departamentoId <= 0) {
             throw new Error("ID do departamento inválido.");
@@ -112,12 +114,13 @@ export async function updateUser(data: {
     novaSenha?: string;
     avatar_url?: string;
 }): Promise<{ success: boolean; message?: string; error?: string }> {
+    if (await isDemoSession()) return { success: false, error: DEMO_READ_ONLY };
     try {
         const userId = await requireUserId();
 
         const user = await query('SELECT * FROM users WHERE id = ?', [userId]) as UserType[];
         if (!user || user.length === 0) {
-            throw new ErroUsuario('Usuário não encontrado.');
+            throw new ErroUsuario('Account not found.');
         }
 
         const currentUser = user[0];
@@ -134,12 +137,12 @@ export async function updateUser(data: {
 
         if (novoEmail && emailAlterado) {
             if (!EMAIL_REGEX.test(novoEmail)) {
-                throw new ErroUsuario('Email inválido.');
+                throw new ErroUsuario("That email isn't valid.");
             }
 
             const existingUser = await findUserByEmail(novoEmail);
             if (existingUser && existingUser.id !== userId) {
-                throw new ErroUsuario('Este email já está em uso.');
+                throw new ErroUsuario('That email is already in use.');
             }
 
             updates.push('email = ?', 'email_verificado_em = NULL');
@@ -148,20 +151,20 @@ export async function updateUser(data: {
 
         if (data.novaSenha) {
             if (!data.senhaAtual) {
-                throw new ErroUsuario('Senha atual é necessária para alterar a senha.');
+                throw new ErroUsuario('Enter your current password to set a new one.');
             }
 
             if (data.novaSenha.length < TAMANHO_MINIMO_SENHA) {
-                throw new ErroUsuario(`A nova senha deve ter pelo menos ${TAMANHO_MINIMO_SENHA} caracteres.`);
+                throw new ErroUsuario(`Your new password needs at least ${TAMANHO_MINIMO_SENHA} characters.`);
             }
 
             if (!currentUser.senha) {
-                throw new ErroUsuario('Não é possível alterar senha para usuários de login social.');
+                throw new ErroUsuario("Accounts that sign in with Google can't change a password here.");
             }
 
             const senhaValida = await bcrypt.compare(data.senhaAtual, currentUser.senha);
             if (!senhaValida) {
-                throw new ErroUsuario('Senha atual incorreta.');
+                throw new ErroUsuario('Your current password is incorrect.');
             }
 
             const hashedNovaSenha = await bcrypt.hash(data.novaSenha, 10);
@@ -175,7 +178,7 @@ export async function updateUser(data: {
         }
 
         if (updates.length === 0) {
-            return { success: true, message: 'Nenhuma alteração detectada.' };
+            return { success: true, message: 'Nothing changed.' };
         }
 
         values.push(userId);
@@ -185,20 +188,21 @@ export async function updateUser(data: {
 
         if (novoEmail && emailAlterado) {
             await enviarEmailVerificacao({ id: userId, nome: data.nome || currentUser.nome, email: novoEmail });
-            return { success: true, message: 'Dados atualizados! Confirme o novo email pelo link que enviamos.' };
+            return { success: true, message: 'Saved! Confirm your new email with the link we just sent.' };
         }
 
-        return { success: true, message: 'Dados atualizados com sucesso!' };
+        return { success: true, message: 'Your details were saved.' };
     } catch (error: unknown) {
         if (error instanceof ErroUsuario) {
             return { success: false, error: error.message };
         }
         console.error('Erro ao atualizar usuário:', error);
-        return { success: false, error: 'Não foi possível atualizar seus dados.' };
+        return { success: false, error: "Couldn't update your details." };
     }
 }
 
 export async function getMinhaConta(): Promise<{ nome: string; email: string; temSenha: boolean; temGoogle: boolean; emailVerificado: boolean } | null> {
+    if (await isDemoSession()) return demo.account();
     try {
         const userId = await requireUserId();
         const users = await query(
@@ -239,11 +243,11 @@ export async function solicitarRedefinicaoSenha(emailInformado: string): Promise
 export async function redefinirSenha(token: string, novaSenha: string, confirmacao: string): Promise<{ success: boolean; error?: string }> {
     try {
         if (!novaSenha || novaSenha.length < TAMANHO_MINIMO_SENHA) {
-            return { success: false, error: `A senha deve ter pelo menos ${TAMANHO_MINIMO_SENHA} caracteres.` };
+            return { success: false, error: `Your password needs at least ${TAMANHO_MINIMO_SENHA} characters.` };
         }
 
         if (novaSenha !== confirmacao) {
-            return { success: false, error: 'As senhas não coincidem.' };
+            return { success: false, error: "Passwords don't match." };
         }
 
         const hash = await bcrypt.hash(novaSenha, 10);
@@ -260,12 +264,12 @@ export async function redefinirSenha(token: string, novaSenha: string, confirmac
         `, [hash, hashToken(token)]);
 
         if ((result as { affectedRows: number }).affectedRows === 0) {
-            return { success: false, error: 'Este link expirou ou já foi usado. Peça um novo.' };
+            return { success: false, error: 'This link has expired or was already used. Request a new one.' };
         }
 
         return { success: true };
     } catch (error) {
         console.error('Erro ao redefinir senha:', error);
-        return { success: false, error: 'Não foi possível redefinir a senha.' };
+        return { success: false, error: "Couldn't reset your password." };
     }
 }

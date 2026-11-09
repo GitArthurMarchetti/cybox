@@ -41,7 +41,7 @@ export async function enviarEmailVerificacao(user: { id: string; nome: string; e
 
     await sendEmail({
         to: user.email,
-        subject: 'Confirme seu email - Cybox',
+        subject: 'Confirm your email - Cybox',
         html: createVerificationEmailTemplate(user.nome, `${process.env.NEXTAUTH_URL}/verificar-email/${token}`)
     });
 }
@@ -57,7 +57,7 @@ export async function enviarEmailRedefinicao(user: { id: string; nome: string; e
 
     await sendEmail({
         to: user.email,
-        subject: 'Redefinir senha - Cybox',
+        subject: 'Reset your password - Cybox',
         html: createResetPasswordEmailTemplate(user.nome, `${process.env.NEXTAUTH_URL}/redefinir-senha/${token}`)
     });
 }

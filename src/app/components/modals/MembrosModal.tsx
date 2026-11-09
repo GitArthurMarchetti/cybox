@@ -57,11 +57,11 @@ export default function MembrosModal({ isOpen, onClose, departamento, membros: m
     const getRoleText = (role: string) => {
         switch (role) {
             case 'owner':
-                return 'Proprietário';
+                return 'Owner';
             case 'admin':
-                return 'Administrador';
+                return 'Admin';
             default:
-                return 'Membro';
+                return 'Member';
         }
     };
 
@@ -80,8 +80,8 @@ export default function MembrosModal({ isOpen, onClose, departamento, membros: m
         <Modal isOpen={isOpen} onClose={onClose} className="max-w-2xl">
                         <ModalHeader
                             icone={<MdGroup size={20} />}
-                            titulo="Membros do Departamento"
-                            subtitulo={<>{departamento.titulo} • {membros.length} membros</>}
+                            titulo="Room members"
+                            subtitulo={<>{departamento.titulo} • {membros.length} {membros.length === 1 ? 'member' : 'members'}</>}
                             onClose={onClose}
                         />
 
@@ -89,7 +89,7 @@ export default function MembrosModal({ isOpen, onClose, departamento, membros: m
                             {isLoading ? (
                                 <div className="flex items-center justify-center py-12">
                                     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-                                    <span className="ml-3 text-subtle">Carregando membros...</span>
+                                    <span className="ml-3 text-subtle">Loading members…</span>
                                 </div>
                             ) : (
                                 <div className="space-y-4 max-h-96 overflow-y-auto">
@@ -118,7 +118,7 @@ export default function MembrosModal({ isOpen, onClose, departamento, membros: m
                                                     {membro.email}
                                                 </div>
                                                 <p className="text-xs text-subtle">
-                                                    Último acesso: {membro.ultimo_login ? new Date(membro.ultimo_login).toLocaleDateString('pt-BR') : 'Nunca'}
+                                                    Last seen: {membro.ultimo_login ? new Date(membro.ultimo_login).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'never'}
                                                 </p>
                                             </div>
                                         </div>
@@ -131,7 +131,7 @@ export default function MembrosModal({ isOpen, onClose, departamento, membros: m
                                     )) : (
                                         <div className="text-center py-8">
                                             <MdGroup className="mx-auto text-subtle mb-4" size={48} />
-                                            <p className="text-subtle">Nenhum membro encontrado</p>
+                                            <p className="text-subtle">No members found</p>
                                         </div>
                                     )}
                                 </div>
@@ -143,15 +143,15 @@ export default function MembrosModal({ isOpen, onClose, departamento, membros: m
                                 <div className="grid grid-cols-3 gap-4 text-center">
                                     <div>
                                         <div className="text-2xl font-bold text-white">{membros.filter(m => m.role === 'owner').length}</div>
-                                        <div className="text-sm text-subtle">Proprietários</div>
+                                        <div className="text-sm text-subtle">Owners</div>
                                     </div>
                                     <div>
                                         <div className="text-2xl font-bold text-white">{membros.filter(m => m.role === 'admin').length}</div>
-                                        <div className="text-sm text-subtle">Administradores</div>
+                                        <div className="text-sm text-subtle">Admins</div>
                                     </div>
                                     <div>
                                         <div className="text-2xl font-bold text-white">{membros.filter(m => m.role === 'member').length}</div>
-                                        <div className="text-sm text-subtle">Membros</div>
+                                        <div className="text-sm text-subtle">Members</div>
                                     </div>
                                 </div>
                                 </div>

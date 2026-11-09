@@ -49,7 +49,7 @@ export function createInviteEmailTemplate(
 
     return `
     <!DOCTYPE html>
-    <html lang="pt-BR">
+    <html lang="en">
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -59,16 +59,16 @@ export function createInviteEmailTemplate(
         <div style="max-width: 600px; margin: 0 auto; background-color: #0F0F0F;">
             <!-- Header -->
             <div style="background: linear-gradient(135deg, #1F1F1F 0%, #2C2C2C 100%); padding: 40px 30px; text-align: center; border-radius: 12px 12px 0 0;">
-                <img src="${process.env.NEXTAUTH_URL}/logo-completa-branca.png" alt="Cybox" style="height: 60px; margin: 0 auto 10px; display: block;" />
-                <p style="color: #8C8888; margin: 10px 0 0; font-size: 16px;">Sistema de Gestão Patrimonial</p>
+                <img src="${process.env.NEXTAUTH_URL}/brand/cybox-wordmark.png" alt="Cybox" style="height: 34px; margin: 0 auto 10px; display: block;" />
+                <p style="color: #8C8888; margin: 10px 0 0; font-size: 16px;">Asset management, by department</p>
             </div>
 
             <!-- Content -->
             <div style="background-color: #1F1F1F; padding: 40px 30px;">
                 <div style="text-align: center; margin-bottom: 30px;">
-                    <h2 style="color: #FFFFFF; margin: 0 0 10px; font-size: 24px; font-weight: bold;">Você foi convidado!</h2>
+                    <h2 style="color: #FFFFFF; margin: 0 0 10px; font-size: 24px; font-weight: bold;">You're invited!</h2>
                     <p style="color: #B4B4B4; margin: 0; font-size: 16px; line-height: 1.5;">
-                        <strong style="color: #F6CF45;">${inviterName}</strong> convidou você para participar do departamento
+                        <strong style="color: #F6CF45;">${inviterName}</strong> invited you to join the room
                     </p>
                 </div>
 
@@ -84,24 +84,24 @@ export function createInviteEmailTemplate(
                         </div>
                         <h3 style="color: #FFFFFF; margin: 0 0 8px; font-size: 22px; font-weight: bold;">${departmentName}</h3>
                         <div style="background-color: #F6CF45; color: #000; padding: 6px 12px; border-radius: 20px; display: inline-block; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">
-                            Departamento
+                            Room
                         </div>
                     </div>
                 </div>
 
                 <div style="text-align: center;">
                     <p style="color: #B4B4B4; margin: 0 0 25px; font-size: 16px; line-height: 1.6;">
-                        Clique no botão abaixo para aceitar o convite e começar a gerenciar patrimônios junto com sua equipe.
+                        Click the button below to accept and start managing assets with your team.
                     </p>
 
                     <!-- CTA Button -->
                     <a href="${inviteLink}" 
                        style="display: inline-block; background-color: #F6CF45; color: #000000; padding: 15px 30px; border-radius: 12px; text-decoration: none; font-weight: bold; font-size: 16px; transition: all 0.3s ease;">
-                        Aceitar Convite
+                        Accept invite
                     </a>
 
                     <p style="color: #8C8888; margin: 20px 0 0; font-size: 14px;">
-                        Este convite expira em 7 dias. Se você não possui uma conta, será criada automaticamente.
+                        This invite expires in 7 days. If you don't have an account yet, you can create one from the link.
                     </p>
                 </div>
             </div>
@@ -110,10 +110,10 @@ export function createInviteEmailTemplate(
             <div style="background-color: #0F0F0F; padding: 30px; text-align: center; border-radius: 0 0 12px 12px;">
                 <div style="border-top: 1px solid #2C2C2C; padding-top: 20px;">
                     <p style="color: #8C8888; margin: 0; font-size: 14px;">
-                        Este email foi enviado pelo Cybox - Sistema de Gestão Patrimonial
+                        This email was sent by Cybox
                     </p>
                     <p style="color: #6C6C6C; margin: 10px 0 0; font-size: 12px;">
-                        Se você não esperava este convite, pode ignorar este email com segurança.
+                        If you weren't expecting this invite, you can safely ignore this email.
                     </p>
                 </div>
             </div>
@@ -137,7 +137,7 @@ function createActionEmailTemplate({ titulo, nome, texto, botao, link, validade,
 
     return `
     <!DOCTYPE html>
-    <html lang="pt-BR">
+    <html lang="en">
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -146,12 +146,12 @@ function createActionEmailTemplate({ titulo, nome, texto, botao, link, validade,
     <body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: #0F0F0F;">
         <div style="max-width: 600px; margin: 0 auto; background-color: #0F0F0F;">
             <div style="background: linear-gradient(135deg, #1F1F1F 0%, #2C2C2C 100%); padding: 40px 30px; text-align: center; border-radius: 12px 12px 0 0;">
-                <img src="${process.env.NEXTAUTH_URL}/logo-completa-branca.png" alt="Cybox" style="height: 60px; margin: 0 auto 10px; display: block;" />
-                <p style="color: #8C8888; margin: 10px 0 0; font-size: 16px;">Sistema de Gestão Patrimonial</p>
+                <img src="${process.env.NEXTAUTH_URL}/brand/cybox-wordmark.png" alt="Cybox" style="height: 34px; margin: 0 auto 10px; display: block;" />
+                <p style="color: #8C8888; margin: 10px 0 0; font-size: 16px;">Asset management, by department</p>
             </div>
 
             <div style="background-color: #1F1F1F; padding: 40px 30px; text-align: center;">
-                <h2 style="color: #FFFFFF; margin: 0 0 10px; font-size: 24px; font-weight: bold;">Olá, ${userName}!</h2>
+                <h2 style="color: #FFFFFF; margin: 0 0 10px; font-size: 24px; font-weight: bold;">Hi, ${userName}!</h2>
                 <p style="color: #B4B4B4; margin: 0 0 25px; font-size: 16px; line-height: 1.6;">
                     ${texto}
                 </p>
@@ -181,24 +181,24 @@ function createActionEmailTemplate({ titulo, nome, texto, botao, link, validade,
 
 export function createVerificationEmailTemplate(userName: string, verificationLink: string): string {
     return createActionEmailTemplate({
-        titulo: 'Confirme seu email',
+        titulo: 'Confirm your email',
         nome: userName,
-        texto: 'Confirme seu email para aceitar convites de departamentos no Cybox.',
-        botao: 'Confirmar email',
+        texto: 'Confirm your email so you can accept invites to rooms on Cybox.',
+        botao: 'Confirm email',
         link: verificationLink,
-        validade: 'Este link expira em 24 horas.',
-        rodape: 'Se você não criou uma conta no Cybox, pode ignorar este email com segurança.',
+        validade: 'This link expires in 24 hours.',
+        rodape: "If you didn't create a Cybox account, you can safely ignore this email.",
     });
 }
 
 export function createResetPasswordEmailTemplate(userName: string, resetLink: string): string {
     return createActionEmailTemplate({
-        titulo: 'Redefinir senha',
+        titulo: 'Reset your password',
         nome: userName,
-        texto: 'Recebemos um pedido para redefinir a senha da sua conta no Cybox.',
-        botao: 'Criar nova senha',
+        texto: 'We received a request to reset the password for your Cybox account.',
+        botao: 'Set a new password',
         link: resetLink,
-        validade: 'Este link expira em 1 hora.',
-        rodape: 'Se você não pediu isso, ignore este email: sua senha continua a mesma.',
+        validade: 'This link expires in 1 hour.',
+        rodape: "If you didn't ask for this, ignore this email: your password stays the same.",
     });
 }

@@ -1,10 +1,9 @@
 "use client"
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, type ComponentType } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { IoMdSearch } from "react-icons/io";
-import { FaFilter, FaSortAmountDown, FaSortAmountUp, FaCrown, FaUserTie, FaUser, FaUsers } from "react-icons/fa";
-import { MdSortByAlpha, MdClear, MdCheckCircle, MdCancel, MdAccessTime } from "react-icons/md";
+import { FiArrowDown, FiArrowUp, FiCheck, FiClock, FiSearch, FiSliders, FiUser, FiUsers, FiX } from "react-icons/fi";
+import { FaCrown } from "react-icons/fa";
 
 interface SearchBarProps {
     value: string;
@@ -18,7 +17,27 @@ interface SearchBarProps {
     };
     filtroSelecionado?: string | null;
     onFilterChange?: (filtro: string | null) => void;
+    placeholder?: string;
 }
+
+type Option = { id: string; label: string; icon: ComponentType<{ className?: string; size?: number }>; iconClass?: string };
+
+const SORT: Option[] = [
+    { id: 'a-z', label: 'Name A–Z', icon: FiArrowDown },
+    { id: 'z-a', label: 'Name Z–A', icon: FiArrowUp },
+    { id: 'mais-recentes', label: 'Newest first', icon: FiClock },
+    { id: 'mais-antigos', label: 'Oldest first', icon: FiClock },
+    { id: 'mais-membros', label: 'Most members', icon: FiUsers },
+    { id: 'menos-membros', label: 'Fewest members', icon: FiUser },
+];
+
+const ROLES: Option[] = [
+    { id: 'owner', label: 'Rooms I own', icon: FaCrown, iconClass: 'text-primary' },
+    { id: 'admin', label: 'Rooms I admin', icon: FiUsers, iconClass: 'text-blue-400' },
+    { id: 'member', label: "Rooms I'm a member of", icon: FiUser, iconClass: 'text-white/50' },
+];
+
+const LABELS = Object.fromEntries([...SORT, ...ROLES].map(o => [o.id, o.label]));
 
 export default function SearchBar({
     value,
@@ -28,7 +47,8 @@ export default function SearchBar({
     onBlur,
     itemVariants,
     filtroSelecionado,
-    onFilterChange
+    onFilterChange,
+    placeholder = "Search rooms",
 }: SearchBarProps) {
     const [isFilterDropdownOpen, setIsFilterDropdownOpen] = useState(false);
 
@@ -44,180 +64,98 @@ export default function SearchBar({
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, [isFilterDropdownOpen]);
 
-    const handleFilterSelect = (filtro: string) => {
-        if (onFilterChange) {
-            onFilterChange(filtro);
-        }
+    const select = (filtro: string | null) => {
+        onFilterChange?.(filtro);
         setIsFilterDropdownOpen(false);
     };
 
-    const handleClearFilter = () => {
-        if (onFilterChange) {
-            onFilterChange(null);
-        }
-        setIsFilterDropdownOpen(false);
+    const renderOption = (o: Option) => {
+        const active = filtroSelecionado === o.id;
+        return (
+            <button
+                key={o.id}
+                type="button"
+                role="menuitemradio"
+                aria-checked={active}
+                className={`flex w-full items-center gap-3 rounded-xl px-3 py-2 text-left text-sm transition-colors ${active ? 'bg-primary/10 text-white' : 'text-white/75 hover:bg-white/[0.06] hover:text-white'}`}
+                onClick={() => select(o.id)}
+            >
+                <o.icon size={15} className={o.iconClass ?? 'text-primary'} />
+                <span className="flex-1">{o.label}</span>
+                {active && <FiCheck className="text-primary" size={15} />}
+            </button>
+        );
     };
 
     return (
-        <motion.div
-            className="flex items-center justify-between mb-6 gap-3 sm:gap-6"
-            variants={itemVariants}
-        >
-            <div
-                className={`flex items-center bg-surface-2 flex-1 min-w-0 px-4 rounded-full transition-all duration-300 ${isSearchFocused ? 'ring-2 ring-primary/50' : ''}`}
+        <motion.div className="mb-6 flex items-center gap-3" variants={itemVariants}>
+            <label
+                className={`flex h-12 min-w-0 flex-1 items-center gap-3 rounded-2xl border bg-white/[0.03] px-4 transition-colors ${isSearchFocused ? 'border-primary/60 ring-4 ring-primary/10' : 'border-white/10 hover:border-white/20'}`}
             >
+                <FiSearch className="shrink-0 text-white/40" aria-hidden />
                 <input
-                    type="text"
-                    placeholder="Pesquise por seu departamento"
-                    aria-label="Pesquisar departamento"
-                    className="flex-grow p-3 custom-focus outline-none bg-transparent text-white placeholder:text-subtle border-none focus:border-none focus:outline-none focus:ring-0"
+                    type="search"
+                    placeholder={placeholder}
+                    aria-label={placeholder}
+                    className="custom-focus h-full min-w-0 flex-1 border-none bg-transparent text-[15px] text-white outline-none placeholder:text-white/35 focus:border-none focus:outline-none focus:ring-0"
                     value={value}
                     onChange={(e) => onChange(e.target.value)}
                     onFocus={onFocus}
                     onBlur={onBlur}
                 />
-                <IoMdSearch className="text-subtle text-xl" />
-            </div>
+                {value && (
+                    <button type="button" onClick={() => onChange("")} aria-label="Clear search" className="rounded-full p-1 text-white/40 hover:bg-white/10 hover:text-white">
+                        <FiX size={15} />
+                    </button>
+                )}
+            </label>
 
-            <div className="relative filter-container">
-                <motion.button
-                    className={`flex h-11 min-w-11 items-center justify-center text-white group ${filtroSelecionado ? 'text-primary' : ''}`}
-                    whileHover={{ scale: 1.05 }}
-                    onClick={() => setIsFilterDropdownOpen(!isFilterDropdownOpen)}
-                    aria-label="Filtrar departamentos"
-                    aria-expanded={isFilterDropdownOpen}
-                >
-                    <FaFilter className={`${filtroSelecionado ? 'text-primary' : 'text-subtle'} group-hover:text-primary transition-colors duration-300`} />
-                    <span className={`ml-2 hidden sm:inline ${filtroSelecionado ? 'text-primary' : 'text-subtle'} underline-offset-4 underline italic group-hover:text-primary transition-colors duration-300`}>
-                        Filtrar
-                    </span>
-                </motion.button>
+            {onFilterChange && (
+                <div className="filter-container relative">
+                    <button
+                        type="button"
+                        className={`flex h-12 items-center gap-2 rounded-2xl border px-4 text-sm transition-colors ${filtroSelecionado ? 'border-primary/50 bg-primary/10 text-primary' : 'border-white/10 bg-white/[0.03] text-white/70 hover:border-white/20 hover:text-white'}`}
+                        onClick={() => setIsFilterDropdownOpen(open => !open)}
+                        aria-label="Sort and filter"
+                        aria-haspopup="menu"
+                        aria-expanded={isFilterDropdownOpen}
+                    >
+                        <FiSliders aria-hidden />
+                        <span className="hidden max-w-[11rem] truncate sm:inline">{filtroSelecionado ? LABELS[filtroSelecionado] ?? 'Filtered' : 'Sort & filter'}</span>
+                    </button>
 
-                <AnimatePresence>
-                    {isFilterDropdownOpen && (
-                        <motion.div
-                            className="absolute right-0 mt-2 w-72 bg-[#1a1a1a] border border-line rounded-xl shadow-xl z-50 overflow-hidden"
-                            initial={{ opacity: 0, y: -10 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            exit={{ opacity: 0, y: -10 }}
-                            transition={{ duration: 0.2 }}
-                        >
-                            <div className="p-2">
-                                <div className="px-3 py-2 text-xs font-semibold text-subtle uppercase">Ordenar</div>
-
-                                <button
-                                    className="w-full flex items-center gap-3 px-3 py-2 text-sm text-white hover:bg-surface-2 rounded-lg transition-colors duration-200"
-                                    onClick={() => handleFilterSelect('a-z')}
-                                >
-                                    <MdSortByAlpha size={18} className="text-primary" />
-                                    <span>A-Z</span>
-                                </button>
-
-                                <button
-                                    className="w-full flex items-center gap-3 px-3 py-2 text-sm text-white hover:bg-surface-2 rounded-lg transition-colors duration-200"
-                                    onClick={() => handleFilterSelect('z-a')}
-                                >
-                                    <MdSortByAlpha size={18} className="text-primary transform rotate-180" />
-                                    <span>Z-A</span>
-                                </button>
-
-                                <button
-                                    className="w-full flex items-center gap-3 px-3 py-2 text-sm text-white hover:bg-surface-2 rounded-lg transition-colors duration-200"
-                                    onClick={() => handleFilterSelect('mais-recentes')}
-                                >
-                                    <MdAccessTime size={18} className="text-primary" />
-                                    <span>Mais recentes</span>
-                                </button>
-
-                                <button
-                                    className="w-full flex items-center gap-3 px-3 py-2 text-sm text-white hover:bg-surface-2 rounded-lg transition-colors duration-200"
-                                    onClick={() => handleFilterSelect('mais-antigos')}
-                                >
-                                    <MdAccessTime size={18} className="text-primary transform rotate-180" />
-                                    <span>Mais antigos</span>
-                                </button>
-
-                                <button
-                                    className="w-full flex items-center gap-3 px-3 py-2 text-sm text-white hover:bg-surface-2 rounded-lg transition-colors duration-200"
-                                    onClick={() => handleFilterSelect('mais-membros')}
-                                >
-                                    <FaSortAmountDown size={16} className="text-primary" />
-                                    <span>Mais membros</span>
-                                </button>
-
-                                <button
-                                    className="w-full flex items-center gap-3 px-3 py-2 text-sm text-white hover:bg-surface-2 rounded-lg transition-colors duration-200"
-                                    onClick={() => handleFilterSelect('menos-membros')}
-                                >
-                                    <FaSortAmountUp size={16} className="text-primary" />
-                                    <span>Menos membros</span>
-                                </button>
-
-                                <div className="my-2 border-t border-line"></div>
-
-                                <div className="px-3 py-2 text-xs font-semibold text-subtle uppercase">Filtrar por Role</div>
-
-                                <button
-                                    className="w-full flex items-center gap-3 px-3 py-2 text-sm text-white hover:bg-surface-2 rounded-lg transition-colors duration-200"
-                                    onClick={() => handleFilterSelect('owner')}
-                                >
-                                    <FaCrown size={16} className="text-yellow-400" />
-                                    <span>Proprietário</span>
-                                </button>
-
-                                <button
-                                    className="w-full flex items-center gap-3 px-3 py-2 text-sm text-white hover:bg-surface-2 rounded-lg transition-colors duration-200"
-                                    onClick={() => handleFilterSelect('admin')}
-                                >
-                                    <FaUserTie size={16} className="text-blue-400" />
-                                    <span>Administrador</span>
-                                </button>
-
-                                <button
-                                    className="w-full flex items-center gap-3 px-3 py-2 text-sm text-white hover:bg-surface-2 rounded-lg transition-colors duration-200"
-                                    onClick={() => handleFilterSelect('member')}
-                                >
-                                    <FaUser size={16} className="text-gray-400" />
-                                    <span>Membro</span>
-                                </button>
-
-                                <div className="my-2 border-t border-line"></div>
-
-                                <div className="px-3 py-2 text-xs font-semibold text-subtle uppercase">Filtrar por Status</div>
-
-                                <button
-                                    className="w-full flex items-center gap-3 px-3 py-2 text-sm text-white hover:bg-surface-2 rounded-lg transition-colors duration-200"
-                                    onClick={() => handleFilterSelect('ativo')}
-                                >
-                                    <MdCheckCircle size={18} className="text-green-500" />
-                                    <span>Ativo</span>
-                                </button>
-
-                                <button
-                                    className="w-full flex items-center gap-3 px-3 py-2 text-sm text-white hover:bg-surface-2 rounded-lg transition-colors duration-200"
-                                    onClick={() => handleFilterSelect('inativo')}
-                                >
-                                    <MdCancel size={18} className="text-red-500" />
-                                    <span>Inativo</span>
-                                </button>
-
+                    <AnimatePresence>
+                        {isFilterDropdownOpen && (
+                            <motion.div
+                                role="menu"
+                                className="absolute right-0 z-50 mt-2 w-64 overflow-hidden rounded-2xl border border-white/10 bg-[#141414] p-1.5 shadow-2xl"
+                                initial={{ opacity: 0, y: -8, scale: 0.98 }}
+                                animate={{ opacity: 1, y: 0, scale: 1 }}
+                                exit={{ opacity: 0, y: -8, scale: 0.98 }}
+                                transition={{ duration: 0.15 }}
+                            >
+                                <p className="px-3 pb-1 pt-2 font-mono text-[10px] uppercase tracking-[0.2em] text-white/35">Sort by</p>
+                                {SORT.map(renderOption)}
+                                <div className="my-1.5 border-t border-white/[0.06]" />
+                                <p className="px-3 pb-1 pt-2 font-mono text-[10px] uppercase tracking-[0.2em] text-white/35">My role</p>
+                                {ROLES.map(renderOption)}
                                 {filtroSelecionado && (
                                     <>
-                                        <div className="my-2 border-t border-line"></div>
+                                        <div className="my-1.5 border-t border-white/[0.06]" />
                                         <button
-                                            className="w-full flex items-center gap-3 px-3 py-2 text-sm text-red-400 hover:bg-surface-2 rounded-lg transition-colors duration-200"
-                                            onClick={handleClearFilter}
+                                            type="button"
+                                            className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-sm text-red-300 transition-colors hover:bg-red-500/10"
+                                            onClick={() => select(null)}
                                         >
-                                            <MdClear size={18} />
-                                            <span>Limpar filtros</span>
+                                            <FiX size={15} /> Clear
                                         </button>
                                     </>
                                 )}
-                            </div>
-                        </motion.div>
-                    )}
-                </AnimatePresence>
-            </div>
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
+                </div>
+            )}
         </motion.div>
     );
 }

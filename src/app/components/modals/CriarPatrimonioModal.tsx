@@ -41,14 +41,14 @@ export default function CriarPatrimonioModal({
         const numero = valor.replace(/\D/g, '');
         if (numero === '') return '';
         const valorNumerico = parseInt(numero) / 100;
-        return valorNumerico.toLocaleString('pt-BR', {
+        return valorNumerico.toLocaleString('en-US', {
             minimumFractionDigits: 2,
             maximumFractionDigits: 2
         });
     };
 
     const calcularValorAtual = (valorInicialStr: string, taxaStr: string, dataAquisicaoStr: string) => {
-        const valorInicialNum = parseFloat(valorInicialStr.replace(/\./g, '').replace(',', '.'));
+        const valorInicialNum = parseFloat(valorInicialStr.replace(/,/g, ''));
         const taxaNum = parseFloat(taxaStr);
 
         if (!isNaN(valorInicialNum) && !isNaN(taxaNum) && taxaNum >= 0 && taxaNum <= 100 && dataAquisicaoStr) {
@@ -60,7 +60,7 @@ export default function CriarPatrimonioModal({
             const depreciacaoTotal = Math.min(taxaNum * diferencaEmAnos, 100);
             const valorAtualCalculado = valorInicialNum * (1 - depreciacaoTotal / 100);
 
-            return Math.max(0, valorAtualCalculado).toLocaleString('pt-BR', {
+            return Math.max(0, valorAtualCalculado).toLocaleString('en-US', {
                 minimumFractionDigits: 2,
                 maximumFractionDigits: 2
             });
@@ -116,23 +116,23 @@ export default function CriarPatrimonioModal({
                 formData.set('id_categoria', selectedCategory.id.toString());
             }
 
-            const valorInicialNum = parseFloat(valorInicial.replace(/\./g, '').replace(',', '.'));
-            const valorAtualNum = parseFloat(valorAtual.replace(/\./g, '').replace(',', '.'));
+            const valorInicialNum = parseFloat(valorInicial.replace(/,/g, ''));
+            const valorAtualNum = parseFloat(valorAtual.replace(/,/g, ''));
 
             formData.set('valor_inicial', valorInicialNum.toString());
             formData.set('valor_atual', valorAtualNum.toString());
 
             const resultado = await savePatrimonio(formData);
             if (!resultado.success) {
-                toast.error(resultado.error || 'Erro ao criar patrimônio');
+                toast.error(resultado.error || "Couldn't add the asset");
                 return;
             }
 
-            toast.success("Patrimônio criado com sucesso!");
+            toast.success("Asset added");
             onClose();
             if (onSuccess) onSuccess();
         } catch (error) {
-            toast.error("Erro ao criar patrimônio");
+            toast.error("Couldn't add the asset");
         } finally {
             setIsLoading(false);
         }
@@ -144,8 +144,8 @@ export default function CriarPatrimonioModal({
         <Modal isOpen={isOpen} onClose={onClose} className="max-w-3xl">
                         <ModalHeader
                             icone={<MdAddBox size={20} />}
-                            titulo="Adicionar patrimônio"
-                            subtitulo={<>Categoria: <span className="font-medium text-primary">{selectedCategory.name}</span></>}
+                            titulo="New asset"
+                            subtitulo={<>Category: <span className="font-medium text-primary">{selectedCategory.name}</span></>}
                             onClose={onClose}
                         />
                         <div className="p-5 sm:p-8">
@@ -161,7 +161,7 @@ export default function CriarPatrimonioModal({
                                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-6">
                                     <div className="group">
                                         <label className="block text-xs text-subtle mb-2 group-focus-within:text-primary transition-colors">
-                                            Nome do Patrimônio
+                                            Asset name
                                         </label>
                                         <input
                                             autoComplete='off'
@@ -169,13 +169,13 @@ export default function CriarPatrimonioModal({
                                             name="nome"
                                             required
                                             className="w-full bg-surface-2 text-white px-4 py-3 rounded-lg border border-transparent focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent placeholder-subtle transition-all duration-300"
-                                            placeholder="Ex: Notebook Dell Inspiron"
+                                            placeholder="e.g. Dell XPS 13"
                                         />
                                     </div>
 
                                     <div className="group">
                                         <label className="block text-xs text-subtle mb-2 group-focus-within:text-primary transition-colors">
-                                            Taxa de Depreciação (% ao ano)
+                                            Depreciation rate (% per year)
                                             {isLoadingPadroes && (
                                                 <span className="ml-2 text-primary">carregando...</span>
                                             )}
@@ -195,7 +195,7 @@ export default function CriarPatrimonioModal({
                                         />
                                         {selectedCategory?.padrao_depreciacao_id && padroesDepreciacao.length > 0 && (
                                             <p className="text-xs text-primary mt-1">
-                                                ✓ Valor baseado no padrão da categoria (editável)
+                                                ✓ Taken from the category&apos;s preset (you can change it)
                                             </p>
                                         )}
                                     </div>
@@ -205,36 +205,36 @@ export default function CriarPatrimonioModal({
                                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-6">
                                     <div className="group">
                                         <label className="block text-xs text-subtle mb-2 group-focus-within:text-primary transition-colors">
-                                            Descrição
+                                            Description
                                         </label>
                                         <textarea
                                             name="descricao"
                                             rows={3}
                                             className="w-full bg-surface-2 text-white px-4 py-3 rounded-lg border border-transparent h-[9.3rem] focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent resize-none placeholder-subtle transition-all duration-300"
-                                            placeholder="Especificações técnicas, características, modelo..."
+                                            placeholder="Model, specs, serial number…"
                                         ></textarea>
                                     </div>
 
                                     <div className="space-y-6">
                                         <div className="group">
                                             <label className="block text-xs text-subtle mb-2 group-focus-within:text-primary transition-colors">
-                                                Localização
+                                                Location
                                             </label>
                                             <input
                                                 autoComplete='off'
                                                 type="text"
                                                 name="localizacao"
                                                 className="w-full bg-surface-2 text-white px-4 py-3 rounded-lg border border-transparent focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent placeholder-subtle transition-all duration-300"
-                                                placeholder="Sala 205, Andar 2, Prédio A"
+                                                placeholder="e.g. Desk 12, 2nd floor"
                                             />
                                         </div>
 
                                         <div className="group">
                                             <label className="block text-xs text-subtle mb-2 group-focus-within:text-primary transition-colors">
-                                                Valor Inicial (R$)
+                                                Purchase price ($)
                                             </label>
                                             <div className="relative">
-                                                <span className="absolute left-4 top-1/2 transform -translate-y-1/2 text-subtle">R$</span>
+                                                <span className="absolute left-4 top-1/2 transform -translate-y-1/2 text-subtle">$</span>
                                                 <input
                                                     autoComplete='off'
                                                     type="text"
@@ -246,7 +246,7 @@ export default function CriarPatrimonioModal({
                                                         setValorInicial(formatted);
                                                     }}
                                                     className="w-full bg-surface-2 text-white pl-10 pr-4 py-3 rounded-lg border border-transparent focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent placeholder-subtle transition-all duration-300"
-                                                    placeholder="3.500,00"
+                                                    placeholder="3,500.00"
                                                 />
                                             </div>
                                         </div>
@@ -257,20 +257,20 @@ export default function CriarPatrimonioModal({
                                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-3 sm:gap-6">
                                     <div className="group">
                                         <label className="block text-xs text-subtle mb-2 group-focus-within:text-primary transition-colors">
-                                            Código do Patrimônio
+                                            Asset code
                                         </label>
                                         <input
                                             autoComplete='off'
                                             type="text"
                                             name="codigo"
                                             className="w-full bg-surface-2 text-white px-4 py-3 rounded-lg border border-transparent focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent placeholder-subtle transition-all duration-300"
-                                            placeholder="PAT-2024-001"
+                                            placeholder="e.g. CYB-0142"
                                         />
                                     </div>
 
                                     <div className="group">
                                         <label className="block text-xs text-subtle mb-2 group-focus-within:text-primary transition-colors">
-                                            Data de Aquisição
+                                            Purchase date
                                         </label>
                                         <input
                                             autoComplete='off'
@@ -286,10 +286,10 @@ export default function CriarPatrimonioModal({
 
                                     <div className="group">
                                         <label className="block text-xs text-subtle mb-2 group-focus-within:text-primary transition-colors">
-                                            Valor Atual (R$)
+                                            Value today ($)
                                         </label>
                                         <div className="relative">
-                                            <span className="absolute left-4 top-1/2 transform -translate-y-1/2 text-subtle">R$</span>
+                                            <span className="absolute left-4 top-1/2 transform -translate-y-1/2 text-subtle">$</span>
                                             <input
                                                 autoComplete='off'
                                                 type="text"
@@ -301,7 +301,7 @@ export default function CriarPatrimonioModal({
                                                     setValorAtual(formatted);
                                                 }}
                                                 className="w-full bg-surface-2 text-white pl-10 pr-4 py-3 rounded-lg border border-transparent focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent placeholder-subtle transition-all duration-300"
-                                                placeholder="2.800,00"
+                                                placeholder="2,800.00"
                                             />
                                         </div>
                                     </div>
@@ -314,7 +314,7 @@ export default function CriarPatrimonioModal({
                                         onClick={onClose}
                                         className="px-6 py-2.5 text-subtle hover:text-white transition-colors duration-300"
                                     >
-                                        Cancelar
+                                        Cancel
                                     </button>
 
                                     <button
@@ -325,12 +325,12 @@ export default function CriarPatrimonioModal({
                                         {isLoading ? (
                                             <>
                                                 <AiOutlineLoading3Quarters className="animate-spin h-4 w-4" />
-                                                Salvando...
+                                                Saving…
                                             </>
                                         ) : (
                                             <>
                                                 <MdCheck className="w-4 h-4 group-hover:scale-110 transition-transform" />
-                                                Salvar Patrimônio
+                                                Add asset
                                             </>
                                         )}
                                     </button>

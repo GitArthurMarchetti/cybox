@@ -21,16 +21,16 @@ export default async function VerificarEmail({ params }: { params: { token: stri
         <PaginaStatus
             icone={confirmado ? <MdMarkEmailRead size={28} /> : <MdErrorOutline size={28} />}
             tom={confirmado ? "sucesso" : "erro"}
-            titulo={confirmado ? "Email confirmado!" : "Link inválido ou expirado"}
+            titulo={confirmado ? "Email confirmed" : "This link is invalid or expired"}
             acoes={
                 <Link href="/departamentos" className={classeBotaoPrimario}>
-                    Ir para meus departamentos
+                    Go to my rooms
                 </Link>
             }
         >
             {confirmado
-                ? "Agora você pode aceitar convites para departamentos."
-                : "Este link já foi usado ou expirou. Abra o convite que você recebeu para pedir um novo."}
+                ? "You can now accept invites to rooms."
+                : "This link was already used or has expired. Open the invite you received to request a new one."}
         </PaginaStatus>
     );
 }

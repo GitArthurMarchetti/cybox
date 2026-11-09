@@ -4,6 +4,10 @@ export interface Category {
     observation: string;
     total: number;
     percentualValor?: number | null;
+    /** total value today of the category's assets */
+    valorTotal?: number;
+    /** annual depreciation rate of the category's preset, if any */
+    taxa?: number | null;
     notebooks?: PatrimonioDetalhadoType[];
     padrao_depreciacao_id?: number | null;
 }

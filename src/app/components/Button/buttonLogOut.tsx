@@ -17,7 +17,7 @@ export default function Logout({ variant = 'default' }: LogoutProps) {
                     className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-lg hover:bg-red-500/10 transition-colors duration-300 text-muted hover:text-red-500"
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
-                    title="Sair"
+                    title="Log out"
                 >
                     <TbLogout2 size={20} />
                 </motion.button>
@@ -31,8 +31,8 @@ export default function Logout({ variant = 'default' }: LogoutProps) {
                 type="submit"
                 className="w-10 h-10 flex items-center justify-center text-muted hover:text-red-400 hover:bg-red-500/10 transition-colors duration-200 rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
                 whileTap={{ scale: 0.92 }}
-                title="Sair"
-                aria-label="Sair da conta"
+                title="Log out"
+                aria-label="Log out"
             >
                 <TbLogout2 className="text-xl" aria-hidden />
             </motion.button>

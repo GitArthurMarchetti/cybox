@@ -107,17 +107,17 @@ async function createNewDatabaseStructure(connection) {
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
     `);
 
-    // Inserir padrões da Receita Federal
+    // Standard straight-line depreciation presets
     await connection.query(`
         INSERT INTO padroes_depreciacao (categoria, descricao, taxa_anual_percent, vida_util_anos, observacoes) VALUES
-        ('Computadores e Periféricos', 'Equipamentos de processamento de dados, notebooks, desktops, impressoras', 20.00, 5, 'Conforme Instrução Normativa RFB nº 1700/2017'),
-        ('Móveis e Utensílios', 'Mesas, cadeiras, armários, estantes', 10.00, 10, 'Móveis em geral para escritório'),
-        ('Veículos', 'Automóveis, caminhões, motocicletas', 20.00, 5, 'Veículos de transporte em geral'),
-        ('Máquinas e Equipamentos', 'Equipamentos industriais e comerciais', 10.00, 10, 'Máquinas e equipamentos diversos'),
-        ('Equipamentos de Comunicação', 'Telefones, rádios, equipamentos de rede', 20.00, 5, 'Equipamentos de telecomunicações'),
-        ('Equipamentos de Áudio e Vídeo', 'Câmeras, microfones, sistemas de som', 20.00, 5, 'Equipamentos de produção audiovisual'),
-        ('Instalações', 'Ar condicionado, sistemas elétricos', 10.00, 10, 'Instalações prediais'),
-        ('Ferramentas', 'Ferramentas em geral', 15.00, 6, 'Ferramentas e utensílios diversos')
+        ('Computers & peripherals', 'Laptops, desktops, printers and data processing equipment', 20.00, 5, 'Typical rate for IT equipment'),
+        ('Furniture & fixtures', 'Desks, chairs, cabinets and shelving', 10.00, 10, 'General office furniture'),
+        ('Vehicles', 'Cars, vans, trucks and motorcycles', 20.00, 5, 'Vehicles used for transport'),
+        ('Machinery & equipment', 'Industrial and commercial equipment', 10.00, 10, 'General machinery and equipment'),
+        ('Communication equipment', 'Phones, radios and network equipment', 20.00, 5, 'Telecommunications equipment'),
+        ('Audio & video equipment', 'Cameras, microphones and sound systems', 20.00, 5, 'Audiovisual production equipment'),
+        ('Building installations', 'Air conditioning and electrical systems', 10.00, 10, 'Fixed building installations'),
+        ('Tools', 'General hand and power tools', 15.00, 6, 'Tools and general equipment')
     `);
 
     // 3. Tabela de departamentos

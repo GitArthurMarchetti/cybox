@@ -48,15 +48,15 @@ export default function CriarCategoriaModal({
 
             const resultado = await saveCategoria(formData);
             if (!resultado.success) {
-                toast.error(resultado.error || 'Erro ao criar categoria');
+                toast.error(resultado.error || "Couldn't create the category");
                 return;
             }
 
-            toast.success("Categoria criada com sucesso!");
+            toast.success("Category created");
             onClose();
             if (onSuccess) onSuccess();
         } catch (error) {
-            toast.error("Erro ao criar categoria");
+            toast.error("Couldn't create the category");
         } finally {
             setIsLoading(false);
         }
@@ -66,8 +66,8 @@ export default function CriarCategoriaModal({
         <Modal isOpen={isOpen} onClose={onClose} className="max-w-2xl">
                         <ModalHeader
                             icone={<MdCategory size={20} />}
-                            titulo="Nova Categoria"
-                            subtitulo="Organize seus patrimônios em categorias"
+                            titulo="New category"
+                            subtitulo="Group assets that depreciate the same way"
                             onClose={onClose}
                         />
 
@@ -78,14 +78,14 @@ export default function CriarCategoriaModal({
                                     animate={{ opacity: 1, y: 0 }}
                                     transition={{ duration: 0.3, delay: 0.1 }}
                                 >
-                                    <label className="block text-sm font-medium text-muted mb-2">Nome da categoria</label>
+                                    <label className="block text-sm font-medium text-muted mb-2">Category name</label>
                                     <input
                                         autoComplete='off'
                                         type="text"
                                         name="nome"
                                         required
                                         className="w-full bg-surface-2 text-white px-4 py-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 placeholder-subtle"
-                                        placeholder="Ex: Notebooks, Mobiliário, Veículos..."
+                                        placeholder="e.g. Laptops, Furniture, Vehicles"
                                     />
                                 </motion.div>
 
@@ -94,12 +94,12 @@ export default function CriarCategoriaModal({
                                     animate={{ opacity: 1, y: 0 }}
                                     transition={{ duration: 0.3, delay: 0.2 }}
                                 >
-                                    <label className="block text-sm font-medium text-muted mb-2">Descrição</label>
+                                    <label className="block text-sm font-medium text-muted mb-2">Description</label>
                                     <textarea
                                         name="descricao"
                                         rows={4}
                                         className="w-full bg-surface-2 text-white px-4 py-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 resize-none placeholder-subtle"
-                                        placeholder="Adicione uma descrição ou observação sobre esta categoria..."
+                                        placeholder="Anything worth noting about this category"
                                     ></textarea>
                                 </motion.div>
 
@@ -108,20 +108,20 @@ export default function CriarCategoriaModal({
                                     animate={{ opacity: 1, y: 0 }}
                                     transition={{ duration: 0.3, delay: 0.3 }}
                                 >
-                                    <label className="block text-sm font-medium text-muted mb-2">Padrão de Depreciação</label>
+                                    <label className="block text-sm font-medium text-muted mb-2">Depreciation preset</label>
                                     <select
                                         name="padrao_depreciacao_id"
                                         className="w-full bg-surface-2 text-white px-4 py-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50"
                                     >
-                                        <option value="">Selecione um padrão (opcional)</option>
+                                        <option value="">Pick a preset (optional)</option>
                                         {padroesDepreciacao.map(padrao => (
                                             <option key={padrao.id} value={padrao.id}>
-                                                {padrao.categoria} - {padrao.taxa_anual_percent}% a.a. ({padrao.vida_util_anos} anos)
+                                                {padrao.categoria} · {Number(padrao.taxa_anual_percent)}% per year ({padrao.vida_util_anos} years)
                                             </option>
                                         ))}
                                     </select>
                                     <p className="text-xs text-subtle mt-2">
-                                        Baseado nos padrões da Receita Federal para depreciação de ativos
+                                        Presets follow standard annual depreciation rates for each asset type
                                     </p>
                                 </motion.div>
 
@@ -132,7 +132,7 @@ export default function CriarCategoriaModal({
                                     transition={{ duration: 0.3, delay: 0.4 }}
                                 >
                                     <div className="text-sm w-1/3 text-subtle">
-                                        Os patrimônios serão organizados nesta categoria
+                                        Assets you add here inherit this category&apos;s rate
                                     </div>
                                     <div className="flex items-center gap-3">
                                         <button
@@ -140,7 +140,7 @@ export default function CriarCategoriaModal({
                                             className="px-6 py-3 text-muted hover:text-white hover:bg-surface-2 rounded-lg transition-all duration-300"
                                             onClick={onClose}
                                         >
-                                            Cancelar
+                                            Cancel
                                         </button>
                                         <button
                                             type="submit"
@@ -150,12 +150,12 @@ export default function CriarCategoriaModal({
                                             {isLoading ? (
                                                 <>
                                                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-black"></div>
-                                                    Criando...
+                                                    Creating…
                                                 </>
                                             ) : (
                                                 <>
                                                     <FaPlus size={16} />
-                                                    Criar Categoria
+                                                    Create category
                                                 </>
                                             )}
                                         </button>

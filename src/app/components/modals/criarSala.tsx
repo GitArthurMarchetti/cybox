@@ -29,7 +29,7 @@ const CreateDepartmentModal = ({ isOpen, onClose, onSuccess }: CreateDepartmentM
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!formData.titulo.trim()) {
-            toast.error('O título é obrigatório');
+            toast.error('Give the room a name');
             return;
         }
 
@@ -42,14 +42,14 @@ const CreateDepartmentModal = ({ isOpen, onClose, onSuccess }: CreateDepartmentM
 
             const resultado = await saveDepartamento(data);
             if (!resultado.success) {
-                toast.error(resultado.error || 'Erro ao criar departamento');
+                toast.error(resultado.error || "Couldn't create the room");
                 return;
             }
-            toast.success('Departamento criado com sucesso!');
+            toast.success('Room created');
             onClose();
             if (onSuccess) onSuccess();
         } catch (error) {
-            toast.error('Erro ao criar departamento');
+            toast.error("Couldn't create the room");
         } finally {
             setIsLoading(false);
         }
@@ -63,8 +63,8 @@ const CreateDepartmentModal = ({ isOpen, onClose, onSuccess }: CreateDepartmentM
         <Modal isOpen={isOpen} onClose={onClose} className="max-w-2xl">
                         <ModalHeader
                             icone={<MdBusiness size={20} />}
-                            titulo="Novo Departamento"
-                            subtitulo="Organize seus patrimônios por departamento"
+                            titulo="New room"
+                            subtitulo="One room per department keeps every asset in its place"
                             onClose={onClose}
                         />
 
@@ -76,14 +76,14 @@ const CreateDepartmentModal = ({ isOpen, onClose, onSuccess }: CreateDepartmentM
                                     transition={{ duration: 0.3, delay: 0.1 }}
                                 >
                                     <label className="block text-sm font-medium text-muted mb-2">
-                                        Nome do departamento *
+                                        Room name *
                                     </label>
                                     <input
                                         type="text"
                                         required
                                         maxLength={100}
                                         className="w-full bg-surface-2 text-white px-4 py-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 placeholder-subtle"
-                                        placeholder="Ex: Tecnologia da Informação, Recursos Humanos..."
+                                        placeholder="e.g. IT, Operations, Warehouse"
                                         value={formData.titulo}
                                         onChange={(e) => handleInputChange('titulo', e.target.value)}
                                     />
@@ -95,13 +95,13 @@ const CreateDepartmentModal = ({ isOpen, onClose, onSuccess }: CreateDepartmentM
                                     transition={{ duration: 0.3, delay: 0.2 }}
                                 >
                                     <label className="block text-sm font-medium text-muted mb-2">
-                                        Descrição
+                                        Description
                                     </label>
                                     <textarea
                                         rows={4}
                                         maxLength={500}
                                         className="w-full bg-surface-2 text-white px-4 py-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 resize-none placeholder-subtle"
-                                        placeholder="Descreva o propósito e responsabilidades deste departamento..."
+                                        placeholder="What does this department look after?"
                                         value={formData.descricao}
                                         onChange={(e) => handleInputChange('descricao', e.target.value)}
                                     />
@@ -116,13 +116,13 @@ const CreateDepartmentModal = ({ isOpen, onClose, onSuccess }: CreateDepartmentM
                                     transition={{ duration: 0.3, delay: 0.3 }}
                                 >
                                     <label className="block text-sm font-medium text-muted mb-2">
-                                        Localização
+                                        Location
                                     </label>
                                     <input
                                         type="text"
                                         maxLength={200}
                                         className="w-full bg-surface-2 text-white px-4 py-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 placeholder-subtle"
-                                        placeholder="Ex: Prédio A - 2º Andar, Sala 205..."
+                                        placeholder="e.g. Building A, 2nd floor"
                                         value={formData.localizacao}
                                         onChange={(e) => handleInputChange('localizacao', e.target.value)}
                                     />
@@ -136,7 +136,7 @@ const CreateDepartmentModal = ({ isOpen, onClose, onSuccess }: CreateDepartmentM
                                     transition={{ duration: 0.3, delay: 0.5 }}
                                 >
                                     <div className="text-sm w-1/3 text-subtle">
-                                        Você será o proprietário deste departamento
+                                        You&apos;ll be the owner of this room
                                     </div>
                                     <div className="flex items-center gap-3">
                                         <button
@@ -144,7 +144,7 @@ const CreateDepartmentModal = ({ isOpen, onClose, onSuccess }: CreateDepartmentM
                                             className="px-6 py-3 text-muted hover:text-white hover:bg-surface-2 rounded-lg transition-all duration-300"
                                             onClick={onClose}
                                         >
-                                            Cancelar
+                                            Cancel
                                         </button>
                                         <button
                                             type="submit"
@@ -154,12 +154,12 @@ const CreateDepartmentModal = ({ isOpen, onClose, onSuccess }: CreateDepartmentM
                                             {isLoading ? (
                                                 <>
                                                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-black"></div>
-                                                    Criando...
+                                                    Creating…
                                                 </>
                                             ) : (
                                                 <>
                                                     <FaPlus size={16} />
-                                                    Criar Departamento
+                                                    Create room
                                                 </>
                                             )}
                                         </button>

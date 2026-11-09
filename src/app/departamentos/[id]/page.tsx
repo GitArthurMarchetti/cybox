@@ -6,8 +6,9 @@ import { UserType } from "@/lib/types/types";
 import { getHostByDepartamento } from "@/app/services/user";
 import { getMembrosPerDepartamento } from "@/app/services/membros";
 import { getCategoriasComTotalPatrimonios } from "@/app/services/categoria";
-import { MdBlock } from "react-icons/md";
-import { IoArrowBack } from "react-icons/io5";
+import Link from "next/link";
+import { FiLock } from "react-icons/fi";
+import { PaginaStatus, classeBotaoPrimario } from "@/app/components/PaginaStatus";
 
 
 
@@ -34,46 +35,18 @@ export default async function DepartamentoDetalhes({ params }: { params: { id: s
 
     if (!temAcesso) {
         return (
-            <div className="min-h-screen bg-gradient-to-br from-page via-[#1a1a1a] to-page flex items-center justify-center p-4">
-                <div className="max-w-2xl w-full">
-                    <div className="text-center mb-8">
-                        <div className="relative inline-block">
-                            <div className="w-24 h-24 bg-gradient-to-r from-red-500 to-red-600 rounded-full flex items-center justify-center mb-4 mx-auto shadow-lg">
-                                <MdBlock className="w-12 h-12 text-white" />
-                            </div>
-                            <div className="absolute -top-2 -right-2 w-4 h-4 bg-red-400 rounded-full animate-ping"></div>
-                            <div className="absolute -bottom-2 -left-2 w-3 h-3 bg-red-300 rounded-full animate-pulse"></div>
-                        </div>
-                    </div>
-
-                    <div className="bg-surface rounded-2xl  p-8 shadow-2xl border border-line ">
-                        <div className="text-center">
-                            <h1 className="text-2xl font-bold text-white mb-4">
-                                Acesso Negado
-                            </h1>
-                            <p className="text-muted text-lg mb-6 leading-relaxed">
-                                Você não tem permissão para acessar este departamento.
-                            </p>
-                            <p className="text-subtle text-sm mb-8">
-                                Entre em contato com o administrador do departamento para solicitar acesso.
-                            </p>
-
-                            <div className="flex flex-col w-full justify-center sm:flex-row gap-3">
-                                <a
-                                    href="/departamentos"
-                                    className="flex items-center justify-center gap-2 bg-primary text-black font-medium px-6 py-3 rounded-lg hover:bg-primary/90 transition-all duration-300 transform hover:scale-105"
-                                >
-                                    <IoArrowBack className="w-4 h-4" />
-                                    Voltar aos Departamentos
-                                </a>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div className="absolute top-1/4 left-1/4 w-32 h-32 bg-red-500/10 rounded-full blur-3xl -z-10"></div>
-                    <div className="absolute bottom-1/4 right-1/4 w-24 h-24 bg-red-400/5 rounded-full blur-2xl -z-10"></div>
-                </div>
-            </div>
+            <PaginaStatus
+                icone={<FiLock size={24} />}
+                tom="erro"
+                titulo="You don't have access to this room"
+                acoes={
+                    <Link href="/departamentos" className={classeBotaoPrimario}>
+                        Back to my rooms
+                    </Link>
+                }
+            >
+                Ask the room&apos;s owner or an admin to send you an invite code.
+            </PaginaStatus>
         );
     }
 

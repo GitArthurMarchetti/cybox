@@ -1,5 +1,6 @@
 "use server"
 
+import { demo, isDemoSession, DEMO_READ_ONLY } from "@/lib/demo";
 import { query } from '@/lib/mysql';
 import { requireDepartamentoRole } from '@/lib/authz';
 
@@ -14,6 +15,7 @@ export interface MembroDepartamento {
 }
 
 export async function getMembrosPerDepartamento(departamentoId: number | string): Promise<MembroDepartamento[]> {
+    if (await isDemoSession()) return demo.members(Number(departamentoId));
     try {
         await requireDepartamentoRole(Number(departamentoId));
 

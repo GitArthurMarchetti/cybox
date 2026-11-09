@@ -10,15 +10,16 @@ import { DepartamentoType } from '@/lib/types/types';
 import { regenerarCodigoConvite, saveDepartamento } from '@/app/services/departamento';
 import { MembroDepartamento } from '@/app/services/membros';
 import { toast } from 'sonner';
+import { useDemo } from '../demo/DemoContext';
 
 const traduzirRole = (role: string | undefined | null) => {
-    if (!role) return 'Membro';
+    if (!role) return 'Member';
     
     switch (role.toLowerCase()) {
-        case 'owner': return 'Proprietário';
-        case 'admin': return 'Administrador';
-        case 'member': return 'Membro';
-        default: return 'Membro';
+        case 'owner': return 'Owner';
+        case 'admin': return 'Admin';
+        case 'member': return 'Member';
+        default: return 'Member';
     }
 };
 
@@ -43,6 +44,7 @@ function ConfiguracoesDepartamentoModal({
     onSuccess,
     onDelete
 }: ConfiguracoesDepartamentoModalProps) {
+    const { blockIfDemo } = useDemo();
     const [activeTab, setActiveTab] = useState<'geral' | 'membros' | 'avancado'>('geral');
     const [isLoading, setIsLoading] = useState(false);
     const [formData, setFormData] = useState({
@@ -79,7 +81,7 @@ function ConfiguracoesDepartamentoModal({
 
             const resultado = await saveDepartamento(formDataToSend);
             if (!resultado.success) {
-                toast.error(resultado.error || 'Erro ao atualizar departamento');
+                toast.error(resultado.error || "Couldn't update the room");
                 return;
             }
 
@@ -90,42 +92,42 @@ function ConfiguracoesDepartamentoModal({
                 localizacao: formData.localizacao
             };
 
-            toast.success('Departamento atualizado com sucesso!');
+            toast.success('Room updated');
             onClose();
             if (onSuccess) onSuccess(departamentoAtualizado);
         } catch (error) {
-            toast.error('Erro ao atualizar departamento');
+            toast.error("Couldn't update the room");
         } finally {
             setIsLoading(false);
         }
     };
 
     const gerarNovoCodigoConvite = async () => {
-        if (!isAdmin) return;
+        if (!isAdmin || blockIfDemo()) return;
 
         try {
             const novoCodigo = await regenerarCodigoConvite(Number(departamento.id_departamentos));
             setFormData(prev => ({ ...prev, codigo_convite: novoCodigo }));
-            toast.success('Novo código gerado! O código anterior deixou de funcionar.');
+            toast.success('New code created. The old one no longer works.');
             if (onSuccess) onSuccess({ ...departamento, codigo_convite: novoCodigo });
         } catch (error) {
-            toast.error('Erro ao gerar novo código');
+            toast.error("Couldn't create a new code");
         }
     };
 
     const copiarCodigoConvite = async () => {
         try {
             await navigator.clipboard.writeText(formData.codigo_convite);
-            toast.success('Código de convite copiado!');
+            toast.success('Invite code copied');
         } catch (error) {
-            toast.error('Não foi possível copiar. Selecione o código e copie manualmente.');
+            toast.error("Couldn't copy. Select the code and copy it manually.");
         }
     };
 
     const tabs = [
-        { id: 'geral', label: 'Geral', icon: FaEdit },
-        { id: 'membros', label: 'Membros', icon: FaUsers },
-        { id: 'avancado', label: 'Avançado', icon: FaCog }
+        { id: 'geral', label: 'General', icon: FaEdit },
+        { id: 'membros', label: 'Members', icon: FaUsers },
+        { id: 'avancado', label: 'Advanced', icon: FaCog }
     ];
 
     return (
@@ -133,7 +135,7 @@ function ConfiguracoesDepartamentoModal({
                         
                         <ModalHeader
                             icone={<FaCog size={20} />}
-                            titulo="Configurações do Departamento"
+                            titulo="Room settings"
                             subtitulo={<>{departamento.titulo}</>}
                             onClose={onClose}
                         />
@@ -141,7 +143,7 @@ function ConfiguracoesDepartamentoModal({
                         <div className="flex min-h-0 flex-1 flex-col sm:flex-row">
                             
                             <div className="shrink-0 border-b border-line bg-[#1a1a1a] p-2 sm:w-56 sm:border-b-0 sm:border-r sm:p-4">
-                                <div role="tablist" aria-label="Seções" className="flex gap-2 overflow-x-auto sm:flex-col">
+                                <div role="tablist" aria-label="Sections" className="flex gap-2 overflow-x-auto sm:flex-col">
                                     {tabs.map((tab) => (
                                         <button
                                             key={tab.id}
@@ -169,11 +171,11 @@ function ConfiguracoesDepartamentoModal({
                                         animate={{ opacity: 1, x: 0 }}
                                         transition={{ duration: 0.3 }}
                                     >
-                                        <h3 className="text-lg font-bold text-white mb-6">Informações Gerais</h3>
+                                        <h3 className="text-lg font-bold text-white mb-6">General</h3>
 
                                         <form onSubmit={handleSubmit} className="space-y-6">
                                             <div>
-                                                <label className="block text-sm text-muted mb-2">Nome do Departamento</label>
+                                                <label className="block text-sm text-muted mb-2">Room name</label>
                                                 <input
                                                     type="text"
                                                     value={formData.titulo}
@@ -182,31 +184,31 @@ function ConfiguracoesDepartamentoModal({
                                                     onChange={(e) => setFormData(prev => ({ ...prev, titulo: e.target.value }))}
                                                     disabled={!isAdmin}
                                                     className="w-full bg-surface-2 text-white px-4 py-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 disabled:opacity-50"
-                                                    placeholder="Nome do departamento"
+                                                    placeholder="Room name"
                                                 />
                                             </div>
 
                                             <div>
-                                                <label className="block text-sm text-muted mb-2">Descrição</label>
+                                                <label className="block text-sm text-muted mb-2">Description</label>
                                                 <textarea
                                                     value={formData.descricao}
                                                     onChange={(e) => setFormData(prev => ({ ...prev, descricao: e.target.value }))}
                                                     disabled={!isAdmin}
                                                     rows={4}
                                                     className="w-full bg-surface-2 text-white px-4 py-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 resize-none disabled:opacity-50"
-                                                    placeholder="Descrição do departamento"
+                                                    placeholder="What this department looks after"
                                                 />
                                             </div>
 
                                             <div>
-                                                <label className="block text-sm text-muted mb-2">Localização</label>
+                                                <label className="block text-sm text-muted mb-2">Location</label>
                                                 <input
                                                     type="text"
                                                     value={formData.localizacao}
                                                     onChange={(e) => setFormData(prev => ({ ...prev, localizacao: e.target.value }))}
                                                     disabled={!isAdmin}
                                                     className="w-full bg-surface-2 text-white px-4 py-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 disabled:opacity-50"
-                                                    placeholder="Localização física"
+                                                    placeholder="e.g. Building A, 2nd floor"
                                                 />
                                             </div>
 
@@ -220,12 +222,12 @@ function ConfiguracoesDepartamentoModal({
                                                         {isLoading ? (
                                                             <>
                                                                 <AiOutlineLoading3Quarters className="animate-spin h-4 w-4" />
-                                                                Salvando...
+                                                                Saving…
                                                             </>
                                                         ) : (
                                                             <>
                                                                 <MdSave size={16} />
-                                                                Salvar Alterações
+                                                                Save changes
                                                             </>
                                                         )}
                                                     </button>
@@ -242,7 +244,7 @@ function ConfiguracoesDepartamentoModal({
                                         transition={{ duration: 0.3 }}
                                     >
                                         <div className="flex items-center justify-between mb-6">
-                                            <h3 className="text-lg font-bold text-white">Membros do Departamento</h3>
+                                            <h3 className="text-lg font-bold text-white">Room members</h3>
                                             <span className="bg-surface-2 text-white px-3 py-1 rounded-full text-sm">
                                                 {membros.length} membros
                                             </span>
@@ -273,7 +275,7 @@ function ConfiguracoesDepartamentoModal({
                                             )) : (
                                                 <div className="text-center py-8">
                                                     <FaUsers className="mx-auto text-subtle mb-2" size={32} />
-                                                    <p className="text-subtle">Nenhum membro para mostrar.</p>
+                                                    <p className="text-subtle">No members to show.</p>
                                                 </div>
                                             )}
                                         </div>
@@ -286,12 +288,12 @@ function ConfiguracoesDepartamentoModal({
                                         animate={{ opacity: 1, x: 0 }}
                                         transition={{ duration: 0.3 }}
                                     >
-                                        <h3 className="text-lg font-bold text-white mb-6">Configurações Avançadas</h3>
+                                        <h3 className="text-lg font-bold text-white mb-6">Advanced</h3>
 
                                         <div className="space-y-6">
                                             
                                             <div>
-                                                <label className="block text-sm text-muted mb-2">Código de Convite</label>
+                                                <label className="block text-sm text-muted mb-2">Invite code</label>
                                                 <div className="flex gap-3">
                                                     <input
                                                         type="text"
@@ -312,12 +314,12 @@ function ConfiguracoesDepartamentoModal({
                                                             onClick={gerarNovoCodigoConvite}
                                                             className="px-4 py-3 bg-primary text-black rounded-lg hover:bg-primary/90 transition-colors duration-300"
                                                         >
-                                                            Gerar Novo
+                                                            New code
                                                         </button>
                                                     )}
                                                 </div>
                                                 <p className="text-xs text-subtle mt-1">
-                                                    Use este código para convidar novos membros ao departamento
+                                                    Share this code to let people join the room
                                                 </p>
                                             </div>
 
@@ -326,17 +328,17 @@ function ConfiguracoesDepartamentoModal({
                                                 <div className="border border-red-500/20 rounded-lg p-6 bg-red-500/5">
                                                     <h4 className="text-red-400 font-medium mb-3 flex items-center gap-2">
                                                         <FaTrash size={16} />
-                                                        Zona de Perigo
+                                                        Danger zone
                                                     </h4>
                                                     <p className="text-subtle text-sm mb-4">
-                                                        Apenas proprietários podem excluir departamentos. Esta ação é irreversível.
+                                                        Only the owner can delete a room. This can&apos;t be undone.
                                                     </p>
                                                     <button
                                                         onClick={onDelete}
                                                         className="flex items-center gap-2 bg-red-600 text-white px-6 py-3 rounded-lg hover:bg-red-700 transition-colors duration-300"
                                                     >
                                                         <FaTrash size={16} />
-                                                        Excluir Departamento
+                                                        Delete room
                                                     </button>
                                                 </div>
                                             )}

@@ -8,11 +8,13 @@ declare module 'next-auth' {
     }
 }
 
-const ROTAS_PUBLICAS = ['/', '/login', '/cadastro', '/esqueci-senha'];
-const PREFIXOS_PUBLICOS = ['/convite/', '/verificar-email/', '/redefinir-senha/'];
+// The signed-in area of the app. Everything else (landing, auth screens, invites,
+// legal pages and unknown URLs, which get the 404 page) is public. Pages inside the
+// private area also check the session themselves, and every service checks access.
+const PREFIXOS_PRIVADOS = ['/departamentos'];
 
 export function rotaPublica(pathname: string): boolean {
-    return ROTAS_PUBLICAS.includes(pathname) || PREFIXOS_PUBLICOS.some(prefixo => pathname.startsWith(prefixo));
+    return !PREFIXOS_PRIVADOS.some(prefixo => pathname === prefixo || pathname.startsWith(prefixo + '/'));
 }
 
 export const authConfig = {

@@ -91,7 +91,7 @@ export default function ConfirmarExclusaoModal({
 
                             <div className="bg-amber-500/10 border border-amber-500/20 rounded-lg p-3 mb-8">
                                 <p className="text-amber-400 text-sm">
-                                    Esta ação não pode ser desfeita!
+                                    This can&apos;t be undone.
                                 </p>
                             </div>
 
@@ -102,7 +102,7 @@ export default function ConfirmarExclusaoModal({
                                     disabled={isProcessing || isLoading}
                                     className="flex-1 px-6 py-3 bg-surface-2 text-white rounded-lg hover:bg-surface-3 transition-colors duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
                                 >
-                                    Cancelar
+                                    Cancel
                                 </button>
 
                                 <button
@@ -113,12 +113,12 @@ export default function ConfirmarExclusaoModal({
                                     {(isProcessing || isLoading) ? (
                                         <>
                                             <AiOutlineLoading3Quarters className="animate-spin h-4 w-4" />
-                                            Excluindo...
+                                            Deleting…
                                         </>
                                     ) : (
                                         <>
                                             <RiDeleteBinLine size={16} />
-                                            Excluir
+                                            Delete
                                         </>
                                     )}
                                 </button>

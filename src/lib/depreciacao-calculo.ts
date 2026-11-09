@@ -25,14 +25,14 @@ export function serieDepreciacao(valorInicial: number, taxaAnual: number, dataAq
     for (let m = 0; m <= totalMeses; m += passo) {
         const data = new Date(ano, mes - 1 + m, dia);
         pontos.push({
-            data: data.toLocaleDateString('pt-BR', { month: 'short', year: '2-digit' }),
+            data: data.toLocaleDateString('en-US', { month: 'short', year: '2-digit' }),
             valor: calcularValorDepreciado(valorInicial, taxaAnual, dataAquisicao, data),
         });
     }
 
     if (totalMeses % passo !== 0 || pontos.length === 1) {
         pontos.push({
-            data: new Date().toLocaleDateString('pt-BR', { month: 'short', year: '2-digit' }),
+            data: new Date().toLocaleDateString('en-US', { month: 'short', year: '2-digit' }),
             valor: calcularValorDepreciado(valorInicial, taxaAnual, dataAquisicao),
         });
     }

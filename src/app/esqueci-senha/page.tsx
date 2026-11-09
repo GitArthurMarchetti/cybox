@@ -24,21 +24,21 @@ export default function EsqueciSenha() {
             <PaginaStatus
                 icone={<MdMarkEmailRead size={28} />}
                 tom="sucesso"
-                titulo="Confira seu email"
-                acoes={<Link href="/login" className={classeBotaoSecundario}>Voltar ao login</Link>}
+                titulo="Check your inbox"
+                acoes={<Link href="/login" className={classeBotaoSecundario}>Back to log in</Link>}
             >
-                Se existir uma conta com <strong className="text-white">{email.trim()}</strong>, enviamos um link
-                para criar uma nova senha. Ele vale por 1 hora. Não esqueça de olhar o spam.
+                If there&apos;s an account for <strong className="text-white">{email.trim()}</strong>, we sent it a link
+                to set a new password. It works for 1 hour, so check your spam folder too.
             </PaginaStatus>
         );
     }
 
     return (
-        <PaginaStatus icone={<MdLockReset size={28} />} titulo="Esqueceu sua senha?">
+        <PaginaStatus icone={<MdLockReset size={28} />} titulo="Forgot your password?">
             <form onSubmit={handleSubmit} className="space-y-4 text-left">
-                <p className="text-center">Digite o email da sua conta e enviaremos um link para criar uma nova senha.</p>
+                <p className="text-center">Enter your account&apos;s email and we&apos;ll send you a link to set a new one.</p>
                 <div>
-                    <label htmlFor="email" className="mb-2 block text-sm font-medium text-muted">Email</label>
+                    <label htmlFor="email" className="mb-2 block text-sm font-medium text-white/75">Email</label>
                     <input
                         id="email"
                         type="email"
@@ -46,14 +46,14 @@ export default function EsqueciSenha() {
                         autoComplete="email"
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
-                        placeholder="seu@email.com"
-                        className="w-full rounded-lg bg-surface-2 px-4 py-3 text-white placeholder:text-subtle focus:outline-none focus:ring-2 focus:ring-primary"
+                        placeholder="you@company.com"
+                        className="h-12 w-full rounded-xl border border-white/10 bg-white/[0.03] px-4 text-white placeholder:text-white/30 focus:border-primary/60 focus:outline-none focus:ring-4 focus:ring-primary/10"
                     />
                 </div>
-                <button type="submit" disabled={isLoading} className={`${classeBotaoPrimario} disabled:cursor-not-allowed disabled:bg-surface-3 disabled:text-subtle`}>
-                    {isLoading ? "Enviando..." : "Enviar link"}
+                <button type="submit" disabled={isLoading} className={`${classeBotaoPrimario} disabled:cursor-not-allowed disabled:opacity-60`}>
+                    {isLoading ? "Sending…" : "Send reset link"}
                 </button>
-                <Link href="/login" className={classeBotaoSecundario}>Voltar ao login</Link>
+                <Link href="/login" className={classeBotaoSecundario}>Back to log in</Link>
             </form>
         </PaginaStatus>
     );

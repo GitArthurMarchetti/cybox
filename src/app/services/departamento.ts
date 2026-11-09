@@ -1,11 +1,13 @@
 "use server"
 
+import { demo, isDemoSession, DEMO_READ_ONLY } from "@/lib/demo";
 import { query, transaction } from '@/lib/mysql';
 import { DepartamentoType } from "@/lib/types/types";
 import { getRoleNoDepartamento, requireDepartamentoRole, requireUserId, DepartamentoRole } from "@/lib/authz";
 import { gerarCodigo } from "@/lib/codigos";
 
 export async function getDepartamentosByUser(): Promise<DepartamentoType[]> {
+    if (await isDemoSession()) return demo.rooms();
     try {
         const userId = await requireUserId();
 
@@ -25,6 +27,7 @@ export async function getDepartamentosByUser(): Promise<DepartamentoType[]> {
 }
 
 export async function getDepartamentosById(idDepartamento: string | number): Promise<DepartamentoType | null> {
+    if (await isDemoSession()) return demo.room(Number(idDepartamento));
     try {
         if (!idDepartamento) {
             throw new Error("ID do departamento inválido ou ausente.");
@@ -47,6 +50,7 @@ export async function getDepartamentosById(idDepartamento: string | number): Pro
 }
 
 export async function saveDepartamento(formData: FormData): Promise<{ success: boolean; error?: string }> {
+    if (await isDemoSession()) return { success: false, error: DEMO_READ_ONLY };
     try {
         const userId = await requireUserId();
         const id_departamentos = +(formData.get('id_departamentos') as string) || null;
@@ -55,11 +59,11 @@ export async function saveDepartamento(formData: FormData): Promise<{ success: b
         const localizacao = (formData.get('localizacao') as string || '').trim() || null;
 
         if (!titulo) {
-            return { success: false, error: 'Informe o nome do departamento.' };
+            return { success: false, error: 'Give the room a name.' };
         }
 
         if (titulo.length > 255 || (localizacao && localizacao.length > 255)) {
-            return { success: false, error: 'Nome ou localização muito longos (máximo de 255 caracteres).' };
+            return { success: false, error: 'Name or location is too long (255 characters max).' };
         }
 
         if (!id_departamentos) {
@@ -90,11 +94,12 @@ export async function saveDepartamento(formData: FormData): Promise<{ success: b
         return { success: true };
     } catch (error) {
         console.error("Erro ao salvar departamento:", error);
-        return { success: false, error: 'Não foi possível salvar o departamento.' };
+        return { success: false, error: "Couldn't save the room." };
     }
 }
 
 export async function removeDepartamento(departamento: DepartamentoType) {
+    if (await isDemoSession()) throw new Error(DEMO_READ_ONLY);
     try {
         if (!departamento.id_departamentos) {
             throw new Error('O ID do departamento é necessário para deletar.');
@@ -121,6 +126,7 @@ export async function removeDepartamento(departamento: DepartamentoType) {
 }
 
 export async function regenerarCodigoConvite(departamentoId: number): Promise<string> {
+    if (await isDemoSession()) throw new Error(DEMO_READ_ONLY);
     await requireDepartamentoRole(departamentoId, ['owner', 'admin']);
 
     const codigo = gerarCodigo('DEPT');
@@ -134,6 +140,7 @@ export async function regenerarCodigoConvite(departamentoId: number): Promise<st
 }
 
 export async function verificarAcessoDepartamento(departamentoId: number): Promise<boolean> {
+    if (await isDemoSession()) return demo.role(departamentoId) !== null;
     try {
         const userId = await requireUserId();
         return (await getRoleNoDepartamento(userId, departamentoId)) !== null;
@@ -144,6 +151,7 @@ export async function verificarAcessoDepartamento(departamentoId: number): Promi
 }
 
 export async function obterRoleUsuarioDepartamento(departamentoId: number): Promise<DepartamentoRole | null> {
+    if (await isDemoSession()) return demo.role(departamentoId);
     try {
         const userId = await requireUserId();
         return await getRoleNoDepartamento(userId, departamentoId);

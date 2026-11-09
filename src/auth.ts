@@ -3,6 +3,7 @@ import CredentialsProvider from 'next-auth/providers/credentials';
 import GoogleProvider from 'next-auth/providers/google';
 import NextAuth, { CredentialsSignin } from 'next-auth';
 import { authConfig } from './auth.config';
+import { DEMO_USER } from './lib/demo-user';
 import {
     estaBloqueado,
     findUserByEmail,
@@ -67,6 +68,17 @@ export const {
             }
         }),
 
+        // Demo / exhibition mode: no account and no database involved. Every service
+        // answers a demo session from sample data and refuses writes (see lib/demo.ts).
+        CredentialsProvider({
+            id: "demo",
+            name: "Demo",
+            credentials: {},
+            async authorize() {
+                return { id: DEMO_USER.id, name: DEMO_USER.name, email: DEMO_USER.email };
+            }
+        }),
+
         GoogleProvider({
             clientId: process.env.GOOGLE_CLIENT_ID!,
             clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
@@ -116,6 +128,11 @@ export const {
             if (account?.provider === 'credentials') {
                 token.id = user?.id;
                 token.provider = 'credentials';
+            }
+
+            if (account?.provider === 'demo') {
+                token.id = DEMO_USER.id;
+                token.provider = 'demo';
             }
 
             return token;

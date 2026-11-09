@@ -1,25 +1,23 @@
+// Display helpers for room roles. Names kept for compatibility with existing imports.
+
 export function traduzirRole(role: string): string {
     switch (role.toLowerCase()) {
         case 'owner':
-            return 'Proprietário';
+            return 'Owner';
         case 'admin':
-            return 'Administrador';
-        case 'member':
-            return 'Membro';
+            return 'Admin';
         default:
-            return 'Membro';
+            return 'Member';
     }
 }
 
 export function getCorPorRole(role: string): { background: string; text: string } {
     switch (role.toLowerCase()) {
         case 'owner':
-            return { background: 'bg-yellow-500', text: 'text-black' };
+            return { background: 'bg-primary', text: 'text-black' };
         case 'admin':
-            return { background: 'bg-blue-500', text: 'text-white' };
-        case 'member':
-            return { background: 'bg-[#1a1a1a]', text: 'text-[#8c8888]' };
+            return { background: 'bg-blue-600', text: 'text-white' };
         default:
-            return { background: 'bg-[#1a1a1a]', text: 'text-[#8c8888]' };
+            return { background: 'bg-white/10', text: 'text-white/70' };
     }
 }

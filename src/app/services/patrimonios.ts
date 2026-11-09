@@ -1,5 +1,6 @@
 "use server"
 
+import { demo, isDemoSession, DEMO_READ_ONLY } from "@/lib/demo";
 import { query } from '@/lib/mysql';
 import { PatrimonioType } from "@/lib/types/types";
 import { requireCategoriaRole, requireDepartamentoRole, requirePatrimonioRole } from "@/lib/authz";
@@ -8,6 +9,7 @@ import { calcularValorDepreciado, sqlValorAtual } from "@/lib/depreciacao";
 const VALOR_MAXIMO = 99999999.99;
 
 export async function getPatrimoniosByCategoria(categoriaId: number): Promise<PatrimonioType[]> {
+    if (await isDemoSession()) return demo.assets(categoriaId);
      try {
           if (!categoriaId) {
                throw new Error("ID da categoria é necessário.");
@@ -34,6 +36,7 @@ export async function getPatrimoniosByCategoria(categoriaId: number): Promise<Pa
 }
 
 export async function getPatrimonioById(patrimonioId: number): Promise<PatrimonioType | null> {
+    if (await isDemoSession()) return demo.asset(patrimonioId);
      try {
           if (!patrimonioId) {
                throw new Error("ID do patrimônio é necessário.");
@@ -65,6 +68,7 @@ function hojeISO(): string {
 }
 
 export async function savePatrimonio(formData: FormData): Promise<{ success: boolean; error?: string }> {
+    if (await isDemoSession()) return { success: false, error: DEMO_READ_ONLY };
      try {
           const id = +(formData.get('id') as string) || null;
           const id_categoria = +(formData.get('id_categoria') as string) || null;
@@ -78,31 +82,31 @@ export async function savePatrimonio(formData: FormData): Promise<{ success: boo
           const taxa_anual = Number(formData.get('tempo_depreciacao'));
 
           if (!id && !id_categoria) {
-               return { success: false, error: "Categoria não informada." };
+               return { success: false, error: "No category was given." };
           }
 
           if (!nome) {
-               return { success: false, error: "Informe o nome do patrimônio." };
+               return { success: false, error: "Give the asset a name." };
           }
 
           if (!Number.isFinite(valor_inicial) || valor_inicial <= 0) {
-               return { success: false, error: "O valor inicial deve ser maior que zero." };
+               return { success: false, error: "The purchase price must be greater than zero." };
           }
 
           if (valor_inicial > VALOR_MAXIMO) {
-               return { success: false, error: "O valor inicial é maior que o permitido." };
+               return { success: false, error: "The purchase price is above the allowed maximum." };
           }
 
           if (!/^\d{4}-\d{2}-\d{2}$/.test(data_aquisicao)) {
-               return { success: false, error: "Informe a data de aquisição." };
+               return { success: false, error: "Add the purchase date." };
           }
 
           if (data_aquisicao > hojeISO()) {
-               return { success: false, error: "A data de aquisição não pode estar no futuro." };
+               return { success: false, error: "The purchase date can't be in the future." };
           }
 
           if (!Number.isFinite(taxa_anual) || taxa_anual <= 0 || taxa_anual > 100) {
-               return { success: false, error: "A taxa de depreciação deve estar entre 0,01% e 100% ao ano." };
+               return { success: false, error: "The depreciation rate must be between 0.01% and 100% per year." };
           }
 
           const valor_atual = calcularValorDepreciado(valor_inicial, taxa_anual, data_aquisicao);
@@ -146,11 +150,12 @@ export async function savePatrimonio(formData: FormData): Promise<{ success: boo
           return { success: true };
      } catch (error) {
           console.error("Erro ao salvar patrimônio:", error);
-          return { success: false, error: "Não foi possível salvar o patrimônio." };
+          return { success: false, error: "Couldn't save the asset." };
      }
 }
 
 export async function removePatrimonio(patrimonioId: number) {
+    if (await isDemoSession()) throw new Error(DEMO_READ_ONLY);
      try {
           if (!patrimonioId) {
                throw new Error("ID do patrimônio é necessário para deletar.");
@@ -170,6 +175,7 @@ export async function removePatrimonio(patrimonioId: number) {
 }
 
 export async function getResumoPatrimonios(departamentoId: number) {
+    if (await isDemoSession()) return demo.summary(departamentoId);
      try {
           if (!departamentoId) {
                throw new Error("ID do departamento é necessário.");

@@ -47,7 +47,7 @@ export function CompartilharModal({ isOpen, onClose, departamento, onInvite }: C
             toast.success('Link copiado!');
             setTimeout(() => setCopied(false), 3000);
         } catch (error) {
-            toast.error('Não foi possível copiar. Selecione o link e copie manualmente.');
+            toast.error("Couldn't copy. Select the link and copy it manually.");
         }
     };
 
@@ -60,12 +60,12 @@ export function CompartilharModal({ isOpen, onClose, departamento, onInvite }: C
 
     const handleInvite = async () => {
         if (emailsPreenchidos.length === 0) {
-            toast.error('Digite pelo menos um email');
+            toast.error('Add at least one email');
             return;
         }
 
         if (emailsInvalidos.length > 0) {
-            toast.error(`Email inválido: ${emailsInvalidos.join(', ')}`);
+            toast.error(`Invalid email: ${emailsInvalidos.join(', ')}`);
             return;
         }
 
@@ -82,14 +82,14 @@ export function CompartilharModal({ isOpen, onClose, departamento, onInvite }: C
         <Modal isOpen={isOpen} onClose={onClose} className="max-w-lg" bloquearFechamento={isLoading}>
             <ModalHeader
                 icone={<FaShare size={18} />}
-                titulo="Compartilhar departamento"
+                titulo="Invite people"
                 subtitulo={departamento.titulo}
                 onClose={onClose}
             />
 
             <div className="min-h-0 flex-1 space-y-6 overflow-y-auto p-5 sm:p-6">
                 <section>
-                    <h3 className="mb-3 text-sm font-medium text-muted">Link de convite</h3>
+                    <h3 className="mb-3 text-sm font-medium text-muted">Invite link</h3>
                     {shareLink ? (
                         <>
                             <div className="flex gap-2">
@@ -97,31 +97,31 @@ export function CompartilharModal({ isOpen, onClose, departamento, onInvite }: C
                                     type="text"
                                     value={shareLink}
                                     readOnly
-                                    aria-label="Link de convite"
+                                    aria-label="Invite link"
                                     onFocus={(e) => e.target.select()}
                                     className="min-w-0 flex-1 rounded-lg bg-surface-2 px-4 py-3 text-sm text-white focus:outline-none focus:ring-2 focus:ring-primary/50"
                                 />
                                 <Button onClick={handleCopyLink} className="shrink-0">
                                     {copied ? <FaCheck size={14} /> : <FaCopy size={14} />}
-                                    {copied ? 'Copiado' : 'Copiar'}
+                                    {copied ? 'Copied' : 'Copy'}
                                 </Button>
                             </div>
                             <p className="mt-2 text-xs text-subtle">
-                                Quem abrir este link entra no departamento como membro. Para invalidá-lo, gere um novo código em Configurações.
+                                Anyone who opens this link joins the room as a member. To revoke it, generate a new code in Room settings.
                             </p>
                         </>
                     ) : (
                         <p className="rounded-lg bg-surface-2 p-4 text-sm text-muted">
-                            Este departamento ainda não tem um código de convite. Um administrador pode gerar um em Configurações &gt; Avançado.
+                            This room doesn&apos;t have an invite code yet. An owner or admin can create one in Room settings &gt; Advanced.
                         </p>
                     )}
                 </section>
 
                 <section className="border-t border-line pt-6">
                     <div className="mb-3 flex items-center justify-between">
-                        <h3 className="text-sm font-medium text-muted">Convidar por email</h3>
+                        <h3 className="text-sm font-medium text-muted">Invite by email</h3>
                         <Button variant="link" size="sm" className="px-0" onClick={() => setEmails(atual => [...atual, ''])}>
-                            <FaPlus size={12} /> Adicionar email
+                            <FaPlus size={12} /> Add another
                         </Button>
                     </div>
 
@@ -132,7 +132,7 @@ export function CompartilharModal({ isOpen, onClose, departamento, onInvite }: C
                                     <FaEnvelope className="absolute left-3 top-1/2 -translate-y-1/2 text-subtle" size={14} aria-hidden />
                                     <input
                                         type="email"
-                                        placeholder="nome@empresa.com"
+                                        placeholder="name@company.com"
                                         aria-label={`Email ${index + 1}`}
                                         value={email}
                                         onChange={(e) => handleEmailChange(index, e.target.value)}
@@ -145,7 +145,7 @@ export function CompartilharModal({ isOpen, onClose, departamento, onInvite }: C
                                         variant="ghost"
                                         size="icon"
                                         onClick={() => setEmails(atual => atual.filter((_, i) => i !== index))}
-                                        aria-label={`Remover email ${index + 1}`}
+                                        aria-label={`Remove email ${index + 1}`}
                                         className="text-red-400 hover:text-red-300"
                                     >
                                         <FaTimes size={16} />
@@ -156,24 +156,24 @@ export function CompartilharModal({ isOpen, onClose, departamento, onInvite }: C
                     </div>
 
                     <p className="mt-2 text-xs text-subtle">
-                        Cada pessoa recebe um link por email. Quem ainda não tem conta pode se cadastrar pelo próprio link.
+                        Each person gets a link by email. People without an account can sign up from that link.
                     </p>
                 </section>
             </div>
 
             <div className="flex shrink-0 items-center justify-end gap-3 border-t border-line p-4 sm:px-6">
                 <Button variant="ghost" onClick={onClose} disabled={isLoading}>
-                    Cancelar
+                    Cancel
                 </Button>
                 <Button onClick={handleInvite} disabled={isLoading || emailsPreenchidos.length === 0}>
                     {isLoading ? (
                         <>
                             <span className="h-4 w-4 animate-spin rounded-full border-2 border-black/30 border-t-black" aria-hidden />
-                            Enviando...
+                            Sending…
                         </>
                     ) : (
                         <>
-                            <FaEnvelope size={14} /> Enviar convites
+                            <FaEnvelope size={14} /> Send invites
                         </>
                     )}
                 </Button>

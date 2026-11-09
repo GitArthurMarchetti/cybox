@@ -12,7 +12,7 @@ interface ModalProps {
   onClose: () => void
   children: React.ReactNode
   className?: string
-  // Impede fechar por Esc/clique fora enquanto uma ação está em andamento.
+  // Prevents closing with Esc / outside click while an action is running.
   bloquearFechamento?: boolean
 }
 
@@ -24,7 +24,7 @@ export function Modal({ isOpen, onClose, children, className, bloquearFechamento
           <Dialog.Portal forceMount>
             <Dialog.Overlay asChild forceMount>
               <motion.div
-                className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm"
+                className="fixed inset-0 z-50 bg-black/75 backdrop-blur-md"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
@@ -35,7 +35,7 @@ export function Modal({ isOpen, onClose, children, className, bloquearFechamento
               <Dialog.Content asChild forceMount aria-describedby={undefined}>
                 <motion.div
                   className={cn(
-                    "pointer-events-auto relative flex max-h-[calc(100dvh-2rem)] w-full max-w-2xl flex-col overflow-hidden rounded-2xl border border-line bg-surface shadow-2xl focus:outline-none",
+                    "pointer-events-auto relative flex max-h-[calc(100dvh-2rem)] w-full max-w-2xl flex-col overflow-hidden rounded-3xl border border-white/10 bg-surface shadow-[0_40px_120px_-30px_rgba(0,0,0,0.9)] focus:outline-none before:pointer-events-none before:absolute before:inset-x-0 before:top-0 before:h-px before:bg-gradient-to-r before:from-transparent before:via-primary/50 before:to-transparent",
                     className
                   )}
                   initial={{ scale: 0.95, opacity: 0, y: 16 }}
@@ -69,22 +69,22 @@ export function ModalHeader({ titulo, subtitulo, icone, onClose, tom = "primary"
       <div className="flex min-w-0 items-center gap-3">
         {icone && (
           <div className={cn(
-            "flex h-10 w-10 shrink-0 items-center justify-center rounded-lg",
-            tom === "danger" ? "bg-red-500/15 text-red-400" : "bg-primary text-primary-foreground"
+            "flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border",
+            tom === "danger" ? "border-red-500/30 bg-red-500/10 text-red-400" : "border-primary/30 bg-primary/10 text-primary"
           )}>
             {icone}
           </div>
         )}
         <div className="min-w-0">
-          <Dialog.Title className="truncate text-lg font-bold text-white sm:text-xl">{titulo}</Dialog.Title>
+          <Dialog.Title className="truncate font-display text-base font-semibold tracking-tight text-white sm:text-lg">{titulo}</Dialog.Title>
           {subtitulo && <p className="truncate text-sm text-subtle">{subtitulo}</p>}
         </div>
       </div>
       <button
         type="button"
         onClick={onClose}
-        aria-label="Fechar"
-        className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-subtle transition-colors hover:bg-surface-2 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+        aria-label="Close"
+        className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-subtle transition-colors hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
       >
         <MdClose size={22} />
       </button>

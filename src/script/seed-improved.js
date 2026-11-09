@@ -244,8 +244,8 @@ async function seed() {
                await connection.query(`
                     INSERT INTO users (id, nome, email, senha, status, email_verificado_em) VALUES
                     (?, 'Eduardo Borges', 'admin@cybox.com', ?, 'ativo', NOW()),
-                    (?, 'Gerente TI', 'ti@cybox.com', ?, 'ativo', NOW()),
-                    (?, 'Analista Financeiro', 'financeiro@cybox.com', ?, 'ativo', NOW())
+                    (?, 'IT Manager', 'ti@cybox.com', ?, 'ativo', NOW()),
+                    (?, 'Finance Analyst', 'financeiro@cybox.com', ?, 'ativo', NOW())
                `, [adminId, hashedPassword, user1Id, hashedPassword, user2Id, hashedPassword]);
 
                console.log('✅ Usuários criados com sucesso!');
@@ -258,14 +258,14 @@ async function seed() {
 
                await connection.query(`
                     INSERT IGNORE INTO padroes_depreciacao (categoria, descricao, taxa_anual_percent, vida_util_anos, observacoes) VALUES
-                    ('Computadores e Periféricos', 'Equipamentos de informática, notebooks, desktops, impressoras', 20.00, 5, 'Taxa baseada na legislação fiscal brasileira'),
-                    ('Móveis e Utensílios', 'Mesas, cadeiras, armários e mobiliário em geral', 10.00, 10, 'Depreciação de acordo com uso normal'),
-                    ('Equipamentos de Comunicação', 'Telefones, rádios, equipamentos de rede', 20.00, 5, 'Alta obsolescência tecnológica'),
-                    ('Veículos', 'Carros, motos, veículos corporativos', 20.00, 5, 'Baseado em tabela FIPE e uso comercial'),
-                    ('Máquinas e Equipamentos', 'Equipamentos industriais e comerciais', 10.00, 10, 'Variável conforme tipo de equipamento'),
-                    ('Equipamentos de Áudio e Vídeo', 'Câmeras, microfones, projetores', 15.00, 7, 'Média obsolescência tecnológica'),
-                    ('Ferramentas', 'Ferramentas manuais e elétricas', 15.00, 7, 'Depreciação por uso e desgaste'),
-                    ('Equipamentos Médicos', 'Aparelhos e instrumentos médicos', 10.00, 10, 'Conforme regulamentação ANVISA')
+                    ('Computers & peripherals', 'Laptops, desktops, printers and data processing equipment', 20.00, 5, 'Typical rate for IT equipment'),
+                    ('Furniture & fixtures', 'Desks, chairs, cabinets and shelving', 10.00, 10, 'General office furniture'),
+                    ('Communication equipment', 'Phones, radios and network equipment', 20.00, 5, 'Fast technological obsolescence'),
+                    ('Vehicles', 'Cars, vans, trucks and motorcycles', 20.00, 5, 'Vehicles used for business'),
+                    ('Machinery & equipment', 'Industrial and commercial equipment', 10.00, 10, 'Varies with the type of equipment'),
+                    ('Audio & video equipment', 'Cameras, microphones and projectors', 15.00, 7, 'Medium technological obsolescence'),
+                    ('Tools', 'Hand and power tools', 15.00, 7, 'Wear and tear from regular use'),
+                    ('Medical equipment', 'Medical devices and instruments', 10.00, 10, 'Check local regulations')
                `);
 
                console.log('✅ Padrões de depreciação criados!');
@@ -275,9 +275,9 @@ async function seed() {
 
                await connection.query(`
                     INSERT INTO departamentos (titulo, descricao, localizacao, codigo_convite, status) VALUES
-                    ('Tecnologia da Informação', 'Gerenciamento de equipamentos e infraestrutura de TI', 'Bloco A - 3º Andar', ?, 'ativo'),
-                    ('Departamento Financeiro', 'Controle e gestão de ativos financeiros e patrimoniais', 'Bloco B - 2º Andar', ?, 'ativo'),
-                    ('Marketing e Comunicação', 'Equipamentos de mídia e comunicação corporativa', 'Bloco C - 1º Andar', ?, 'ativo')
+                    ('IT', 'IT equipment and infrastructure', 'Building A, 3rd floor', ?, 'ativo'),
+                    ('Finance', 'Furniture and equipment for the finance team', 'Building B, 2nd floor', ?, 'ativo'),
+                    ('Marketing', 'Media and content production equipment', 'Building C, 1st floor', ?, 'ativo')
                `, [gerarCodigoDepartamento(), gerarCodigoDepartamento(), gerarCodigoDepartamento()]);
 
                // Obter IDs dos departamentos
@@ -299,21 +299,21 @@ async function seed() {
 
                // Obter padrões de depreciação
                const [padroes] = await connection.query('SELECT id, categoria FROM padroes_depreciacao');
-               const padraoComputadores = padroes.find(p => p.categoria === 'Computadores e Periféricos');
-               const padraoMoveis = padroes.find(p => p.categoria === 'Móveis e Utensílios');
-               const padraoAudioVideo = padroes.find(p => p.categoria === 'Equipamentos de Áudio e Vídeo');
+               const padraoComputadores = padroes.find(p => p.categoria === 'Computers & peripherals');
+               const padraoMoveis = padroes.find(p => p.categoria === 'Furniture & fixtures');
+               const padraoAudioVideo = padroes.find(p => p.categoria === 'Audio & video equipment');
 
                // Criar categorias de exemplo
                console.log('📂 Criando categorias iniciais...');
 
                await connection.query(`
                     INSERT INTO categorias (id_departamento, nome, descricao, padrao_depreciacao_id) VALUES
-                    (?, 'Computadores e Notebooks', 'Equipamentos de informática portáteis e desktops', ?),
-                    (?, 'Monitores e Displays', 'Monitores, projetores e equipamentos de exibição', ?),
-                    (?, 'Servidores e Rede', 'Equipamentos de infraestrutura de rede e servidores', ?),
-                    (?, 'Mobiliário Corporativo', 'Mesas, cadeiras e móveis de escritório', ?),
-                    (?, 'Equipamentos Financeiros', 'Calculadoras, cofres e equipamentos específicos', ?),
-                    (?, 'Equipamentos de Áudio/Vídeo', 'Microfones, câmeras e equipamentos de produção', ?)
+                    (?, 'Computers & laptops', 'Laptops and desktop computers', ?),
+                    (?, 'Monitors & displays', 'Monitors, projectors and displays', ?),
+                    (?, 'Servers & network', 'Servers and network infrastructure', ?),
+                    (?, 'Office furniture', 'Desks, chairs and office furniture', ?),
+                    (?, 'Finance equipment', 'Safes, calculators and other finance equipment', ?),
+                    (?, 'Audio & video', 'Microphones, cameras and production gear', ?)
                `, [
                     departamentos[0].id_departamentos, padraoComputadores?.id,
                     departamentos[0].id_departamentos, padraoComputadores?.id,
@@ -334,31 +334,31 @@ async function seed() {
 
                // Patrimônios para TI
                for (const categoria of categorias) {
-                    if (categoria.nome === 'Computadores e Notebooks') {
+                    if (categoria.nome === 'Computers & laptops') {
                          await connection.query(`
                               INSERT INTO patrimonios (
                                    id_categoria, nome, descricao, codigo_patrimonio,
                                    localizacao, valor_inicial, valor_atual, data_aquisicao, tempo_depreciacao,
                                    status
                               ) VALUES
-                              (?, 'Notebook Dell Inspiron 15', 'Notebook corporativo i7 16GB RAM 512GB SSD', 'NB-2024-001', 'TI - Sala 301', 4500.00, 3600.00, ?, 20, 'ativo'),
-                              (?, 'Desktop HP EliteDesk', 'Desktop corporativo i5 8GB RAM 256GB SSD', 'DT-2024-001', 'TI - Sala 302', 3200.00, 2560.00, ?, 20, 'ativo'),
-                              (?, 'MacBook Pro 14"', 'MacBook Pro M2 32GB RAM 1TB SSD', 'MB-2024-001', 'TI - Sala 303', 12000.00, 9600.00, ?, 25, 'ativo')
+                              (?, 'Dell Inspiron 15', 'Company laptop, i7, 16GB RAM, 512GB SSD', 'NB-2024-001', 'IT - Room 301', 4500.00, 3600.00, ?, 20, 'ativo'),
+                              (?, 'HP EliteDesk', 'Company desktop, i5, 8GB RAM, 256GB SSD', 'DT-2024-001', 'IT - Room 302', 3200.00, 2560.00, ?, 20, 'ativo'),
+                              (?, 'MacBook Pro 14"', 'MacBook Pro M2, 32GB RAM, 1TB SSD', 'MB-2024-001', 'IT - Room 303', 12000.00, 9600.00, ?, 25, 'ativo')
                          `, [
                               categoria.id, dataAquisicao.toISOString().split('T')[0],
                               categoria.id, dataAquisicao.toISOString().split('T')[0],
                               categoria.id, dataAquisicao.toISOString().split('T')[0]
                          ]);
-                    } else if (categoria.nome === 'Monitores e Displays') {
+                    } else if (categoria.nome === 'Monitors & displays') {
                          await connection.query(`
                               INSERT INTO patrimonios (
                                    id_categoria, nome, descricao, codigo_patrimonio,
                                    localizacao, valor_inicial, valor_atual, data_aquisicao, tempo_depreciacao,
                                    status
                               ) VALUES
-                              (?, 'Monitor LG UltraWide 29"', 'Monitor UltraWide 29" Full HD IPS', 'MN-2024-001', 'TI - Sala 301', 1200.00, 1080.00, ?, 10, 'ativo'),
-                              (?, 'Monitor Dell 27"', 'Monitor 27" 4K USB-C', 'MN-2024-002', 'TI - Sala 302', 2800.00, 2520.00, ?, 12, 'ativo'),
-                              (?, 'Projetor Epson', 'Projetor Full HD 3500 lumens', 'PJ-2024-001', 'TI - Sala de Reuniões', 3500.00, 2800.00, ?, 15, 'ativo')
+                              (?, 'Monitor LG UltraWide 29"', '29" UltraWide Full HD IPS monitor', 'MN-2024-001', 'IT - Room 301', 1200.00, 1080.00, ?, 10, 'ativo'),
+                              (?, 'Dell 27" monitor', '27" 4K USB-C monitor', 'MN-2024-002', 'IT - Room 302', 2800.00, 2520.00, ?, 12, 'ativo'),
+                              (?, 'Epson projector', 'Full HD projector, 3500 lumens', 'PJ-2024-001', 'IT - Meeting room', 3500.00, 2800.00, ?, 15, 'ativo')
                          `, [
                               categoria.id, dataAquisicao.toISOString().split('T')[0],
                               categoria.id, dataAquisicao.toISOString().split('T')[0],
@@ -368,7 +368,7 @@ async function seed() {
                }
 
                // Patrimônios para Financeiro
-               const categoriaFinanceiro = categorias.find(c => c.nome === 'Mobiliário Corporativo');
+               const categoriaFinanceiro = categorias.find(c => c.nome === 'Office furniture');
                if (categoriaFinanceiro) {
                     await connection.query(`
                          INSERT INTO patrimonios (
@@ -376,9 +376,9 @@ async function seed() {
                               localizacao, valor_inicial, valor_atual, data_aquisicao, tempo_depreciacao,
                               status
                          ) VALUES
-                         (?, 'Mesa Executiva L', 'Mesa em L com gavetas e suporte para CPU', 'MS-2024-001', 'Financeiro - Sala 201', 2200.00, 1980.00, ?, 5, 'ativo'),
-                         (?, 'Cadeira Presidente', 'Cadeira ergonômica com apoio lombar ajustável', 'CD-2024-001', 'Financeiro - Sala 201', 1800.00, 1620.00, ?, 8, 'ativo'),
-                         (?, 'Armário de Arquivo', 'Armário de aço 4 gavetas com fechadura', 'AR-2024-001', 'Financeiro - Arquivo', 1500.00, 1350.00, ?, 3, 'ativo')
+                         (?, 'L-shaped executive desk', 'L-shaped desk with drawers and CPU stand', 'MS-2024-001', 'Finance - Room 201', 2200.00, 1980.00, ?, 5, 'ativo'),
+                         (?, 'Executive chair', 'Ergonomic chair with adjustable lumbar support', 'CD-2024-001', 'Finance - Room 201', 1800.00, 1620.00, ?, 8, 'ativo'),
+                         (?, 'Filing cabinet', '4-drawer steel cabinet with lock', 'AR-2024-001', 'Finance - Archive', 1500.00, 1350.00, ?, 3, 'ativo')
                     `, [
                          categoriaFinanceiro.id, dataAquisicao.toISOString().split('T')[0],
                          categoriaFinanceiro.id, dataAquisicao.toISOString().split('T')[0],
@@ -387,7 +387,7 @@ async function seed() {
                }
 
                // Patrimônios para Marketing
-               const categoriaMarketing = categorias.find(c => c.nome === 'Equipamentos de Áudio/Vídeo');
+               const categoriaMarketing = categorias.find(c => c.nome === 'Audio & video');
                if (categoriaMarketing) {
                     await connection.query(`
                          INSERT INTO patrimonios (
@@ -395,9 +395,9 @@ async function seed() {
                               localizacao, valor_inicial, valor_atual, data_aquisicao, tempo_depreciacao,
                               status
                          ) VALUES
-                         (?, 'Microfone Rode PodMic', 'Microfone dinâmico para podcast e streaming', 'MC-2024-001', 'Marketing - Estúdio', 850.00, 765.00, ?, 10, 'ativo'),
-                         (?, 'Câmera Sony A7 III', 'Câmera mirrorless full-frame para produção de conteúdo', 'CM-2024-001', 'Marketing - Estúdio', 12500.00, 10000.00, ?, 18, 'ativo'),
-                         (?, 'Tripé Manfrotto', 'Tripé profissional de fibra de carbono', 'TP-2024-001', 'Marketing - Estúdio', 1200.00, 1080.00, ?, 5, 'ativo')
+                         (?, 'Microfone Rode PodMic', 'Dynamic microphone for podcasts and streaming', 'MC-2024-001', 'Marketing - Studio', 850.00, 765.00, ?, 10, 'ativo'),
+                         (?, 'Sony A7 III camera', 'Full-frame mirrorless camera for content production', 'CM-2024-001', 'Marketing - Studio', 12500.00, 10000.00, ?, 18, 'ativo'),
+                         (?, 'Manfrotto tripod', 'Professional carbon fiber tripod', 'TP-2024-001', 'Marketing - Studio', 1200.00, 1080.00, ?, 5, 'ativo')
                     `, [
                          categoriaMarketing.id, dataAquisicao.toISOString().split('T')[0],
                          categoriaMarketing.id, dataAquisicao.toISOString().split('T')[0],

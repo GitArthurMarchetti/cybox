@@ -28,8 +28,8 @@ const EnterDepartmentModal = ({ isOpen, onClose }: {
           <Modal isOpen={isOpen} onClose={onClose} className="max-w-md">
                               <ModalHeader
                                   icone={<MdLogin size={20} />}
-                                  titulo="Entrar no Departamento"
-                                  subtitulo="Digite o código de convite recebido"
+                                  titulo="Join a room"
+                                  subtitulo="Paste the invite code a teammate shared with you"
                                   onClose={onClose}
                               />
 
@@ -41,13 +41,13 @@ const EnterDepartmentModal = ({ isOpen, onClose }: {
                                              transition={{ duration: 0.3, delay: 0.1 }}
                                         >
                                              <label className="block text-sm font-medium text-muted mb-2">
-                                                  Código do Convite
+                                                  Invite code
                                              </label>
                                              <div className="relative">
                                                   <FaKey className="absolute left-4 top-1/2 transform -translate-y-1/2 text-subtle" size={16} />
                                                   <input
                                                        type="text"
-                                                       placeholder="Ex: DEPT-AB12CD34EF"
+                                                       placeholder="e.g. DEPT-AB12CD34EF"
                                                        className="w-full bg-surface-2 text-white pl-12 pr-4 py-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 placeholder-subtle"
                                                        value={code}
                                                        onChange={(e) => setCode(e.target.value.toUpperCase())}
@@ -55,7 +55,7 @@ const EnterDepartmentModal = ({ isOpen, onClose }: {
                                                   />
                                              </div>
                                              <p className="text-xs text-subtle mt-2">
-                                                  O código deve ter sido enviado pelo administrador do departamento
+                                                  Ask the room&apos;s owner or an admin for it
                                              </p>
                                         </motion.div>
 
@@ -66,7 +66,7 @@ const EnterDepartmentModal = ({ isOpen, onClose }: {
                                              transition={{ duration: 0.3, delay: 0.2 }}
                                         >
                                              <div className="text-sm text-subtle">
-                                                  Você será adicionado ao departamento
+                                                  You&apos;ll join the room as a member
                                              </div>
                                              <div className="flex items-center gap-3">
                                                   <button
@@ -74,22 +74,22 @@ const EnterDepartmentModal = ({ isOpen, onClose }: {
                                                        className="px-6 py-3 text-muted hover:text-white hover:bg-surface-2 rounded-lg transition-all duration-300"
                                                        onClick={onClose}
                                                   >
-                                                       Cancelar
+                                                       Cancel
                                                   </button>
                                                   <button
                                                        type="submit"
                                                        disabled={isLoading || !code.trim()}
-                                                       className="px-6 py-3 bg-primary text-black font-medium rounded-lg hover:bg-primary/90 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                                                       className="flex shrink-0 items-center gap-2 whitespace-nowrap rounded-full bg-primary px-6 py-3 font-semibold text-black transition-colors hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-50"
                                                   >
                                                        {isLoading ? (
                                                             <>
                                                                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-black"></div>
-                                                                 Entrando...
+                                                                 Joining…
                                                             </>
                                                        ) : (
                                                             <>
                                                                  <MdLogin size={16} />
-                                                                 Entrar
+                                                                 Join room
                                                             </>
                                                        )}
                                                   </button>
